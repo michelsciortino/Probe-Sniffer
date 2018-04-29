@@ -1,5 +1,4 @@
-﻿using ProbeSniffer.ViewModels;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,18 +10,18 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace ProbeSniffer.Views
 {
     /// <summary>
-    /// Logica di interazione per SplashView.xaml
+    /// Logica di interazione per ConfigurationLoadingView.xaml
     /// </summary>
-    public partial class SplashView : Window
+    public partial class ConfigurationLoadingView : Page
     {
-        public SplashView(SplashViewModel splashViewModel)
+        public ConfigurationLoadingView()
         {
-            DataContext = splashViewModel;
             InitializeComponent();
         }
     }
