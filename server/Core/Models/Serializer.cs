@@ -15,7 +15,7 @@ namespace Core.Models
         /// </summary>
         /// <param name="configuration">Configuration to serialize</param>
         /// <returns>True if serialized correctly, False otherwise</returns>
-        public static bool Serialize(object obj,string filePath)
+        public static bool Serialize<T>(T obj,string filePath)
         {
             IFormatter formatter = new BinaryFormatter();
             try
@@ -35,24 +35,24 @@ namespace Core.Models
         /// Deserializes a configuration from file
         /// </summary>
         /// <returns>A configuration if found and deserialized correctly, null otherwise</returns>
-        public static Configuration Deserialize(string filePath)
+        public static T Deserialize<T>(string filePath)
         {
-            Configuration c = null;
+            T obj = default(T);
 
             if (!File.Exists(filePath))
-                return null;
+                return default(T);
             IFormatter formatter = new BinaryFormatter();
             try
             {
                 Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                c = (Configuration)formatter.Deserialize(stream);
+                obj = (T) formatter.Deserialize(stream);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
             }
 
-            return c;
+            return obj;
         }
 
         #endregion
