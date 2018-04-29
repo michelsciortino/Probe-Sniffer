@@ -1,5 +1,6 @@
 ﻿using System;
-namespace ProbeSniffer.Models
+
+namespace Core.Models
 {
     [Serializable]
     public class Device
