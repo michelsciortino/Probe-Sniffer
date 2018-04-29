@@ -68,6 +68,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\Configuration.cs" />
+    <Compile Include="Models\Device.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
