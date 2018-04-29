@@ -4,8 +4,8 @@
 
     <Color x:Key="GreenColor">#ff6afff3</Color>
     <SolidColorBrush x:Key="GreenColorBrush" Color="{StaticResource GreenColor}"/>
-    
-    <Color x:Key="DarkGreenColor">#ff6afff3</Color>
+
+    <Color x:Key="DarkGreenColor">#ff409992</Color>
     <SolidColorBrush x:Key="DarkGreenColorBrush" Color="{StaticResource DarkGreenColor}"/>
 
     <Color x:Key="VioletColor">#ffbf71ff</Color>
