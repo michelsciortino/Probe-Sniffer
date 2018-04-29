@@ -20,7 +20,7 @@
     <Color x:Key="AzureColor">#ff1cbfff</Color>
     <SolidColorBrush x:Key="AzureColorBrush" Color="{StaticResource AzureColor}"/>
 
-    <Color x:Key="BackgroundColor">#ff1cbfff</Color>
+    <Color x:Key="BackgroundColor">#ff141828</Color>
     <SolidColorBrush x:Key="BackgroundColorBrush" Color="{StaticResource BackgroundColor}"/>
 
 </ResourceDictionary>
