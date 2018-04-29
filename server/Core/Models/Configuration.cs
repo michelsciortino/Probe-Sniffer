@@ -42,12 +42,17 @@ namespace Core.Models
         public int GetNumOfDevices() => _nDevices;
 
         /// <summary>
+        /// Getter for the list of devices
+        /// </summary>
+        public IList<Device> Devices => _devices;
+
+        /// <summary>
         /// Get the stored configuration
         /// </summary>
         /// <returns>A configuration if found, null otherwise</returns>
         public Configuration LoadConfiguration()
         {
-            return Serializer.Deserialize(ConfFilePath);
+            return Serializer.Deserialize<Configuration>(ConfFilePath);
         }
 
         /// <summary>
