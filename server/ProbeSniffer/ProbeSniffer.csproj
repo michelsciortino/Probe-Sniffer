@@ -54,19 +54,50 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Program.cs" />
+    <Compile Include="ViewModels\DevicesAwaitingViewModel.cs" />
     <Compile Include="ViewModels\SplashViewModel.cs" />
-    <Compile Include="Views\SplashView.xaml.cs">
-      <DependentUpon>SplashView.xaml</DependentUpon>
+    <Compile Include="Views\SplashScreen\ConfigurationLoadingView.xaml.cs">
+      <DependentUpon>ConfigurationLoadingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SplashScreen\DatabaseConnectionLoadingView.xaml.cs">
+      <DependentUpon>DatabaseConnectionLoadingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SplashScreen\DevicesAwaitingView.xaml.cs">
+      <DependentUpon>DevicesAwaitingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\SplashWindow.xaml.cs">
+      <DependentUpon>SplashWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Controls\SpinningRing.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Styles\Colors.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\SplashView.xaml">
+    <Page Include="Styles\Fonts.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SplashScreen\ConfigurationLoadingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SplashScreen\DatabaseConnectionLoadingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SplashScreen\DevicesAwaitingView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\SplashWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -103,5 +134,6 @@
       <Name>Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
