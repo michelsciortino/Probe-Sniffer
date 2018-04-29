@@ -8,5 +8,6 @@ namespace Core.Models
         public string MAC { get; set; }
         public int X_position { get; set; }
         public int Y_Position { get; set; }
+        public bool Active { get; set; }
     }
 }
