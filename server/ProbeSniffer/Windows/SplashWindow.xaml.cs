@@ -8,9 +8,8 @@ namespace ProbeSniffer.Windows
     /// </summary>
     public partial class SplashWindow : Window
     {
-        public SplashWindow(SplashViewModel splashViewModel)
+        public SplashWindow()
         {
-            DataContext = splashViewModel;
             InitializeComponent();
         }
     }

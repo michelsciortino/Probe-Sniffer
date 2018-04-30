@@ -7,11 +7,16 @@
         xmlns:vm="clr-namespace:ProbeSniffer.ViewModels"
         mc:Ignorable="d"
         WindowStyle="None"
+        ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen"
         AllowsTransparency="True"
         Title="Probe Sniffer"
         Height="450" Width="580"
         Background="Transparent">
+
+    <Window.DataContext>
+        <vm:SplashViewModel/>
+    </Window.DataContext>
     
     <Frame Content="{Binding CurrentPage}"
            NavigationUIVisibility="Hidden"

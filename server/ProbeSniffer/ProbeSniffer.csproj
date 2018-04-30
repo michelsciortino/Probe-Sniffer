@@ -55,7 +55,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Program.cs" />
-    <Compile Include="ViewModels\DevicesAwaitingViewModel.cs" />
+    <Compile Include="SplashScreen.cs" />
     <Compile Include="ViewModels\SplashViewModel.cs" />
     <Compile Include="Views\SplashScreen\ConfigurationLoadingView.xaml.cs">
       <DependentUpon>ConfigurationLoadingView.xaml</DependentUpon>

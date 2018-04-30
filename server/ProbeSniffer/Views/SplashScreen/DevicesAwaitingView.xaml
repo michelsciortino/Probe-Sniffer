@@ -7,7 +7,7 @@
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="580">
 
-    <Page.Resources>
+    <!--Page.Resources>
         <Style x:Key="device" TargetType="{x:Type Ellipse}">
             <Setter Property="Margin" Value="3,0,3,0"/>
             <Setter Property="Width" Value="10"/>
@@ -18,12 +18,12 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-    </Page.Resources>
+    </Page.Resources-->
     
     <Border BorderThickness="0" BorderBrush="Transparent">
         <StackPanel HorizontalAlignment="Right" Margin="0,181,201,181">
             <TextBlock Text="Waiting for devices" Foreground="White" FontSize="{StaticResource SplashFontSize}"/>
-            <ItemsControl ItemsSource="{Binding Items,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+            <!--ItemsControl ItemsSource="{Binding Items,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                         Margin="0,20,0,0"
                         HorizontalAlignment="Center"
                       Background="Transparent"
@@ -38,8 +38,9 @@
                         <Ellipse Style="{StaticResource device}" Fill="Bisque"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            </ItemsControl-->
             <Border BorderBrush="Transparent" BorderThickness="0" Height="30" Width="0"/>
+            <Control Style="{StaticResource BusyAnimationStyle}"/>
         </StackPanel>
     </Border>
 </Page>

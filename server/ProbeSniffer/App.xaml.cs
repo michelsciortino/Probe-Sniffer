@@ -17,7 +17,7 @@ namespace ProbeSniffer
         {
             base.OnStartup(e);
             Program program = new Program();
-            program.MainAsync();
+            program.Main();
         }
     }
 }
