@@ -10,6 +10,7 @@ namespace ProbeSniffer.ViewModels
 
         #endregion
 
+        #region Public Properties
         public Page CurrentPage
         {
             get => _currentPage;
@@ -20,6 +21,6 @@ namespace ProbeSniffer.ViewModels
                 OnPropertyChanged(nameof(CurrentPage));
             }
         }
-
+        #endregion
     }
 }
