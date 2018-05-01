@@ -31,32 +31,32 @@ namespace ProbeSniffer
                 new Device { Active = false }
             };            
 
-            splash = new SplashScreen();
+            //splash = new SplashScreen();
 
-            splash.Show();
+            //splash.Show();
 
             //Loading configuration
-            splash.ShowConfLoadingSplashScreen();
+            //splash.ShowConfLoadingSplashScreen();
             configuration = new Configuration();
             configuration.LoadConfiguration();
 
             await Task.Run(async () => Thread.Sleep(5000));
 
             //Test Database connection
-            splash.ShowDBConneLoadingSplashScreen();
+            //splash.ShowDBConneLoadingSplashScreen();
             /* connect()....*/
 
             await Task.Run(async () => Thread.Sleep(5000));
 
             //Connecting to Device
-            splash.ShowDeviceAwaitingSplashScreen();
+            //splash.ShowDeviceAwaitingSplashScreen();
             //DeviceCommunication.Initialize();
 
             await Task.Run(async () => Thread.Sleep(5000));
 
-            splash.Close();
-            visualizer = new DataVisualizer(_devices);
-            visualizer.Show();
+            //splash.Close();
+            //visualizer = new DataVisualizer(_devices);
+            //visualizer.Show();
         }
 
     }
