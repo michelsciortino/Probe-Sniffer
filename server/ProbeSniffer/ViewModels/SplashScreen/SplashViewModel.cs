@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace ProbeSniffer.ViewModels
+namespace ProbeSniffer.ViewModels.SplashScreen
 {
     public class SplashViewModel: Core.ViewModelBase.BaseViewModel
     {
