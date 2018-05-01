@@ -6,8 +6,8 @@ namespace Core.Models
     public class Device
     {
         public string MAC { get; set; }
-        public int X_position { get; set; }
-        public int Y_Position { get; set; }
+        public double X_position { get; set; }
+        public double Y_Position { get; set; }
         public bool Active { get; set; }
     }
 }
