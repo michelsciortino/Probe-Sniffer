@@ -37,8 +37,7 @@ namespace ProbeSniffer
 
             //Loading configuration
             //splash.ShowConfLoadingSplashScreen();
-            configuration = new Configuration();
-            configuration.LoadConfiguration();
+            configuration = Configuration.LoadConfiguration();
 
             await Task.Run(async () => Thread.Sleep(5000));
 
