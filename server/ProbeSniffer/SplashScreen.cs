@@ -28,7 +28,14 @@ namespace ProbeSniffer
             SplashThread.SetApartmentState(ApartmentState.STA);
             SplashThread.IsBackground = false;
             SplashThread.Start();
-            Thread.Sleep(1000);
+            while (true)
+            {
+                Dispatcher dispatcher = Dispatcher.FromThread(SplashThread);
+                if (dispatcher == null)
+                    Thread.Sleep(100);
+                else
+                    break;
+            }
         }
 
         /// <summary>
@@ -43,6 +50,11 @@ namespace ProbeSniffer
                 ((SplashViewModel)splashWindow.DataContext).CurrentPage= new ConfigurationLoadingView();
             });
             
+        }
+
+        internal void ShowDBConnectionErrorRetrying()
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
