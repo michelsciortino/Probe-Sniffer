@@ -4,6 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Configurator"
+        xmlns:vm="clr-namespace:Configurator.ViewModels"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+        xmlns:command="http://www.galasoft.ch/mvvmlight"
         mc:Ignorable="d"
         Title="Device Condifuration"
         Height="450" Width="600"
@@ -11,6 +14,10 @@
         BorderThickness="0"
         Foreground="White"
         Background="{StaticResource BackgroundColorBrush}">
+    <Window.DataContext>
+        <vm:ConfiguratorViewModel/>
+    </Window.DataContext>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="180" MaxWidth="220"/>
@@ -34,11 +41,45 @@
                     Margin="0,0,0,5"
                     FontFamily="Segoe MDL2 Assets"
                     Content="&#xE738;"
-                    Padding="2"/>
-            <ListBox Grid.Row="1"                 
-                 BorderThickness="0"
-                 Background="{StaticResource BackgroundLighterColorBrush}"
-                 ItemsSource="{Binding Devices,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"/>
+                    Foreground="White"
+                    Padding="2">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="Click">
+                        <command:EventToCommand Command="{Binding RemoveDeviceCommand}"
+                                                PassEventArgsToCommand="False"
+                                                CommandParameter="{Binding ElementName=DeviceList, Path=SelectedItem}" />
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </Button>
+            <ListBox x:Name="DeviceList"
+                     Grid.Row="1"     
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                     BorderThickness="0"
+                     Padding="0"
+                     Background="{StaticResource BackgroundLighterColorBrush}"
+                     ItemsSource="{Binding Devices,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border HorizontalAlignment="Stretch"
+                                Background="{StaticResource AzureColorBrush}"
+                                Margin="0"
+                                BorderThickness="1"
+                                BorderBrush="{StaticResource AzureColorBrush}">
+                            <StackPanel HorizontalAlignment="Stretch"
+                                        MinWidth="135">
+                                <TextBlock Padding="5,0" Text="{Binding MAC}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Padding="5,0" Text="x:"/>
+                                    <TextBlock Padding="5,0" Text="{Binding X_position}"/>
+                                    <TextBlock Padding="5,0" Text="y:"/>
+                                    <TextBlock Padding="5,0" Text="{Binding Y_Position}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Grid>
 
         <Grid Grid.Column="1"
@@ -58,6 +99,7 @@
                 <Button Grid.Row="0"
                         Content="Search for devices"
                         Padding="10"
+                        Foreground="White"
                         Margin="0,20"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center"
@@ -65,7 +107,7 @@
                 
                 <Grid Grid.Column="0"
                       Grid.Row="1"
-                      IsEnabled="{Binding NewDeviceFormEnabled}"
+                      IsEnabled="{Binding NewDeviceFormEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                       VerticalAlignment="Stretch"
                       HorizontalAlignment="Stretch">
                     <Grid.RowDefinitions>
@@ -95,6 +137,7 @@
                             <TextBox Width="80"
                                      BorderThickness="0"
                                      Padding="1"
+                                     Foreground="White"
                                      Text="{Binding X,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
                                      Background="{StaticResource BackgroundLighterLighterColorBrush}"/>
                         </StackPanel>
@@ -103,6 +146,7 @@
                                 Orientation="Horizontal">
                             <TextBlock Text="y" Margin="0,0,10,0"/>
                             <TextBox Width="80"
+                                     Foreground="White"
                                      BorderThickness="0"
                                      Padding="1"
                                      Text="{Binding Y,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
@@ -115,19 +159,29 @@
                                 Margin="0,20,0,0"
                                 Orientation="Horizontal">
                             <TextBlock Text="mac" Margin="0,0,10,0"/>
-                            <TextBox IsEnabled="False"
+                            <TextBox IsEnabled="True"
                                      Width="150"
+                                     Foreground="White"
                                      BorderThickness="0"
-                                     Text="{Binding MAC,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource BackgroundLightColorBrush}"/>
+                                     Text="{Binding MAC,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BackgroundLightColorBrush}">
+                            </TextBox>
                         </StackPanel>
                     </Grid>
-                    <Button Content="Add Device"
+                    <Button x:Name="AddDevice"
+                            Content="Add Device"
                             Grid.Row="2"
                             HorizontalAlignment="Right"
                             Padding="5,2"
                             Margin="50,20"
-                            BorderThickness="0"/>
+                            BorderThickness="0"
+                            IsEnabled="{Binding AddDeviceButtonEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <command:EventToCommand Command="{Binding AddDeviceCommand}" PassEventArgsToCommand="False"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </Button>
                 </Grid>
             </Grid>
             <Button Content="Save Confituration"
@@ -135,7 +189,13 @@
                     VerticalAlignment="Bottom"
                     Padding="5,2"
                     Margin="0"
-                    BorderThickness="0"/>
+                    BorderThickness="0">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="Click">
+                        <command:EventToCommand Command="{Binding SaveConfigurationCommand}" PassEventArgsToCommand="False"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </Button>
 
         </Grid>
 
