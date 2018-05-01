@@ -23,4 +23,11 @@
     <Color x:Key="BackgroundColor">#ff141828</Color>
     <SolidColorBrush x:Key="BackgroundColorBrush" Color="{StaticResource BackgroundColor}"/>
 
+    <Color x:Key="BackgroundLighterColor">#ff262A3d</Color>
+    <SolidColorBrush x:Key="BackgroundLighterColorBrush" Color="{StaticResource BackgroundLighterColor}"/>
+
+    <Color x:Key="BackgroundLightColor">#ff202438</Color>
+    <SolidColorBrush x:Key="BackgroundLightColorBrush" Color="{StaticResource BackgroundLightColor}"/>
+
+
 </ResourceDictionary>
