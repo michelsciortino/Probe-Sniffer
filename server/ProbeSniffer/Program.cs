@@ -29,7 +29,7 @@ namespace ProbeSniffer
 
             splash = new SplashScreen();
 
-            splash.ShowSplashScreen();
+            splash.Show();
 
             //Loading configuration
             splash.ShowConfLoadingSplashScreen();
@@ -42,7 +42,7 @@ namespace ProbeSniffer
             /* connect()....*/
             await Task.Run(async () => Thread.Sleep(5000));
             //Connecting to Device
-            splash.ShowDeviceAwaitingSplashScreen(_devices);
+            splash.ShowDeviceAwaitingSplashScreen();
             //DeviceCommunication.Initialize();
 
 

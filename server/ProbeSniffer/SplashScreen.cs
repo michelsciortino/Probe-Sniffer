@@ -1,11 +1,8 @@
-﻿using Core.Models;
-using ProbeSniffer.ViewModels;
-using ProbeSniffer.Views;
-using ProbeSniffer.Windows;
-using System;
-using System.Collections.ObjectModel;
-using System.Threading;
+﻿using System.Threading;
 using System.Windows.Threading;
+using ProbeSniffer.Views;
+using ProbeSniffer.ViewModels;
+using ProbeSniffer.Windows;
 
 namespace ProbeSniffer
 {
@@ -14,8 +11,10 @@ namespace ProbeSniffer
         private Thread SplashThread = null;
         private SplashWindow splashWindow = null;
         
-
-        public void ShowSplashScreen()
+        /// <summary>
+        /// Shows the Splash Screen
+        /// </summary>
+        public void Show()
         {
             SplashThread = new Thread(new ThreadStart(() =>
             {
@@ -29,6 +28,9 @@ namespace ProbeSniffer
             SplashThread.Start();
         }
 
+        /// <summary>
+        /// Shows the ConfigurationLoading view in the Splash Screen
+        /// </summary>
         public void ShowConfLoadingSplashScreen()
         {
             Dispatcher dispatcher = Dispatcher.FromThread(SplashThread);
@@ -38,6 +40,10 @@ namespace ProbeSniffer
             });
             
         }
+
+        /// <summary>
+        /// Shows the DatabaseConnection view in the Splash Screen
+        /// </summary>
         public void ShowDBConneLoadingSplashScreen()
         {
             Dispatcher.FromThread(SplashThread).Invoke(() =>
@@ -46,7 +52,10 @@ namespace ProbeSniffer
             });
         }
 
-        public void ShowDeviceAwaitingSplashScreen(ObservableCollection<Device> devices)
+        /// <summary>
+        /// Shows the DeviceAwaiting view in the Splash Screen
+        /// </summary>
+        public void ShowDeviceAwaitingSplashScreen()
         {
             Dispatcher.FromThread(SplashThread).Invoke(() =>
             {
