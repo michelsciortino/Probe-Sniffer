@@ -7,8 +7,13 @@ namespace ProbeSniffer
 {
     public class Program
     {
-        private static Configuration configuration=null;
-        SplashScreen splash = null;
+        private static Configuration configuration = null;
+
+        #region Windows
+        private SplashScreen splash = null;
+        private DataVisualizer visualizer = null;
+        #endregion
+        
         private ObservableCollection<Device> _devices = null;
 
         /// <summary>
@@ -24,8 +29,7 @@ namespace ProbeSniffer
                 new Device { Active = true },
                 new Device { Active = false },
                 new Device { Active = false }
-            };
-            
+            };            
 
             splash = new SplashScreen();
 
@@ -37,19 +41,22 @@ namespace ProbeSniffer
             configuration.LoadConfiguration();
 
             await Task.Run(async () => Thread.Sleep(5000));
+
             //Test Database connection
             splash.ShowDBConneLoadingSplashScreen();
             /* connect()....*/
+
             await Task.Run(async () => Thread.Sleep(5000));
+
             //Connecting to Device
             splash.ShowDeviceAwaitingSplashScreen();
             //DeviceCommunication.Initialize();
 
+            await Task.Run(async () => Thread.Sleep(5000));
 
-            //await Task.Run(async () => Thread.Sleep(5000));
-
-
-
+            splash.Close();
+            visualizer = new DataVisualizer(_devices);
+            visualizer.Show();
         }
 
     }
