@@ -23,7 +23,7 @@ namespace ProbeSniffer
         /// <summary>
         /// Main entry point of the program
         /// </summary>
-        public async void Main()
+        public void Main()
         {
             bool result = false;
 
@@ -79,16 +79,21 @@ namespace ProbeSniffer
                 return;
             }
 
-
+            //Opening visualizer
             splash.Close();
-            //visualizer = new DataVisualizer(_devices);
-            //visualizer.Show();
+            visualizer = new DataVisualizer(configuration.Devices);
+            visualizer.Show();
         }
 
 
         private void ShowErrorMessage(string message)
         {
-            MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.None, MessageBoxOptions.DefaultDesktopOnly);
+            MessageBox.Show(message,
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error,
+                            MessageBoxResult.None,
+                            MessageBoxOptions.DefaultDesktopOnly);
         }
 
     }
