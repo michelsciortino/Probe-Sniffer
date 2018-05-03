@@ -44,10 +44,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeviceCominication\DeviceCommunication.cs" />
-    <Compile Include="DeviceCominication\Messages\Ok_Message.cs" />
-    <Compile Include="DeviceCominication\Messages\Server_Advertisement.cs" />
-    <Compile Include="DeviceCominication\UDPsender.cs" />
+    <Compile Include="DeviceCommunication\DeviceCommunication.cs" />
+    <Compile Include="DeviceCommunication\ESPManager.cs" />
+    <Compile Include="DeviceCommunication\Messages\Ok_Message.cs" />
+    <Compile Include="DeviceCommunication\Messages\Server_Advertisement.cs" />
+    <Compile Include="DeviceCommunication\UDPsender.cs" />
     <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\ESP32_Device.cs" />
