@@ -11,6 +11,7 @@ namespace Core.Models
 
         private int _nDevices = 0;
         private List<Device> _devices = null;
+        private string _SSID = null;
 
         #endregion
 
@@ -42,9 +43,14 @@ namespace Core.Models
         public int GetNumOfDevices() => _nDevices;
 
         /// <summary>
-        /// Getter for the list of devices
+        /// Get the list of devices
         /// </summary>
         public IList<Device> Devices => _devices;
+
+        /// <summary>
+        /// Get the SSID
+        /// </summary>
+        public string SSID => _SSID;
 
         /// <summary>
         /// Get the stored configuration
