@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeviceCominication\DeviceCominication.cs" />
+    <Compile Include="DeviceCominication\DeviceCommunication.cs" />
     <Compile Include="DeviceCominication\Messages\Ok_Message.cs" />
     <Compile Include="DeviceCominication\Messages\Server_Advertisement.cs" />
     <Compile Include="DeviceCominication\UDPsender.cs" />

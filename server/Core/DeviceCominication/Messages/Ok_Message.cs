@@ -1,5 +1,5 @@
 ﻿using static Core.Utilities.Utilities;
-namespace Core.DeviceCominication.Messages
+namespace Core.DeviceCommunication.Messages
 {
     class Ok_Message
     {

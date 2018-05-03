@@ -2,7 +2,7 @@
 using static Core.Utilities.Utilities;
 using System.Net;
 
-namespace Core.DeviceCominication.Messages
+namespace Core.DeviceCommunication.Messages
 {
     class Server_Advertisement
     {
