@@ -1,6 +1,6 @@
 ﻿namespace Core.Utilities
 {
-    public static class Utilities
+    public static class Util
     {
         /// <summary>
         /// Stretches a string to <paramref name="lenght"/>.
