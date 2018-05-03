@@ -45,7 +45,7 @@ namespace Core.Models
         /// <summary>
         /// Get the list of devices
         /// </summary>
-        public IList<Device> Devices => _devices;
+        public List<Device> Devices => _devices;
 
         /// <summary>
         /// Get the SSID
