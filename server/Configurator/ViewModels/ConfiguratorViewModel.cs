@@ -24,15 +24,15 @@ namespace Configurator.ViewModels
 
         #region Private properties
         private ObservableCollection<Device> _devices = null;
-        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled=false;
-        private double _x,_y;
-        private string _mac="";
+        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false;
+        private double _x, _y;
+        private string _mac = "";
         #endregion
 
         #region Public Properties
         public ObservableCollection<Device> Devices
         {
-            get =>_devices;
+            get => _devices;
             set
             {
                 if (_devices == value) return;
@@ -86,7 +86,7 @@ namespace Configurator.ViewModels
                 else AddDeviceButtonEnabled = true;
             }
         }
-        
+
         public bool AddDeviceButtonEnabled
         {
             get => _addDeviceButtonEnabled;
@@ -103,15 +103,15 @@ namespace Configurator.ViewModels
         #region Public Commands
         public ICommand AddDeviceCommand => _addDeviceCommand ?? (_addDeviceCommand = new RelayCommand<object>((x) => AddDevice()));
         public ICommand RemoveDeviceCommand => _removeDeviceCommand ?? (_removeDeviceCommand = new RelayCommand<Device>((x) => RemoveDevice(x)));
-        public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>( (x) => SaveConfiguration()));
-        
+        public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>((x) => SaveConfiguration()));
+
         #endregion
 
         #region Private Methods
         private void AddDevice()
         {
             if (_mac == "") return;
-            Devices.Add(new Device { X_position = _x, Y_Position = _y, MAC = _mac, Active = false });
+            Devices.Add(new Device { X_position = _x, Y_Position = _y, MAC = _mac });
         }
 
         private void RemoveDevice(Device x)
