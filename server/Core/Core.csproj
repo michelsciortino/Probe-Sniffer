@@ -50,6 +50,7 @@
     <Compile Include="DeviceCominication\UDPsender.cs" />
     <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\Device.cs" />
+    <Compile Include="Models\ESP32_Device.cs" />
     <Compile Include="Models\LocalNetworkConnection.cs" />
     <Compile Include="Models\Serializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
