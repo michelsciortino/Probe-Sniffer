@@ -1,10 +1,7 @@
 ﻿using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.ObjectModel;
 using Core.Models;
 using Core.DatabaseConnection;
 using System.Windows;
-using System.Collections.Generic;
 using Core.DeviceCommunication;
 
 namespace ProbeSniffer
