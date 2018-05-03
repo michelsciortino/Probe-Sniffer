@@ -11,7 +11,7 @@ namespace Core.DeviceCominication
         public const int SERVER_PORT = 45445;
         public const int DEVICE_PORT = 45448;
 
-        public static bool Inizialize(IList<Device> devices) {
+        public static bool Initialize(IList<Device> devices) {
             bool result;
             Thread ServerAdvertismentThread = new Thread(() => { DoAdvertisement(); });
             result=ReceiveDeviceReadys(devices);
