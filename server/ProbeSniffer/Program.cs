@@ -35,6 +35,15 @@ namespace ProbeSniffer
             splash.ShowConfLoadingSplashScreen();
             configuration = Configuration.LoadConfiguration();
 
+            if (configuration is null)
+            {
+                ShowErrorMessage("Unable to load the configuration...\nExiting.");
+                splash.Close();
+                Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                Application.Current.Shutdown();
+                return;
+            }
+
             //Testing Database connection
             splash.ShowDBConneLoadingSplashScreen();
             DBconnection = new DatabaseConnection();
@@ -63,7 +72,7 @@ namespace ProbeSniffer
 
             if (result is false)
             {
-                ShowErrorMessage("Unable to initialize devices...\nExiting.");
+                ShowErrorMessage("Unable to initialize ESP32 devices...\nExiting.");
                 splash.Close();
                 Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 Application.Current.Shutdown();
