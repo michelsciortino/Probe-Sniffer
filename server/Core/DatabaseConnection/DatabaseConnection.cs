@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Core.DatabaseConnection
 {
@@ -58,6 +59,24 @@ namespace Core.DatabaseConnection
             {
                 Debug.WriteLine(e.Message);
             }
+            return entries;
+        }
+
+        public async Task<IList<DatabaseEntry>> GetLastIntervalEntries()
+        {
+            List<DatabaseEntry> entries = new List<DatabaseEntry>();
+
+            var options = new FindOptions<DatabaseEntry,DatabaseEntry>
+            {
+                Limit = 1,
+                Sort = Builders<DatabaseEntry>.Sort.Descending(entry => entry.IntervalId)
+            };
+
+            DatabaseEntry max =  (await GetCollection().FindAsync(FilterDefinition<DatabaseEntry>.Empty, options)).FirstOrDefault();
+            Debug.WriteLine("Max found: " + max.IntervalId);
+
+            entries.AddRange((await GetCollection().FindAsync((entry) => entry.IntervalId == max.IntervalId)).ToList());
+
             return entries;
         }
 
