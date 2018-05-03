@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace ProbeSniffer.ViewModels
+namespace ProbeSniffer.ViewModels.SplashScreen
 {
     public class SplashViewModel: Core.ViewModelBase.BaseViewModel
     {
@@ -10,6 +10,7 @@ namespace ProbeSniffer.ViewModels
 
         #endregion
 
+        #region Public Properties
         public Page CurrentPage
         {
             get => _currentPage;
@@ -20,6 +21,6 @@ namespace ProbeSniffer.ViewModels
                 OnPropertyChanged(nameof(CurrentPage));
             }
         }
-
+        #endregion
     }
 }

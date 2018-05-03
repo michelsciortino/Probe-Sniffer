@@ -50,7 +50,7 @@ namespace Core.Models
         /// Get the stored configuration
         /// </summary>
         /// <returns>A configuration if found, null otherwise</returns>
-        public Configuration LoadConfiguration()
+        public static Configuration LoadConfiguration()
         {
             return Serializer.Deserialize<Configuration>(ConfFilePath);
         }
