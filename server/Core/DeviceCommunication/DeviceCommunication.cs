@@ -13,6 +13,8 @@ namespace Core.DeviceCommunication
         public const int SERVER_PORT = 45445;
         public const int DEVICE_PORT = 45448;
 
+        private const int INIT_TIMEOUT = 30000;
+
         private bool _initialized = false;
         private List<ESP32_Device> esp32s = null;
 
@@ -78,11 +80,11 @@ namespace Core.DeviceCommunication
             int received = 0;
             string mac = "";
             IPAddress ip = null;
-            bool result = false;
-
+            bool result = false,timedOut=false;
+            Timer timer = new Timer((_) => { timedOut = true; },null, INIT_TIMEOUT, Timeout.Infinite);
             while (received != devices.Count)
             {
-
+                if (timedOut) break;
                 result = ESPManager.ReceiveDeviceReady(ref mac, ref ip);
                 if (result is true)
                     for (int i = 0; i < devices.Count; i++)
