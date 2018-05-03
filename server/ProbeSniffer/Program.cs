@@ -5,79 +5,81 @@ using Core.Models;
 using Core.DatabaseConnection;
 using System.Windows;
 using System.Collections.Generic;
+using Core.DeviceCommunication;
 
 namespace ProbeSniffer
 {
     public class Program
     {
         private Configuration configuration = null;
-        private DatabaseConnection DBconnection;
+        private DatabaseConnection DBconnection = null;
+        private DeviceCommunication deviceCommunication = null;
 
         #region Windows
         private SplashScreen splash = null;
         private DataVisualizer visualizer = null;
         #endregion
-        
-        private ObservableCollection<Device> _devices = null;
 
         /// <summary>
         /// Main entry point of the program
         /// </summary>
         public async void Main()
         {
-            //testing
-            _devices = new ObservableCollection<Device>
-            {
-                new Device { Active = true },
-                new Device { Active = true },
-                new Device { Active = true },
-                new Device { Active = false },
-                new Device { Active = false }
-            };            
+            bool result = false;
 
+            //Showing Splash Screen
             splash = new SplashScreen();
-
             splash.Show();
 
             //Loading configuration
             splash.ShowConfLoadingSplashScreen();
             configuration = Configuration.LoadConfiguration();
 
-            //await Task.Run(async () => Thread.Sleep(5000));
-
-            //Test Database connection
+            //Testing Database connection
             splash.ShowDBConneLoadingSplashScreen();
             DBconnection = new DatabaseConnection();
             int tries = 0;
-            while (tries!=3)
+            while (tries != 3)
             {
                 DBconnection.Connect();
                 if (DBconnection.Connected) break;
-                //splash.ShowDBConnectionErrorRetrying();
                 Thread.Sleep(2000);
                 tries++;
             }
-
             if (!DBconnection.Connected)    //not connected after 3 tries
             {
-                MessageBox.Show("Unable to connect to Database...\nExiting.", "Error", MessageBoxButton.OK,MessageBoxImage.Error,MessageBoxResult.None,MessageBoxOptions.DefaultDesktopOnly);
+                ShowErrorMessage("Unable to connect to Database...\nExiting.");
                 splash.Close();
                 Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 Application.Current.Shutdown();
                 return;
             }
-            
 
-            await Task.Run(async () => Thread.Sleep(5000));
-            //Connecting to Device
+
+            //Connecting to Devices
             splash.ShowDeviceAwaitingSplashScreen();
-            //DeviceCommunication.Initialize();
+            deviceCommunication = new DeviceCommunication();
+            result = deviceCommunication.Initialize(configuration.Devices);
 
-            await Task.Run(async () => Thread.Sleep(5000));
+            if (result is false)
+            {
+                ShowErrorMessage("Unable to initialize devices...\nExiting.");
+                splash.Close();
+                Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+                Application.Current.Shutdown();
+                return;
+            }
+
 
             splash.Close();
             //visualizer = new DataVisualizer(_devices);
             //visualizer.Show();
+        }
+
+
+        private void ShowErrorMessage(string message)
+        {
+            MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.None, MessageBoxOptions.DefaultDesktopOnly);
         }
 
     }

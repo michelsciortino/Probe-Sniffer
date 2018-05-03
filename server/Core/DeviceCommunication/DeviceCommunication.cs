@@ -2,27 +2,46 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-using Core.DeviceCommunication.Messages;
 using System.Diagnostics;
 using System;
+using Core.DeviceCommunication.Messages.Server_Messages;
 
 namespace Core.DeviceCommunication
 {
-    public static class DeviceCommunication
+    public class DeviceCommunication
     {
         public const int SERVER_PORT = 45445;
         public const int DEVICE_PORT = 45448;
 
-        public static bool Initialize(IList<ESP32_Device> devices) {
+        private bool _initialized = false;
+        private List<ESP32_Device> esp32s = null;
+
+        public bool Initialized { get => _initialized; }
+
+        public bool Initialize(List<Device> devices)
+        {
+            esp32s = new List<ESP32_Device>();
+            foreach (Device e in devices)
+                esp32s.Add(new ESP32_Device(e));
+
             bool result;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             Thread ServerAdvertismentThread = new Thread(() => { DoAdvertisement(cancellation.Token); });
-            ServerAdvertismentThread.Start();
-            result=ReceiveDeviceReadys(devices);
-            if(result)
-                foreach (Device d in devices)
+            try
+            {
+                ServerAdvertismentThread.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                _initialized = false;
+                return false;
+            }
+            result = ReceiveDeviceReadys(esp32s);
+            if (result)
+                foreach (ESP32_Device esp in esp32s)
                 {
-                    result = SendPacketToDevice(new Ok_Message().ToString(), d);
+                    result = SendPacketToDevice(new Ok_Message().ToString(), esp);
                     if (result == false)
                         break;
                 }
@@ -32,10 +51,11 @@ namespace Core.DeviceCommunication
                 while (ServerAdvertismentThread.IsAlive) Thread.Sleep(10);
                 ServerAdvertismentThread.Abort();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
             }
+            _initialized = result;
             return result;
         }
 
@@ -59,11 +79,10 @@ namespace Core.DeviceCommunication
             string mac = "";
             IPAddress ip = null;
             bool result = false;
-            
 
-            while (received!=devices.Count)
+            while (received != devices.Count)
             {
-                
+
                 result = ESPManager.ReceiveDeviceReady(ref mac, ref ip);
                 if (result is true)
                     for (int i = 0; i < devices.Count; i++)
@@ -84,7 +103,7 @@ namespace Core.DeviceCommunication
         /// <typeparam name="T"></typeparam>
         /// <param name="packet"></param>
         /// <returns></returns>
-        private static bool SendPacketToDevice(string packet, Device device)
+        private static bool SendPacketToDevice(string packet, ESP32_Device device)
         {
 
 
@@ -93,6 +112,6 @@ namespace Core.DeviceCommunication
 
     }
 
-    
+
 
 }
