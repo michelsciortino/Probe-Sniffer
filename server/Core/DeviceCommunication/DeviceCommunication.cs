@@ -42,7 +42,7 @@ namespace Core.DeviceCommunication
 
         public static void DoAdvertisement(CancellationToken token)
         {
-            Server_Advertisement advertisement = new Server_Advertisement();
+            Server_Advertisement_Message advertisement = new Server_Advertisement_Message();
             IPAddress broadcast = LocalNetworkConnection.GetBroadcastAddress();
 
             while (true)
