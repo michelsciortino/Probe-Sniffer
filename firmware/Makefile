@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := MalnatiProject
+PROJECT_NAME := firmware
 
 include $(IDF_PATH)/make/project.mk
 
