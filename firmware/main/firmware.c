@@ -21,11 +21,13 @@
 
 #define BUFLEN 512
 #define PORT 45445
+#define SPORT 48448
 #define LISTENQ 3
 #define IPLEN 17
 #define ST_DISCONNECTED 0
 #define ST_CONNECTED 1
 #define ST_GOT_IP 3
+#define ST_ERR 4
 
 
 struct status
@@ -37,6 +39,59 @@ struct status
 
 struct status st = {ST_DISCONNECTED, "\0", 0};
 
+void send_ready()
+{
+ int s, result, i;
+ struct sockaddr_in str_sock_s, str_sock_c;
+ char buf[BUFLEN];
+ //unsigned int sockaddrlen;
+ struct in_addr in_addr;
+ uint8_t mac[6];
+
+ s=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+ if(s<0)
+ {
+  st.status_value=ST_ERR;
+  return;
+ }
+
+ memset(&str_sock_s, 0, sizeof(str_sock_s));
+ str_sock_s.sin_family=AF_INET;
+ str_sock_s.sin_port=htons(SPORT);
+ if(inet_aton(st.server_ip, &in_addr)==0)
+ {
+  close(s);
+  st.status_value=ST_ERR;
+  return;
+ }
+ str_sock_s.sin_addr=in_addr;
+
+ printf("Trying to connect to %s:%d\n", inet_ntoa(str_sock_s.sin_addr), ntohs(str_sock_s.sin_port));
+
+ result=connect(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
+ if(result==-1)
+ {
+  close(s);
+  st.status_value=ST_ERR;
+  return;
+ }
+
+ if(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac) != ESP_OK)
+ {
+  close(s);
+  st.status_value=ST_ERR;
+  return;
+ }
+
+ sprintf(buf, "READY     ");
+ for(i=0; i<6; i++)
+  sprintf(buf+10+(i*3), "%02x:", mac[i]);
+ buf[9+(i*3)]='\0';
+
+ printf("Sending %s\n", buf);
+}
+
 void acquire_server_ip()
 {
  int s, result, recv_len, i;
@@ -46,8 +101,11 @@ void acquire_server_ip()
 
  s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
- //int enabled = 1;
- //setsockopt(s, SOL_SOCKET, SO_BROADCAST, &enabled, sizeof(enabled));
+ if(s<0)
+ {
+  st.status_value=ST_ERR;
+  return;
+ }
 
  memset(&str_sock_s, 0, sizeof(str_sock_s));
  str_sock_s.sin_family=AF_INET;
@@ -57,6 +115,7 @@ void acquire_server_ip()
  result=bind(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
  if(result==-1)
  {
+  close(s);
   return;
  }
 
@@ -71,6 +130,7 @@ void acquire_server_ip()
    st.server_ip[i]=buf[7+i];
    st.server_ip[i]='\0';
    st.status_value=ST_GOT_IP;
+   close(s);
    break;
   }
  }
@@ -215,5 +275,8 @@ void app_main()
  {
   printf("IP Acquired: %s\n", st.server_ip);
  }
- //send_ready();
+ else
+  esp_restart();
+ send_ready();
 }
+
