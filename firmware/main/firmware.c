@@ -24,10 +24,23 @@
 #define SPORT 48448
 #define LISTENQ 3
 #define IPLEN 17
+
+//ESP32 status codes
 #define ST_DISCONNECTED 0
 #define ST_CONNECTED 1
 #define ST_GOT_IP 3
 #define ST_ERR 4
+#define ST_SNIFFING 5
+#define ST_WAITING_TIME 6
+
+#define HEADER_LEN 10
+#define MAC_LEN 17
+
+//codes received from server
+#define CODE_OK 0
+#define CODE_TIME 1
+#define CODE_RESET 2
+#define CODE_UNKNOWN -1
 
 
 struct status
@@ -35,13 +48,62 @@ struct status
  int status_value;
  char server_ip[IPLEN];
  int port;
+ //int time;
 };
 
 struct status st = {ST_DISCONNECTED, "\0", 0};
 
+//returns code received in header from server
+int read_header(char *buf)
+{
+ if(strncmp(buf, "OK        ", HEADER_LEN))
+  return CODE_OK;
+ if(strncmp(buf, "TIMESTAMP ", HEADER_LEN))
+  return CODE_TIME;
+ if(strncmp(buf, "RESET     ", HEADER_LEN))
+  return CODE_RESET;
+ return CODE_UNKNOWN;
+}
+
+//receive packets frome server and decides what to do
+void recv_from_server(int s)
+{
+ char buf[BUFLEN];
+ int recv_len, code;
+
+ recv_len=1;
+ while(recv_len>0)
+ {
+  recv_len=recv(s, buf, BUFLEN, 0);
+  code=read_header(buf);
+  switch(code)
+  {
+   case CODE_OK:
+    st.status_value=ST_WAITING_TIME;
+    break;
+   case CODE_TIME:
+    close(s);
+    st.status_value=ST_SNIFFING;
+    //start_timer();
+    //start_sniffing();
+    break;
+   case CODE_RESET:
+    close(s);
+    esp_restart();
+    break;
+   default:
+    close(s);
+    esp_restart();
+    break;
+  }
+ }
+ close(s);
+}
+
+//first connection with server at startup (TCP:48448): sends OK + MAC address
 void send_ready()
 {
- int s, result, i;
+ int s, result, i, sent_len;
  struct sockaddr_in str_sock_s, str_sock_c;
  char buf[BUFLEN];
  //unsigned int sockaddrlen;
@@ -67,7 +129,7 @@ void send_ready()
  }
  str_sock_s.sin_addr=in_addr;
 
- printf("Trying to connect to %s:%d\n", inet_ntoa(str_sock_s.sin_addr), ntohs(str_sock_s.sin_port));
+ //printf("Trying to connect to %s:%d\n", inet_ntoa(str_sock_s.sin_addr), ntohs(str_sock_s.sin_port));
 
  result=connect(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
  if(result==-1)
@@ -86,12 +148,21 @@ void send_ready()
 
  sprintf(buf, "READY     ");
  for(i=0; i<6; i++)
-  sprintf(buf+10+(i*3), "%02x:", mac[i]);
+  sprintf(buf+HEADER_LEN+(i*3), "%02x:", mac[i]);
  buf[9+(i*3)]='\0';
 
- printf("Sending %s\n", buf);
+ //printf("Sending %s\n", buf);
+ sent_len=send(s, buf, HEADER_LEN+MAC_LEN, 0);
+ if(sent_len<0)
+ {
+  close(s);
+  st.status_value=ST_ERR;
+  return;
+ }
+ recv_from_server(s);
 }
 
+//receive the broadcast packet from server (UDP:45445) containing server ip address
 void acquire_server_ip()
 {
  int s, result, recv_len, i;
@@ -136,6 +207,7 @@ void acquire_server_ip()
  }
 }
 
+//handle wifi connection related events
 static esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
 {
  switch (event->event_id) {
@@ -159,6 +231,7 @@ static esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
  return ESP_OK;
 }
 
+//does what the name says
 static void setup_and_connect_wifi(void)
 {
  tcpip_adapter_init();
@@ -181,6 +254,7 @@ static void setup_and_connect_wifi(void)
  ESP_ERROR_CHECK(esp_wifi_start());
 }
 
+//print payload data in hex and ascii, for debug purposes
 void print_data(unsigned char *buf, int len)
 {
  int i, j, c, fill_spaces;
@@ -227,6 +301,7 @@ void print_packet_info_mgmt(wifi_promiscuous_pkt_t *pkt)
  print_data(pkt->payload, pkt->rx_ctrl.sig_len);
 }
 
+//handle the packet sniffed in promiscuous mode (we are interested in management packets)
 void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 {
  printf("Packet received\n"); //DEBUG
@@ -247,6 +322,7 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  }
 }
 
+//omen nomen
 int setup_and_listen_promiscuous()
 {
  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -257,6 +333,7 @@ int setup_and_listen_promiscuous()
  return 1;
 }
 
+//main function
 void app_main()
 {
  esp_err_t ret = nvs_flash_init();
