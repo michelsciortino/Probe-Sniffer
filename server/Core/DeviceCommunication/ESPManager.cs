@@ -10,6 +10,7 @@ namespace Core.DeviceCommunication
         public static bool ReceiveDeviceReady(ref string mac, ref IPAddress ip)
         {
             TcpListener server = null;
+            bool result = false;
 
             try
             {
@@ -20,49 +21,53 @@ namespace Core.DeviceCommunication
 
                 server.Start();
 
-                Byte[] bytesbuffer = new Byte[27];  //10(header)+17(mac)    METTERE COME CAMPO NELLE CLASSI MESSAGGI LA LUNGHEZZA FINALE SE C'E'
+                TcpClient device = server.AcceptTcpClient();
+
+                Byte[] bytesbuffer = new Byte[device.ReceiveBufferSize]; 
                 string data = null;
 
-                //listening loop
-                while (true)
+                //faccio uno stream per leggere
+                NetworkStream stream = device.GetStream();
+                int bytesRead;
+
+                //loop to receive data
+                while ((bytesRead = stream.Read(bytesbuffer, 0, bytesbuffer.Length)) != 0)
                 {
-                    Console.WriteLine("Waiting for connection...");
-                    TcpClient device = server.AcceptTcpClient();
-                    Console.WriteLine("connected!");
+                    data = Encoding.ASCII.GetString(bytesbuffer, 0, bytesRead);
+                    Console.WriteLine("received: ", data);
 
-                    data = null;
-
-                    //faccio uno stream per leggere
-                    NetworkStream stream = device.GetStream();
-                    int i;
-
-                    //loop to receive data
-                    while ((i = stream.Read(bytesbuffer, 0, bytesbuffer.Length)) != 0)
-                    {
-                        data = Encoding.ASCII.GetString(bytesbuffer, 0, i);
-                        Console.WriteLine("received: ", data);
-
-                        //Estraggo MAC da data
-                        //da aggiustare non va
-                        mac = data.Substring(11, 17);
-
-                        //mandiamo già quà OK? o lasciamo fuori?
-                        //byte[] ok = Encoding.ASCII.GetBytes("ok");
-                        //stream.Write(ok,0,ok.Length);
-                    }
-                    device.Close();
+                    string header = data.Substring(0,10);  //header length packet (10 char)
+                    ManageCase(header, data, ref mac);
                 }
-                return true;
+                device.Close();
+                result = true;
             }
             catch (SocketException e)
             {
-                return false;
+                result = false;
             }
             finally
             {
                 server.Stop();
             }
-            return true;
+            return result;
+        }
+
+        public static void ManageCase(string header, string data, ref string mac)
+        {
+            switch (header)
+            {
+                case "READY     ":
+                    //Estraggo MAC da data
+                    mac = data.Substring(10, 17);   //sostituire con cose giuste
+                    break;
+
+                case "DATA      ":
+                    break;
+
+                default:
+                    break;
+            }
         }
     }
 }
