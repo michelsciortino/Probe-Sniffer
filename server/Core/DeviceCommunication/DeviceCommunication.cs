@@ -43,7 +43,7 @@ namespace Core.DeviceCommunication
             if (result)
                 foreach (ESP32_Device esp in esp32s)
                 {
-                    result = SendPacketToDevice(new Ok_Message().ToString(), esp);
+                    result = SendPacketToDevice(new Ok_Message().ToBytes(), esp);
                     if (result == false)
                         break;
                 }
@@ -70,7 +70,7 @@ namespace Core.DeviceCommunication
             while (true)
             {
                 if (token.IsCancellationRequested) break;
-                UDPsender.Send(broadcast, SERVER_PORT, advertisement.ToString());
+                UDPsender.Send(broadcast, SERVER_PORT, advertisement.ToBytes());
                 Thread.Sleep(1000);
             }
         }
@@ -80,8 +80,8 @@ namespace Core.DeviceCommunication
             int received = 0;
             string mac = "";
             IPAddress ip = null;
-            bool result = false,timedOut=false;
-            Timer timer = new Timer((_) => { timedOut = true; },null, INIT_TIMEOUT, Timeout.Infinite);
+            bool result = false, timedOut = false;
+            Timer timer = new Timer((_) => { timedOut = true; }, null, INIT_TIMEOUT, Timeout.Infinite);
             while (received != devices.Count)
             {
                 if (timedOut) break;
@@ -105,7 +105,7 @@ namespace Core.DeviceCommunication
         /// <typeparam name="T"></typeparam>
         /// <param name="packet"></param>
         /// <returns></returns>
-        private static bool SendPacketToDevice(string packet, ESP32_Device device)
+        private static bool SendPacketToDevice(byte[] packet, ESP32_Device device)
         {
 
 
@@ -113,7 +113,4 @@ namespace Core.DeviceCommunication
         }
 
     }
-
-
-
 }
