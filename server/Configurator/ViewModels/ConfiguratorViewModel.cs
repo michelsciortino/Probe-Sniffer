@@ -1,7 +1,6 @@
 ﻿using Core.Models;
 using Core.ViewModelBase;
 using System.Collections.ObjectModel;
-using System.Threading;
 using System.Windows.Input;
 
 namespace Configurator.ViewModels
