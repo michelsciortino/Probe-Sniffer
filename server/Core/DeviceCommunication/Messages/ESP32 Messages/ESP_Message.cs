@@ -2,15 +2,13 @@
 {
     public abstract class ESP_Message
     {
-        protected const int header_lenght = 10;
-
         #region Private Properties
-        protected string _header;
+        protected byte _header;
         protected string _payload;
         #endregion
 
         #region Public Properties
-        public string Header
+        public byte Header
         {
             get => _header;
             set => _header = value;

@@ -5,7 +5,8 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 {
     public class Timestamp_Message : Server_Message
     {
-        public const string TIMESTAMP_HEADER = "TIMESTAMP";
+        public const string TIMESTAMP_HEADER_STRING = "TIMESTAMP";
+        public const byte TIMESTAMP_HEADER = 202;
         #region Constructor
         public Timestamp_Message()
         {
@@ -18,8 +19,7 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
         #endregion
 
         #region Public Methods
-        public override string ToString() => Util.Stretch(_header, header_lenght) + _payload.Length + _payload;
-
+        public override byte[] ToBytes() => Util.MessageInBytes(TIMESTAMP_HEADER, _payload);
         #endregion
     }
 }
