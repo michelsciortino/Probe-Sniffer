@@ -1,5 +1,4 @@
-﻿using Core.Utilities;
-namespace Core.DeviceCommunication.Messages.Server_Messages
+﻿namespace Core.DeviceCommunication.Messages.Server_Messages
 {
     public class Reset_Message : Server_Message
     {
@@ -10,11 +9,8 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
         public Reset_Message()
         {
             _header = RESET_HEADER;
+            _payload = "";
         }
-        #endregion
-
-        #region Public Methods
-        public override byte[] ToBytes() => Util.MessageInBytes(RESET_HEADER, _payload);
         #endregion
     }
 }

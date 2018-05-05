@@ -1,6 +1,4 @@
 ﻿using Core.Models;
-using Core.Utilities;
-using System;
 using System.Net;
 
 namespace Core.DeviceCommunication.Messages.Server_Messages
@@ -18,10 +16,6 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
             _header = SERVER_ADV;
             _payload = ip.Length.ToString() + ip;
         }
-        #endregion
-
-        #region Public Methods
-        public override byte[] ToBytes() => Util.MessageInBytes(SERVER_ADV, _payload);
         #endregion
     }
 }

@@ -10,11 +10,8 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
         public Ok_Message()
         {
             _header = OK_HEADER;
+            _payload = "";
         }
-        #endregion
-
-        #region Public Methods
-        public override byte[] ToBytes() => Util.MessageInBytes(OK_HEADER, _payload);
         #endregion
     }
 }
