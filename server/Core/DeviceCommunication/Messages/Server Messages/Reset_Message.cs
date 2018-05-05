@@ -3,8 +3,7 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 {
     public class Reset_Message : Server_Message
     {
-        public const string RESET_HEADER_STRING = "RESET";
-        public const byte RESET_HEADER = 203;
+        public const string RESET_HEADER = "RESET";
 
         #region Constructor
         public Reset_Message()
@@ -14,7 +13,7 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
         #endregion
 
         #region Public Methods
-        public override byte[] ToBytes() => Util.MessageInBytes(RESET_HEADER, _payload);
+        public override string ToString() => Util.Stretch(_header, header_lenght);
         #endregion
     }
 }
