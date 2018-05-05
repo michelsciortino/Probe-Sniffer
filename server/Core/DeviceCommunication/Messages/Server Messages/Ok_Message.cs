@@ -3,17 +3,18 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 {
     class Ok_Message : Server_Message
     {
-        public const string OK_HEADER = "OK";
+        public const string OK_HEADER_STRING = "OK";
+        public const byte OK_HEADER = 200;
 
         #region Constructor
         public Ok_Message()
-        {   
+        {
             _header = OK_HEADER;
         }
         #endregion
 
         #region Public Methods
-        public override string ToString() => Util.Stretch(_header, header_lenght);
+        public override byte[] ToBytes() => Util.MessageInBytes(OK_HEADER, _payload);
         #endregion
     }
 }

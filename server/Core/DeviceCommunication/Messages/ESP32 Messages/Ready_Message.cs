@@ -2,6 +2,7 @@
 {
     public class Ready_Message : ESP_Message
     {
-        public const string READY_HEADER = "READY";
+        public const string READY_HEADER_STRING = "READY";
+        public const byte READY_HEADER = 204;
     }
 }

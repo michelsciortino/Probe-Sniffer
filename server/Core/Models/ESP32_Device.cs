@@ -15,7 +15,7 @@ namespace Core.Models
         public ESP32_Device(Device device)
         {
             MAC = device.MAC;
-            X_position = device.X_position;
+            X_Position = device.X_Position;
             Y_Position = device.Y_Position;
             Ip = null;
             Active = false;
