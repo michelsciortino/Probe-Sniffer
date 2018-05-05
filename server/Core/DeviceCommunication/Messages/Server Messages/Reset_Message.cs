@@ -2,7 +2,6 @@
 {
     public class Reset_Message : Server_Message
     {
-        public const string RESET_HEADER_STRING = "RESET";
         public const byte RESET_HEADER = 203;
 
         #region Constructor

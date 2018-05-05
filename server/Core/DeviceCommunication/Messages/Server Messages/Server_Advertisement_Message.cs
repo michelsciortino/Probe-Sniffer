@@ -5,7 +5,6 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 {
     public class Server_Advertisement_Message : Server_Message
     {
-        public const string SERVER_ADV_STRING = "SERVER_ADV";
         public const byte SERVER_ADV = 201;
 
         #region Constructor
