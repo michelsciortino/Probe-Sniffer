@@ -8,12 +8,17 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:command="http://www.galasoft.ch/mvvmlight"
         mc:Ignorable="d"
+        x:Name="window"
         Title="Probe Sniffer"
+        WindowStyle="SingleBorderWindow"
         Background="{StaticResource BackgroundColorBrush}"
-        Height="450" Width="800">
+        Height="450" Width="800"
+        MinHeight="290"
+        MinWidth="530">
     <Window.DataContext>
         <vm:DataVisualizationWindowViewModel/>
     </Window.DataContext>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="150"/>
@@ -56,7 +61,13 @@
               Background="Black">
             <Button Content="About"
                     HorizontalAlignment="Left"
-                    Padding="10,0"/>
+                    Padding="10,0">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="Click">
+                        <command:EventToCommand Command="{Binding AboutCommand}" PassEventArgsToCommand="False"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+            </Button>
         </Grid>
 
     </Grid>
