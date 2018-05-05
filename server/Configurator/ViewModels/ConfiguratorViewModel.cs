@@ -10,7 +10,6 @@ namespace Configurator.ViewModels
     {
         #region Private Variables
         private Configuration configuration = null;
-        private Thread ServerAdvertismentThread = null;
         #endregion
 
         #region Constructor
@@ -111,7 +110,7 @@ namespace Configurator.ViewModels
         private void AddDevice()
         {
             if (_mac == "") return;
-            Devices.Add(new Device { X_position = _x, Y_Position = _y, MAC = _mac });
+            Devices.Add(new Device { X_Position = _x, Y_Position = _y, MAC = _mac });
         }
 
         private void RemoveDevice(Device x)
