@@ -49,6 +49,7 @@
       <HintPath>..\ProbeSniffer\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\ProbeSniffer\packages\System.Buffers.4.4.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
@@ -67,7 +68,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DatabaseConnection\DatabaseConnection.cs" />
-    <Compile Include="DeviceCommunication\DeviceCommunication.cs" />
+    <Compile Include="DataCollection\DataCollector.cs" />
+    <Compile Include="DeviceCommunication\DeviceConnectionManager.cs" />
     <Compile Include="DeviceCommunication\ESPManager.cs" />
     <Compile Include="DeviceCommunication\Messages\ESP32 Messages\Data_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\ESP32 Messages\Ready_Message.cs" />
@@ -77,7 +79,8 @@
     <Compile Include="DeviceCommunication\Messages\Server Messages\Reset_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\Server Messages\Server_Advertisement_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\Server Messages\Timestamp_Message.cs" />
-    <Compile Include="DeviceCommunication\UDPsender.cs" />
+    <Compile Include="DeviceCommunication\TcpServer.cs" />
+    <Compile Include="DeviceCommunication\UdpBroadcaster.cs" />
     <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\DatabaseEntry.cs" />
     <Compile Include="Models\Device.cs" />

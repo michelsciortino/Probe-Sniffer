@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Core.DatabaseConnection
+namespace Core.DBConnection
 {
     public class DatabaseConnection
     {
@@ -66,16 +66,10 @@ namespace Core.DatabaseConnection
         {
             List<DatabaseEntry> entries = new List<DatabaseEntry>();
 
-            var options = new FindOptions<DatabaseEntry,DatabaseEntry>
-            {
-                Limit = 1,
-                Sort = Builders<DatabaseEntry>.Sort.Descending(entry => entry.IntervalId)
-            };
+            int maxIntervalId = GetMaxIntervalID().Result;
+            Debug.WriteLine("Max found: " + maxIntervalId);
 
-            DatabaseEntry max =  (await GetCollection().FindAsync(FilterDefinition<DatabaseEntry>.Empty, options)).FirstOrDefault();
-            Debug.WriteLine("Max found: " + max.IntervalId);
-
-            entries.AddRange((await GetCollection().FindAsync((entry) => entry.IntervalId == max.IntervalId)).ToList());
+            entries.AddRange((await GetCollection().FindAsync((entry) => entry.IntervalId == maxIntervalId)).ToList());
 
             return entries;
         }
@@ -95,6 +89,17 @@ namespace Core.DatabaseConnection
                     Debug.WriteLine(e.Message);
                 }
             }
+        }
+
+        public async Task<int> GetMaxIntervalID()
+        {
+            var options = new FindOptions<DatabaseEntry, DatabaseEntry>
+            {
+                Limit = 1,
+                Sort = Builders<DatabaseEntry>.Sort.Descending(entry => entry.IntervalId)
+            };
+            DatabaseEntry max = (await GetCollection().FindAsync(FilterDefinition<DatabaseEntry>.Empty, options)).FirstOrDefault();
+            return max.IntervalId;
         }
     }
 }

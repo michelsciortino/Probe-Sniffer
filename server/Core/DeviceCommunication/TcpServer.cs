@@ -1,0 +1,236 @@
+﻿using System;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+
+namespace Core.DeviceCommunication
+{
+    public static class TcpServer
+    {
+
+        #region Private Properties
+        private static TcpListener _listener = null;
+        private static TcpClient _client = null;
+        private static IPAddress _remoteEndPointAddress = null;
+        private static bool _started = false;
+        private static bool _connected = false;
+        #endregion
+
+        #region Public Properties
+        public static IPAddress RemoteEndPointAddress => _remoteEndPointAddress;
+        public static bool Started => _started;
+        public static bool Connected => _connected;
+        #endregion
+
+        #region Public Methods
+        /// <summary>
+        /// Starts the listening for new connections
+        /// </summary>
+        /// <returns>True if started, False otherwise</returns>
+        public static bool Start(IPAddress localIP, int port)
+        {
+            if (_started) return _started;
+            try
+            {
+                _listener = new TcpListener(localIP, port);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                throw;
+            }
+            try
+            {
+                _listener.Start();
+                _started = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                _started = false;
+            }
+            return _started;
+        }
+
+        /// <summary>
+        /// Accepts a new connection
+        /// </summary>
+        /// <param name="timeout">The timeout for new connection accepting in seconds (-1 = infinite)</param>
+        /// <returns>The IP address of the connected EndPoint</returns>
+        public static IPAddress AcceptNewConnection(int timeout)
+        {
+            //If already connected with a client -> disconnect
+            if (_client?.Connected is true || _connected is true)
+            {
+                if (_client?.Connected is true)
+                    _client.Close();
+                _connected = false;
+            }
+            try
+            {
+                //Waiting for new Connection request
+                Stopwatch stopwatch = new Stopwatch();
+                if(timeout>0)
+                    stopwatch.Start();
+                while (true)
+                {
+                    //If Timed Out -> return null
+                    if (timeout> 0 && stopwatch.Elapsed.Seconds > timeout)
+                    {
+                        stopwatch.Stop();
+                        _connected = false;
+                        return null;
+                    }
+                    if (!_listener.Pending())
+                        Thread.Sleep(100);
+                    else break;
+                }
+                if(timeout>0)
+                stopwatch.Stop();
+                
+                //Accepting the new Connection
+                _client = _listener.AcceptTcpClient();
+                _remoteEndPointAddress = ((IPEndPoint)_client.Client.RemoteEndPoint).Address;
+                _connected = _client.Connected;
+            }
+            catch (Exception)
+            {
+                _remoteEndPointAddress = null;
+                _connected = (bool)_client?.Connected;
+            }
+            return _remoteEndPointAddress;
+        }
+
+        /// <summary>
+        /// Connects to a Remote EndPoint
+        /// </summary>
+        /// <param name="remoteEndPointAddress">The IP address of the EndPoint</param>
+        /// <param name="port">The port for the connection</param>
+        /// <param name="timeout">A timeout for the connection request in seconds (-1 = infinite)</param>
+        /// <returns></returns>
+        public static bool Connect(IPAddress remoteEndPointAddress, int port, int timeout = -1)
+        {
+            bool result = false;
+
+            if ((bool)_client?.Connected)
+            {
+                _client.Close();
+            }
+
+            Stopwatch stopwatch = new Stopwatch();
+            if (timeout > 0)
+                stopwatch.Start();
+            while (true)
+            {
+                if (timeout>0 && stopwatch.Elapsed.TotalSeconds > timeout)
+                {
+                    stopwatch.Stop();
+                    result = false;
+                    break;
+                }
+                try
+                {
+                    _client.Connect(remoteEndPointAddress, port);
+                    if (_client.Connected)
+                    {
+                        result = true;
+                        stopwatch.Stop();
+                        _connected = _client.Connected;
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    result = false;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Receives <paramref name="nBytes"/> from the EndPoint
+        /// </summary>
+        /// <param name="nBytes">Number of bytes to receive</param>
+        /// <returns>The received bytes</returns>
+        public static byte[] Receive(int nBytes)
+        {
+            if (_started is false)
+                throw new Exception("TcpReceiver not started");
+            if (_connected is false)
+                throw new Exception("TcpReceiver not not connected to an EndPoint");
+
+            byte[] bytes = new byte[nBytes];
+            int readBytes = 0, leftBytes = nBytes;
+
+            try
+            {
+                //stream for read data
+                NetworkStream stream = _client.GetStream();
+                while (leftBytes < nBytes)
+                {
+                    readBytes = stream.Read(bytes, nBytes - leftBytes, nBytes);
+                    leftBytes -= readBytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return null;
+            }
+            return bytes;
+        }
+
+        /// <summary>
+        /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
+        /// </summary>
+        /// <param name="bytes">The array of bytes to send</param>
+        /// <returns>True if the bytes has been sent, False otherwise</returns>
+        public static bool Send(byte[] bytes)
+        {
+            NetworkStream stream;
+            if (_connected)
+            {
+                try
+                {
+                    stream = _client.GetStream();
+                    stream.Write(bytes,0, bytes.Length);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Closes the connection with the current connected client (if any)
+        /// </summary>
+        public static void CloseConnection()
+        {
+            if ((bool)_client?.Connected)
+                _client.Close();
+        }
+
+        /// <summary>
+        /// Stops the TcpListener
+        /// </summary>
+        public static void StopListener()
+        {
+            try
+            {
+                _listener.Stop();
+                _started = false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+        #endregion
+
+    }
+}
