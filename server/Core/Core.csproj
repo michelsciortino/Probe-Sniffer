@@ -78,7 +78,7 @@
     <Compile Include="DeviceCommunication\Messages\Server Messages\Server_Advertisement_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\Server Messages\Timestamp_Message.cs" />
     <Compile Include="DeviceCommunication\TcpServer.cs" />
-    <Compile Include="DeviceCommunication\UDPsender.cs" />
+    <Compile Include="DeviceCommunication\UdpBroadcaster.cs" />
     <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\DatabaseEntry.cs" />
     <Compile Include="Models\Device.cs" />

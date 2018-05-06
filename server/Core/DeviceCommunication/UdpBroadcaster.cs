@@ -5,7 +5,7 @@ using System.Net.Sockets;
 
 namespace Core.DeviceCommunication
 {
-    public static class UDPsender
+    public static class UdpBroadcaster
     {
         public static bool Send(IPAddress dest, int port, byte[] packet)
         {

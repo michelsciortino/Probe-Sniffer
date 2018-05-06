@@ -92,7 +92,7 @@ namespace Core.DeviceCommunication
             while (true)
             {
                 if (token.IsCancellationRequested) break;
-                UDPsender.Send(broadcast, SERVER_PORT, advertisement.ToBytes());
+                UdpBroadcaster.Send(broadcast, SERVER_PORT, advertisement.ToBytes());
                 Thread.Sleep(1000);
             }
         }
