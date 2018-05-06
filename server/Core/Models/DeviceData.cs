@@ -1,30 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Newtonsoft.Json;
 
 namespace Core.Models
 {
     public class DeviceData
     {
-        public ICollection<Packet> Packets { get; set; }
+        public string Esp_Mac { get; set; }
+        public List<Packet> Packets { get; set; }
+        
 
         public DeviceData()
         {
             Packets = new List<Packet>();
         }
 
-        public DeviceData(string json)
+        public static DeviceData FromJson(string json)
         {
-            ICollection<Packet> data = null;
+            DeviceData deviceData = null;
             try
             {
-                data = JsonConvert.DeserializeObject<ICollection<Packet>>(json);
+                deviceData = JsonConvert.DeserializeObject<DeviceData>(json);
+                return deviceData;
             }
             catch(Exception ex)
             {
-                throw new Exception("Error deserializing data.", ex);
+                Debug.WriteLine(ex.Message);
+                //throw new Exception("Error deserializing data.", ex);
+                return null;
             }
-            Packets = data;
         }
 
         public string GetJson()
@@ -32,7 +37,7 @@ namespace Core.Models
             string json = "";
             try
             {
-                json = JsonConvert.SerializeObject(Packets);
+                json = JsonConvert.SerializeObject(this);
             }
             catch(Exception ex)
             {
