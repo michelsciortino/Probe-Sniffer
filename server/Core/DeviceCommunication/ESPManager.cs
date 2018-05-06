@@ -3,6 +3,8 @@ using System.Net;
 using System.Text;
 using Core.DeviceCommunication.Messages.ESP32_Messages;
 using System.Diagnostics;
+using Core.DeviceCommunication.Messages.Server_Messages;
+using Core.Models;
 
 namespace Core.DeviceCommunication
 {
@@ -27,12 +29,13 @@ namespace Core.DeviceCommunication
         #endregion
 
         #region Public Methods
+
+        #region Messages Receiving
+        
         /// <summary>
-        /// TCP Listener for Ready Packet
+        /// Tries to receive a Ready Message from a device
         /// </summary>
-        /// <param name="mac">Return by reference MAC of connect device</param>
-        /// <param name="ip">Return by reference IP of connect device</param>
-        /// <returns>Return true if Ready Packet is correct</returns>
+        /// <returns>A Ready Message or null</returns>
         public Ready_Message ReceiveReadyMessage()
         {
             ESP_Message message = ReceiveMessage();
@@ -41,6 +44,10 @@ namespace Core.DeviceCommunication
             return (Ready_Message)message;
         }
 
+        /// <summary>
+        /// Tries to receive a Data_Message from a device
+        /// </summary>
+        /// <returns>A Data Message or null</returns>
         public Data_Message ReceiveDataMessage()
         {
             ESP_Message message = ReceiveMessage();
@@ -127,5 +134,46 @@ namespace Core.DeviceCommunication
         }
         #endregion
 
+        #region Messages Sending
+
+        /// <summary>
+        /// Tries to send a Timestamp Message to a ESP32 <paramref name="device"/>
+        /// </summary>
+        /// <param name="device">The ESP32 device</param>
+        /// <param name="port">The connection port</param>
+        /// <returns>True if the message has been sent correctly, False otherwise</returns>
+        public bool SendTimestampMessage(ESP32_Device device,int port)
+        {
+            bool result = false;
+
+            result = TcpServer.Connect(device.Ip, port,Timeout);
+            if (result is false)
+                return result;
+
+            result = TcpServer.Send(new Timestamp_Message().ToBytes());
+            return result;
+        }
+
+        /// <summary>
+        /// Tries to send a Ok Message to a ESP32 <paramref name="device"/>
+        /// </summary>
+        /// <param name="device">The ESP32 device</param>
+        /// <param name="port">The connection port</param>
+        /// <returns>True if the message has been sent correctly, False otherwise</returns>
+        public bool SendOkMessage(ESP32_Device device, int port)
+        {
+            bool result = false;
+
+            result = TcpServer.Connect(device.Ip, port, Timeout);
+            if (result is false)
+                return result;
+
+            result = TcpServer.Send(new Ok_Message().ToBytes());
+            return result;
+        }
+
+        #endregion
+
+        #endregion
     }
 }
