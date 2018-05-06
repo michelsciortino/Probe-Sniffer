@@ -1,9 +1,6 @@
 ﻿using MongoDB.Bson;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core.Models
 {
@@ -11,6 +8,7 @@ namespace Core.Models
     {
         public ObjectId Id { get; set; }
         public int IntervalId { get; set; }
+        public List<Device> ActiveESP32s { get; set; }
         public Device Device { get; set; }
         public string SSID { get; set; }
         public DateTime Timestamp { get; set; }
