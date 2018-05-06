@@ -4,6 +4,6 @@ namespace Core.Models
 {
     public class DeviceData
     {
-        public ICollection<Packet> packets { get; set; }
+        public ICollection<Packet> Packets { get; set; }
     }
 }
