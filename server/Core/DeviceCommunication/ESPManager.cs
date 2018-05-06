@@ -1,99 +1,118 @@
 ﻿using System;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using Core.Models;
 using Core.DeviceCommunication.Messages.ESP32_Messages;
+using System.Diagnostics;
 
 namespace Core.DeviceCommunication
 {
-    public static class ESPManager
+    public class ESPManager
     {
+        #region Private Properties
+        private IPAddress _localIpAddress = null;
+        private int _receivingPort = -1;
+        #endregion
+        public ESPManager(IPAddress localIpAddress,int receivingPort)
+        {
+            _localIpAddress = localIpAddress;
+            _receivingPort= receivingPort;
+        }
+
         /// <summary>
         /// TCP Listener for Ready Packet
         /// </summary>
         /// <param name="mac">Return by reference MAC of connect device</param>
         /// <param name="ip">Return by reference IP of connect device</param>
         /// <returns>Return true if Ready Packet is correct</returns>
-        public static bool ReceiveDeviceReady(ref string mac, ref IPAddress ip)
+        public Ready_Message ReceiveReadyMessage(ref string mac, ref IPAddress ip)
         {
-            TcpListener server = null;
-            bool result = false;
-
-            try
-            {
-                int port = DeviceCommunication.SERVER_PORT;
-                IPAddress LocalIP = LocalNetworkConnection.GetLocalIp();
-
-                server = new TcpListener(LocalIP, port);
-
-                server.Start();
-
-                TcpClient device = server.AcceptTcpClient();
-
-                IPEndPoint DeviceEndPoint = (IPEndPoint)device.Client.RemoteEndPoint;
-                ip = DeviceEndPoint.Address;
-
-                Byte[] bytesbuffer = new Byte[device.ReceiveBufferSize];
-
-                //stream for read data
-                NetworkStream stream = device.GetStream();
-                int bytesRead;
-
-                //loop to receive data
-                while ((bytesRead = stream.Read(bytesbuffer, 0, bytesbuffer.Length)) != 0)
-                {
-                    if (ManageCaseBytes(bytesbuffer, bytesRead, ref mac) == false)
-                    {
-                        result = false;
-                        return result;
-                    }
-                }
-                device.Close();
-                result = true;
-            }
-            catch (SocketException)
-            {
-                result = false;
-            }
-            finally
-            {
-                server.Stop();
-            }
-            return result;
+            ESP_Message message = ReceiveMessage();
+            if (message.GetType() != typeof(Ready_Message))
+                return null;
+            return (Ready_Message)message;
         }
 
-        public static void ReceiveDeviceData(ref string mac)
+        public Data_Message ReceiveDataMessage()
         {
-
+            ESP_Message message = ReceiveMessage();
+            if(message.GetType() != typeof(Data_Message))
+                return null;
+            return (Data_Message)message;
         }
 
         /// <summary>
-        /// To Manage different packet 
+        /// Receives an ESP message from the network and parses it
         /// </summary>
-        /// <param name="buffer">Buffer read in Bytes</param>
-        /// <param name="bytesRead">Number of Bytes read</param>
-        /// <param name="mac">return MAC of device</param>
-        /// <returns>Return true if packet is correct</returns>
-        private static bool ManageCaseBytes(byte[] buffer, int bytesRead, ref string mac)
+        /// <returns>The parsed message</returns>
+        private ESP_Message ReceiveMessage()
         {
-            bool result;
-            switch (buffer[0])
+            IPAddress remoteIPAddress;
+            ESP_Message message=null;
+            byte header;
+            byte[] payload = null;
+            
+            //Starting the TCP server if not started yet
+            if(!TcpServer.Started)
+                TcpServer.Start(_localIpAddress, _receivingPort);
+
+            //Connecting to an ESP device
+            remoteIPAddress = TcpServer.AcceptNewConnection();
+            if (!TcpServer.Connected)
+                return null;
+
+            //Receiving the message header
+            header=TcpServer.Receive(1)[0];
+
+            //Parsing the message
+            switch (header)
             {
-                case Ready_Message.READY_HEADER:   //204 -> READY Packet
-                    mac = Encoding.ASCII.GetString(buffer, 1, bytesRead - 1);
-                    if (mac.Length != 17)
+                case Ready_Message.READY_HEADER:
+                    try
                     {
-                        result = false;
+                        payload=TcpServer.Receive(Ready_Message.PAYLOAD_LENGTH);
+                        if (payload.Length != Ready_Message.PAYLOAD_LENGTH)
+                        {
+                            message = null;
+                            break;
+                        }
+                        message = new Ready_Message
+                        {
+                            Header = Ready_Message.READY_HEADER,
+                            Payload = Encoding.ASCII.GetString(payload, 0, Ready_Message.PAYLOAD_LENGTH)
+                        };
                     }
-                    else result = true;
+                    catch(Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                        message = null;
+                    }
                     break;
 
+                case Data_Message.DATA_HEADER:
+                    try
+                    {
+                        byte[] jsonLenght = TcpServer.Receive(1);
+                        byte[] json = TcpServer.Receive(jsonLenght[0]);
+                        payload = new byte[jsonLenght[0] + 1];
+                        Buffer.BlockCopy(jsonLenght, 0, payload, 0, 1);
+                        Buffer.BlockCopy(json, 0, payload, 1,jsonLenght[0]);
+                        message = new Data_Message
+                        {
+                            Header = Data_Message.DATA_HEADER,
+                            Payload = Encoding.ASCII.GetString(payload, 0, payload.Length)
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                        message = null;
+                    }
+                    break;
                 default:
-                    result = false;
                     break;
             }
-            return result;
+            TcpServer.CloseConnection();
+            return message;
         }
     }
 }
