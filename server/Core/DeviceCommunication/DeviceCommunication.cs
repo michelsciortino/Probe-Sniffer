@@ -25,7 +25,6 @@ namespace Core.DeviceCommunication
         public bool Initialized { get => _initialized; }
         #endregion
 
-
         #region Public Methods
 
         /// <summary>
