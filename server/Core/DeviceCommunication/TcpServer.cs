@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace Core.DeviceCommunication
 {
@@ -55,9 +56,11 @@ namespace Core.DeviceCommunication
         /// <summary>
         /// Accepts a new connection
         /// </summary>
+        /// <param name="timeout">The timeout for new connection accepting in seconds (-1 = infinite)</param>
         /// <returns>The IP address of the connected EndPoint</returns>
-        public static IPAddress AcceptNewConnection()
+        public static IPAddress AcceptNewConnection(int timeout)
         {
+            //If already connected with a client -> disconnect
             if (_client?.Connected is true || _connected is true)
             {
                 if (_client?.Connected is true)
@@ -66,6 +69,27 @@ namespace Core.DeviceCommunication
             }
             try
             {
+                //Waiting for new Connection request
+                Stopwatch stopwatch = new Stopwatch();
+                if(timeout>0)
+                    stopwatch.Start();
+                while (true)
+                {
+                    //If Timed Out -> return null
+                    if (timeout> 0 && stopwatch.Elapsed.Seconds > timeout)
+                    {
+                        stopwatch.Stop();
+                        _connected = false;
+                        return null;
+                    }
+                    if (!_listener.Pending())
+                        Thread.Sleep(100);
+                    else break;
+                }
+                if(timeout>0)
+                stopwatch.Stop();
+                
+                //Accepting the new Connection
                 _client = _listener.AcceptTcpClient();
                 _remoteEndPointAddress = ((IPEndPoint)_client.Client.RemoteEndPoint).Address;
                 _connected = _client.Connected;
