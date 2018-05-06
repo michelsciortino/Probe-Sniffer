@@ -51,7 +51,7 @@ namespace Core.DeviceCommunication
         public Data_Message ReceiveDataMessage()
         {
             ESP_Message message = ReceiveMessage();
-            if (message.GetType() != typeof(Data_Message))
+            if (message is null || message.GetType() != typeof(Data_Message))
                 return null;
             return (Data_Message)message;
         }
@@ -65,7 +65,7 @@ namespace Core.DeviceCommunication
             IPAddress remoteIPAddress;
             ESP_Message message = null;
             byte header;
-            byte[] payload = null;
+            byte[] result = null;
 
             //Starting the TCP server if not started yet
             if (!TcpServer.Started)
@@ -85,8 +85,8 @@ namespace Core.DeviceCommunication
                 case Ready_Message.READY_HEADER:
                     try
                     {
-                        payload = TcpServer.Receive(Ready_Message.PAYLOAD_LENGTH);
-                        if (payload.Length != Ready_Message.PAYLOAD_LENGTH)
+                        result = TcpServer.Receive(Ready_Message.PAYLOAD_LENGTH);
+                        if (result.Length != Ready_Message.PAYLOAD_LENGTH)
                         {
                             message = null;
                             break;
@@ -94,7 +94,7 @@ namespace Core.DeviceCommunication
                         message = new Ready_Message
                         {
                             Header = Ready_Message.READY_HEADER,
-                            Payload = Encoding.ASCII.GetString(payload, 0, Ready_Message.PAYLOAD_LENGTH),
+                            Payload = Encoding.ASCII.GetString(result, 0, Ready_Message.PAYLOAD_LENGTH),
                             EspIPAddress = remoteIPAddress
                         };
                     }
@@ -108,15 +108,19 @@ namespace Core.DeviceCommunication
                 case Data_Message.DATA_HEADER:
                     try
                     {
-                        byte[] jsonLenght = TcpServer.Receive(1);
-                        byte[] json = TcpServer.Receive(jsonLenght[0]);
-                        payload = new byte[jsonLenght[0] + 1];
-                        Buffer.BlockCopy(jsonLenght, 0, payload, 0, 1);
-                        Buffer.BlockCopy(json, 0, payload, 1, jsonLenght[0]);
+                        int jsonLenght = -1;
+                        if ((result = TcpServer.Receive(1)) is null ||
+                            (jsonLenght = result[0]) < 0 ||
+                            (result = TcpServer.Receive(result[0])) is null)
+                        {
+                            message = null;
+                            break;
+                        }
+
                         message = new Data_Message
                         {
                             Header = Data_Message.DATA_HEADER,
-                            Payload = Encoding.ASCII.GetString(payload, 0, payload.Length),
+                            Payload = Encoding.ASCII.GetString(result, 0, jsonLenght),
                             EspIPAddress = remoteIPAddress
                         };
                     }
