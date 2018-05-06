@@ -5,6 +5,7 @@ using System.Threading;
 using System.Diagnostics;
 using System;
 using Core.DeviceCommunication.Messages.Server_Messages;
+using Core.DeviceCommunication.Messages.ESP32_Messages;
 
 namespace Core.DeviceCommunication
 {
@@ -19,6 +20,7 @@ namespace Core.DeviceCommunication
         #region Private Properties
         private bool _initialized = false;
         private List<ESP32_Device> esp32s = null;
+        private ESPManager espManager = null;
         #endregion
 
         #region Public Properties
@@ -38,6 +40,8 @@ namespace Core.DeviceCommunication
             foreach (Device e in devices)
                 esp32s.Add(new ESP32_Device(e));
 
+            espManager = new ESPManager(LocalNetworkConnection.GetLocalIp(), DeviceCommunication.SERVER_PORT);
+            espManager.Timeout = 10; // 10 seconds
             bool result;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             Thread ServerAdvertismentThread = new Thread(() => { DoAdvertisement(cancellation.Token); });
@@ -51,7 +55,7 @@ namespace Core.DeviceCommunication
                 _initialized = false;
                 return false;
             }
-            result = ReceiveDeviceReadys(esp32s,INIT_TIMEOUT);
+            result = ReceiveDeviceReadys(INIT_TIMEOUT);
             if (result)
                 foreach (ESP32_Device esp in esp32s)
                 {
@@ -100,28 +104,29 @@ namespace Core.DeviceCommunication
         /// <param name="timeout">The timeout</param>
         /// <returns>True if all the devices sent the Device Ready message, False otherwise</returns>
         /// <remarks>The method set the <paramref name="Ip"/> address and the <paramref name="Status"/> of each ESP32 device which responded </remarks>
-        public static bool ReceiveDeviceReadys(IList<ESP32_Device> devices,int timeout)
+        public bool ReceiveDeviceReadys(int timeout)
         {
             int received = 0;
-            string mac = "";
-            IPAddress ip = null;
-            bool result = false, timedOut = false;
+            bool timedOut = false;
             Timer timer = new Timer((_) => { timedOut = true; }, null, timeout, Timeout.Infinite);
-            while (received != devices.Count)
+            while (received != esp32s.Count)
             {
                 if (timedOut) break;
-                result = ESPManager.ReceiveDeviceReady(ref mac, ref ip);
-                if (result is true)
-                    for (int i = 0; i < devices.Count; i++)
-                        if (devices[i].MAC == mac)
+                Ready_Message ready = espManager.ReceiveReadyMessage();
+                if (ready != null)
+                    for (int i = 0; i < esp32s.Count; i++)
+                        if (esp32s[i].MAC == ready.Payload)
                         {
-                            devices[i].Ip = ip;
-                            devices[i].Active = true;
+                            esp32s[i].Ip = ready.EspIPAddress;
+                            esp32s[i].Active = true;
                             received++;
                             break;
                         }
             }
-            return false;
+            if (received == esp32s.Count)
+                return true;
+            else
+                return false;
         }
 
         /// <summary>
