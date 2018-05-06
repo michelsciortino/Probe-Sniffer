@@ -177,7 +177,7 @@ namespace Core.DeviceCommunication
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                throw;
+                return null;
             }
             return bytes;
         }
