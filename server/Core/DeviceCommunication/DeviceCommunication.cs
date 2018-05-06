@@ -36,13 +36,14 @@ namespace Core.DeviceCommunication
         /// <returns>True if the communication has been initialized correctly, False otherwise</returns>
         public bool Initialize(List<Device> devices)
         {
+            bool result;
             esp32s = new List<ESP32_Device>();
             foreach (Device e in devices)
                 esp32s.Add(new ESP32_Device(e));
 
-            espManager = new ESPManager(LocalNetworkConnection.GetLocalIp(), DeviceCommunication.SERVER_PORT);
+            espManager = new ESPManager(LocalNetworkConnection.GetLocalIp(), SERVER_PORT);
             espManager.Timeout = 10; // 10 seconds
-            bool result;
+            
             CancellationTokenSource cancellation = new CancellationTokenSource();
             Thread ServerAdvertismentThread = new Thread(() => { DoAdvertisement(cancellation.Token); });
             try
@@ -56,17 +57,28 @@ namespace Core.DeviceCommunication
                 return false;
             }
             result = ReceiveDeviceReadys(INIT_TIMEOUT);
-            if (result)
+
+            //Sending Ok Message to each ESP32 device
+            if (result is true)
+            {
+                int tries;
                 foreach (ESP32_Device esp in esp32s)
                 {
-                    result = SendPacketToDevice(new Ok_Message().ToBytes(), esp);
-                    if (result == false)
-                        break;
+                    tries = 0;
+                    while (tries<3)
+                    {
+                        result = espManager.SendOkMessage(esp, DEVICE_PORT);
+                        if (result == true)
+                            break;
+                        tries++;
+                    }
                 }
+            }
             try
             {
                 cancellation.Cancel();
-                while (ServerAdvertismentThread.IsAlive) Thread.Sleep(10);
+                while (ServerAdvertismentThread.IsAlive)
+                    Thread.Sleep(10);
                 ServerAdvertismentThread.Abort();
             }
             catch (Exception ex)
