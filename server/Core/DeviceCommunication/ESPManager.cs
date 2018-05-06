@@ -24,7 +24,7 @@ namespace Core.DeviceCommunication
         /// <param name="mac">Return by reference MAC of connect device</param>
         /// <param name="ip">Return by reference IP of connect device</param>
         /// <returns>Return true if Ready Packet is correct</returns>
-        public Ready_Message ReceiveReadyMessage(ref string mac, ref IPAddress ip)
+        public Ready_Message ReceiveReadyMessage()
         {
             ESP_Message message = ReceiveMessage();
             if (message.GetType() != typeof(Ready_Message))
