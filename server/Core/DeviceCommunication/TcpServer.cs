@@ -103,6 +103,53 @@ namespace Core.DeviceCommunication
         }
 
         /// <summary>
+        /// Connects to a Remote EndPoint
+        /// </summary>
+        /// <param name="remoteEndPointAddress">The IP address of the EndPoint</param>
+        /// <param name="port">The port for the connection</param>
+        /// <param name="timeout">A timeout for the connection request in seconds (-1 = infinite)</param>
+        /// <returns></returns>
+        public static bool Connect(IPAddress remoteEndPointAddress, int port, int timeout = -1)
+        {
+            bool result = false;
+
+            if ((bool)_client?.Connected)
+            {
+                _client.Close();
+            }
+
+            Stopwatch stopwatch = new Stopwatch();
+            if (timeout > 0)
+                stopwatch.Start();
+            while (true)
+            {
+                if (timeout>0 && stopwatch.Elapsed.TotalSeconds > timeout)
+                {
+                    stopwatch.Stop();
+                    result = false;
+                    break;
+                }
+                try
+                {
+                    _client.Connect(remoteEndPointAddress, port);
+                    if (_client.Connected)
+                    {
+                        result = true;
+                        stopwatch.Stop();
+                        _connected = _client.Connected;
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    result = false;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Receives <paramref name="nBytes"/> from the EndPoint
         /// </summary>
         /// <param name="nBytes">Number of bytes to receive</param>
@@ -133,6 +180,30 @@ namespace Core.DeviceCommunication
                 throw;
             }
             return bytes;
+        }
+
+        /// <summary>
+        /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
+        /// </summary>
+        /// <param name="bytes">The array of bytes to send</param>
+        /// <returns>True if the bytes has been sent, False otherwise</returns>
+        public static bool Send(byte[] bytes)
+        {
+            NetworkStream stream;
+            if (_connected)
+            {
+                try
+                {
+                    stream = _client.GetStream();
+                    stream.Write(bytes,0, bytes.Length);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
