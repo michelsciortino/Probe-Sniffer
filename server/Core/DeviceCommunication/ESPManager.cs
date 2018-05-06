@@ -11,13 +11,22 @@ namespace Core.DeviceCommunication
         #region Private Properties
         private IPAddress _localIpAddress = null;
         private int _receivingPort = -1;
+        private int _timeout = -1;
         #endregion
-        public ESPManager(IPAddress localIpAddress,int receivingPort)
+
+        #region Constructor
+        public ESPManager(IPAddress localIpAddress, int receivingPort)
         {
             _localIpAddress = localIpAddress;
-            _receivingPort= receivingPort;
+            _receivingPort = receivingPort;
         }
+        #endregion
 
+        #region Public Properties
+        public int Timeout { get => _timeout; set => _timeout = value; }
+        #endregion
+
+        #region Public Methods
         /// <summary>
         /// TCP Listener for Ready Packet
         /// </summary>
@@ -35,7 +44,7 @@ namespace Core.DeviceCommunication
         public Data_Message ReceiveDataMessage()
         {
             ESP_Message message = ReceiveMessage();
-            if(message.GetType() != typeof(Data_Message))
+            if (message.GetType() != typeof(Data_Message))
                 return null;
             return (Data_Message)message;
         }
@@ -47,21 +56,21 @@ namespace Core.DeviceCommunication
         private ESP_Message ReceiveMessage()
         {
             IPAddress remoteIPAddress;
-            ESP_Message message=null;
+            ESP_Message message = null;
             byte header;
             byte[] payload = null;
-            
+
             //Starting the TCP server if not started yet
-            if(!TcpServer.Started)
+            if (!TcpServer.Started)
                 TcpServer.Start(_localIpAddress, _receivingPort);
 
             //Connecting to an ESP device
-            remoteIPAddress = TcpServer.AcceptNewConnection();
-            if (!TcpServer.Connected)
+            remoteIPAddress = TcpServer.AcceptNewConnection(_timeout);
+            if (!TcpServer.Connected || remoteIPAddress is null)
                 return null;
 
             //Receiving the message header
-            header=TcpServer.Receive(1)[0];
+            header = TcpServer.Receive(1)[0];
 
             //Parsing the message
             switch (header)
@@ -69,7 +78,7 @@ namespace Core.DeviceCommunication
                 case Ready_Message.READY_HEADER:
                     try
                     {
-                        payload=TcpServer.Receive(Ready_Message.PAYLOAD_LENGTH);
+                        payload = TcpServer.Receive(Ready_Message.PAYLOAD_LENGTH);
                         if (payload.Length != Ready_Message.PAYLOAD_LENGTH)
                         {
                             message = null;
@@ -78,10 +87,11 @@ namespace Core.DeviceCommunication
                         message = new Ready_Message
                         {
                             Header = Ready_Message.READY_HEADER,
-                            Payload = Encoding.ASCII.GetString(payload, 0, Ready_Message.PAYLOAD_LENGTH)
+                            Payload = Encoding.ASCII.GetString(payload, 0, Ready_Message.PAYLOAD_LENGTH),
+                            EspIPAddress = remoteIPAddress
                         };
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Debug.WriteLine(ex.Message);
                         message = null;
@@ -95,11 +105,12 @@ namespace Core.DeviceCommunication
                         byte[] json = TcpServer.Receive(jsonLenght[0]);
                         payload = new byte[jsonLenght[0] + 1];
                         Buffer.BlockCopy(jsonLenght, 0, payload, 0, 1);
-                        Buffer.BlockCopy(json, 0, payload, 1,jsonLenght[0]);
+                        Buffer.BlockCopy(json, 0, payload, 1, jsonLenght[0]);
                         message = new Data_Message
                         {
                             Header = Data_Message.DATA_HEADER,
-                            Payload = Encoding.ASCII.GetString(payload, 0, payload.Length)
+                            Payload = Encoding.ASCII.GetString(payload, 0, payload.Length),
+                            EspIPAddress = remoteIPAddress
                         };
                     }
                     catch (Exception ex)
@@ -114,5 +125,7 @@ namespace Core.DeviceCommunication
             TcpServer.CloseConnection();
             return message;
         }
+        #endregion
+
     }
 }
