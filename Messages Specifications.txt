@@ -17,12 +17,14 @@
 
 ---------DEVICE_DATA json layout:---------
 | [{                                     |
+|     "ESP_MAC": "",                     |
 |     "MAC": "",                         |
 |     "SSID": "",                        |
 |     "Timestamp": "",                   | Timestamp sintax: "{AAAA}-{MM}-{GG}T{hh}:{mm}:{ss}.000000+02:00"
 |     "Hash": "",                        |
-|     "SignalStrength": value            |
+|     "SignalStrength": value,           |
 |  },{                                   |
+|     "ESP_MAC": "",                     |
 |     "MAC": "",                         |
 |     "SSID": "",                        |
 |     "Timestamp": "",                   |
