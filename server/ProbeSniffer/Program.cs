@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using Core.Models;
-using Core.DatabaseConnection;
+using Core.DBConnection;
 using System.Windows;
 using Core.DeviceCommunication;
 
@@ -9,8 +9,8 @@ namespace ProbeSniffer
     public class Program
     {
         private Configuration configuration = null;
-        private DatabaseConnection DBconnection = null;
-        private DeviceCommunication deviceCommunication = null;
+        private DatabaseConnection dbConnection = null;
+        private DeviceConnectionManager deviceCommunication = null;
 
         #region Windows
         private SplashScreen splash = null;
@@ -43,16 +43,16 @@ namespace ProbeSniffer
 
             //Testing Database connection
             splash.ShowDBConneLoadingSplashScreen();
-            DBconnection = new DatabaseConnection();
+            dbConnection = new DatabaseConnection();
             int tries = 0;
             while (tries != 3)
             {
-                DBconnection.Connect();
-                if (DBconnection.Connected) break;
+                dbConnection.Connect();
+                if (dbConnection.Connected) break;
                 Thread.Sleep(2000);
                 tries++;
             }
-            if (!DBconnection.Connected)    //not connected after 3 tries
+            if (!dbConnection.Connected)    //not connected after 3 tries
             {
                 ShowErrorMessage("Unable to connect to Database...\nExiting.");
                 splash.Close();
@@ -64,7 +64,7 @@ namespace ProbeSniffer
 
             //Connecting to Devices
             splash.ShowDeviceAwaitingSplashScreen();
-            deviceCommunication = new DeviceCommunication();
+            deviceCommunication = new DeviceConnectionManager();
             result = deviceCommunication.Initialize(configuration.Devices);
 
             if (result is false)
@@ -81,8 +81,7 @@ namespace ProbeSniffer
             visualizer = new DataVisualizer(configuration.Devices);
             visualizer.Show();
         }
-
-
+        
         private void ShowErrorMessage(string message)
         {
             MessageBox.Show(message,
