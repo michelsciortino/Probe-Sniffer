@@ -11,7 +11,7 @@ namespace Core.Models
 
         private int _nDevices = 0;
         private List<Device> _devices = null;
-        private string _SSID = null;
+        private string _ssid = null;
 
         #endregion
 
@@ -24,6 +24,18 @@ namespace Core.Models
             this._devices = new List<Device>();
         }
         #endregion
+
+        #region Public Properties
+        /// <summary>
+        /// Get the SSID
+        /// </summary>
+        public string SSID
+        {
+            get => _ssid;
+            set => _ssid = value;
+        }
+        #endregion
+
 
         #region Public Methods
         /// <summary>
@@ -46,11 +58,6 @@ namespace Core.Models
         /// Get the list of devices
         /// </summary>
         public List<Device> Devices => _devices;
-
-        /// <summary>
-        /// Get the SSID
-        /// </summary>
-        public string SSID => _SSID;
 
         /// <summary>
         /// Get the stored configuration
