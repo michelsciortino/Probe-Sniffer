@@ -2,7 +2,7 @@
 
 #include <stdio.h> //DEBUG
 #include <ctype.h> //DEBUG
-//#include "freertos/FreeRTOS.h"
+#include "freertos/FreeRTOS.h"
 //#include "freertos/task.h"
 //#include "esp_system.h"
 #include "esp_wifi.h"
@@ -35,34 +35,96 @@
 
 #define HEADER_LEN 10
 #define MAC_LEN 17
+#define TIME_LEN 22
+#define SSID_LEN 34
 
 //codes received from server
-#define CODE_OK 0
-#define CODE_TIME 1
-#define CODE_RESET 2
-#define CODE_UNKNOWN -1
+#define CODE_OK 200
+#define CODE_TIME 202
+#define CODE_RESET 203
+#define CODE_READY 100
+#define CODE_DATA 101
 
+struct packet_info
+{
+ char mac[MAC_LEN];
+ char ssid[SSID_LEN];
+ char timestamp[TIME_LEN];
+ //char hash[HASH_LEN];
+ int strength;
+};
+
+struct packet_node
+{
+ struct packet_info packet;
+ struct packet_node *next;
+};
 
 struct status
 {
  int status_value;
  char server_ip[IPLEN];
  int port;
- //int time;
+ char srv_time[TIME_LEN];
+ time_t client_time;
+ struct packet_node *packet_list;
+ int total_length;
+ esp_timer_handle_t timer;
 };
 
-struct status st = {ST_DISCONNECTED, "\0", 0};
+struct status st;
+
+void clear_data()
+{
+ struct packet_node *next;
+ struct packet_node *p=st.packet_list;
+ while(p!=NULL)
+ {
+  next=p->next;
+  free(p);
+  p=next;
+ }
+ st.total_length=0;
+}
+
+void start_timer()
+{
+ esp_err_t ret;
+ uint64_t usec=5000000;
+ ret = esp_timer_start_once(st.timer, usec);
+ ESP_ERROR_CHECK( ret );
+}
+
+//handle the end of the timer: send data to server then reset timer and return sniffing
+void timer_handle()
+{
+ printf("'bling'\n"); //DEBUG
+ //send_data();
+ start_timer();
+}
+
+//sniffs packets then sends those to server in infinite loop
+void sniffer()
+{
+ clear_data();
+ start_timer();
+ //start_sniffing();
+}
+
+//save time received from server and time on client when it arrives
+void save_timestamp(char *buf)
+{
+ strncpy(st.srv_time, buf+2, TIME_LEN-2);
+ st.srv_time[TIME_LEN-2]='\0';
+ st.client_time=time(NULL);
+}
 
 //returns code received in header from server
 int read_header(char *buf)
 {
- if(strncmp(buf, "OK        ", HEADER_LEN))
-  return CODE_OK;
- if(strncmp(buf, "TIMESTAMP ", HEADER_LEN))
-  return CODE_TIME;
- if(strncmp(buf, "RESET     ", HEADER_LEN))
-  return CODE_RESET;
- return CODE_UNKNOWN;
+ char head_val;
+ sscanf(buf, "%c", &head_val);
+ return (int)head_val;
 }
 
 //receive packets frome server and decides what to do
@@ -82,8 +144,8 @@ void recv_from_server(int s)
     st.status_value=ST_WAITING_TIME;
     break;
    case CODE_TIME:
-    close(s);
     st.status_value=ST_SNIFFING;
+    save_timestamp(buf);
     //start_timer();
     //start_sniffing();
     break;
@@ -104,7 +166,7 @@ void recv_from_server(int s)
 void send_ready()
 {
  int s, result, i, sent_len;
- struct sockaddr_in str_sock_s, str_sock_c;
+ struct sockaddr_in str_sock_s;
  char buf[BUFLEN];
  //unsigned int sockaddrlen;
  struct in_addr in_addr;
@@ -146,12 +208,12 @@ void send_ready()
   return;
  }
 
- sprintf(buf, "READY     ");
+ char c=CODE_READY;
+ sprintf(buf, "%c", c);
  for(i=0; i<6; i++)
   sprintf(buf+HEADER_LEN+(i*3), "%02x:", mac[i]);
  buf[9+(i*3)]='\0';
 
- //printf("Sending %s\n", buf);
  sent_len=send(s, buf, HEADER_LEN+MAC_LEN, 0);
  if(sent_len<0)
  {
@@ -254,6 +316,7 @@ static void setup_and_connect_wifi(void)
  ESP_ERROR_CHECK(esp_wifi_start());
 }
 
+/* #HEX+ASCII PRINTER#
 //print payload data in hex and ascii, for debug purposes
 void print_data(unsigned char *buf, int len)
 {
@@ -300,6 +363,7 @@ void print_packet_info_mgmt(wifi_promiscuous_pkt_t *pkt)
  printf("Strength: %d\nChannel: %d\nPayload:\n", pkt->rx_ctrl.rssi, pkt->rx_ctrl.channel);
  print_data(pkt->payload, pkt->rx_ctrl.sig_len);
 }
+*/
 
 //handle the packet sniffed in promiscuous mode (we are interested in management packets)
 void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
@@ -309,11 +373,11 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  {
   case WIFI_PKT_MGMT:
    printf("MANAGEMENT\n"); //DEBUG
-   print_packet_info_mgmt((wifi_promiscuous_pkt_t *)buf);
+   //print_packet_info_mgmt((wifi_promiscuous_pkt_t *)buf);
    break;
   case WIFI_PKT_DATA:
    printf("DATA\n");
-   print_data(((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len);
+   //print_data(((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len);
    //print_packet_info((wifi_promiscuous_pkt_t *)buf);
    break;
   default:
@@ -333,6 +397,19 @@ int setup_and_listen_promiscuous()
  return 1;
 }
 
+//initialize the main structure
+void initialize_st()
+{
+ st.status_value=ST_DISCONNECTED;
+ strcpy(st.server_ip, "\0");
+ st.port=-1;
+ strcpy(st.srv_time, "\0");
+ st.client_time=0;
+ st.packet_list=NULL;
+ st.total_length=0;
+ st.timer=NULL;
+}
+
 //main function
 void app_main()
 {
@@ -343,8 +420,19 @@ void app_main()
  }
  ESP_ERROR_CHECK( ret );
 
+ initialize_st();
+
+ //create timer
+ esp_timer_create_args_t create_args;
+ create_args.callback = timer_handle;
+ create_args.arg = NULL;
+ create_args.dispatch_method = ESP_TIMER_TASK;
+ create_args.name = "timer\0";
+ ret = esp_timer_create(&create_args, &(st.timer));
+ ESP_ERROR_CHECK( ret );
+
  //setup_and_listen_promiscuous();
- setup_and_connect_wifi();
+/* setup_and_connect_wifi();
  while(st.status_value==ST_DISCONNECTED);
 
  acquire_server_ip();
@@ -355,5 +443,12 @@ void app_main()
  else
   esp_restart();
  send_ready();
+ if(st.status_value!=ST_SNIFFING)
+  esp_restart();
+ //sniffer();
+ esp_restart();
+*/
+
+ start_timer();
 }
 
