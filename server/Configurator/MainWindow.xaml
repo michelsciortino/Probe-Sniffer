@@ -8,9 +8,10 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:command="http://www.galasoft.ch/mvvmlight"
         mc:Ignorable="d"
-        Title="Device Condifuration"
-        Height="450" Width="600"
-        MinHeight="300" MinWidth="500"
+        Title="   System Condifuration"
+        Height="500" Width="500"
+        MinHeight="500" MinWidth="550"
+        
         BorderThickness="0"
         Foreground="White"
         Background="{StaticResource BackgroundColorBrush}">
@@ -20,8 +21,8 @@
     
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="180" MaxWidth="220"/>
-            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="2*" MinWidth="180" MaxWidth="220"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -52,20 +53,20 @@
                 </i:Interaction.Triggers>
             </Button>
             <ListBox x:Name="DeviceList"
+                     Foreground="White"
                      Grid.Row="1"     
                      ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Hidden"
                      BorderThickness="0"
+                     HorizontalContentAlignment="Stretch"
                      Padding="0"
-                     Background="{StaticResource BackgroundLighterColorBrush}"
-                     ItemsSource="{Binding Devices,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}">
+                     ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource BackgroundLighterColorBrush}">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border HorizontalAlignment="Stretch"
-                                Background="{StaticResource AzureColorBrush}"
                                 Margin="0"
-                                BorderThickness="1"
-                                BorderBrush="{StaticResource AzureColorBrush}">
+                                BorderThickness="1">
                             <StackPanel HorizontalAlignment="Stretch"
                                         MinWidth="135">
                                 <TextBlock Padding="5,0" Text="{Binding MAC}"/>
@@ -84,7 +85,8 @@
 
         <Grid Grid.Column="1"
               Grid.Row="0"
-              Margin="0,20,30,15">
+              Margin="0,20,30,15"
+              HorizontalAlignment="Center">
 
             <Grid HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch">
@@ -112,7 +114,7 @@
                       HorizontalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid HorizontalAlignment="Center">
                         <Grid.ColumnDefinitions>
@@ -160,6 +162,7 @@
                                 Orientation="Horizontal">
                             <TextBlock Text="mac" Margin="0,0,10,0"/>
                             <TextBox IsEnabled="True"
+                                     IsReadOnly="True"
                                      Width="150"
                                      Foreground="White"
                                      BorderThickness="0"
@@ -168,34 +171,61 @@
                             </TextBox>
                         </StackPanel>
                     </Grid>
-                    <Button x:Name="AddDevice"
-                            Content="Add Device"
-                            Grid.Row="2"
-                            HorizontalAlignment="Right"
-                            Padding="5,2"
-                            Margin="50,20"
-                            BorderThickness="0"
-                            IsEnabled="{Binding AddDeviceButtonEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="Click">
-                                <command:EventToCommand Command="{Binding AddDeviceCommand}" PassEventArgsToCommand="False"/>
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
-                    </Button>
+                    <Grid Grid.Row="2" VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="1*" MinHeight="100"/>
+                            <RowDefinition Height="2*" MinHeight="60"/>
+                            <RowDefinition Height="1*"/>
+                        </Grid.RowDefinitions>
+                        <Button x:Name="AddDevice"
+                                Grid.Row="0"
+                                Content="Add Device"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right"
+                                Padding="10,5"
+                                BorderThickness="0"
+                                IsEnabled="{Binding AddDeviceButtonEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="Click">
+                                    <command:EventToCommand Command="{Binding AddDeviceCommand}" PassEventArgsToCommand="False"/>
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
+                        </Button>
+                        <StackPanel Grid.Row="1">
+                            <TextBlock Text="Preferred SSID" HorizontalAlignment="Center"/>
+                            <ComboBox Width="150"
+                                      Height="40"
+                                      x:Name="SSIDSelector"
+                                      VerticalContentAlignment="Center"
+                                      HorizontalContentAlignment="Left"
+                                      Padding="10,0,0,0"
+                                      SelectedItem="{Binding SelectedSSID,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                                      ItemsSource="{Binding SSIDList,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource ComboBoxStyle}"
+                                      IsEditable="False">
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="DropDownOpened">
+                                        <command:EventToCommand Command="{Binding UpdateAvaibleSSIDsListCommand}" PassEventArgsToCommand="False"/>
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
+                            </ComboBox>
+                        </StackPanel>
+                        <Button Content="Save Confituration"
+                                Grid.Row="2"
+                                IsEnabled="{Binding SaveConfigurationButtonEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                                HorizontalAlignment="left"
+                                VerticalAlignment="Bottom"
+                                Padding="5,2"
+                                BorderThickness="0">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="Click">
+                                    <command:EventToCommand Command="{Binding SaveConfigurationCommand}" PassEventArgsToCommand="False"/>
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Grid>
-            <Button Content="Save Confituration"
-                    HorizontalAlignment="left"
-                    VerticalAlignment="Bottom"
-                    Padding="5,2"
-                    Margin="0"
-                    BorderThickness="0">
-                <i:Interaction.Triggers>
-                    <i:EventTrigger EventName="Click">
-                        <command:EventToCommand Command="{Binding SaveConfigurationCommand}" PassEventArgsToCommand="False"/>
-                    </i:EventTrigger>
-                </i:Interaction.Triggers>
-            </Button>
+            
 
         </Grid>
 

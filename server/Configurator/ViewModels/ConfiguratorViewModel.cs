@@ -1,6 +1,9 @@
 ﻿using Core.Models;
 using Core.ViewModelBase;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Input;
 
 namespace Configurator.ViewModels
@@ -17,14 +20,15 @@ namespace Configurator.ViewModels
             configuration = Configuration.LoadConfiguration();
             if (configuration is null) configuration = new Configuration();
             _devices = new ObservableCollection<Device>(configuration.Devices);
+            _selectedSSID = configuration.SSID;
         }
         #endregion
 
         #region Private properties
         private ObservableCollection<Device> _devices = null;
-        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false;
-        private double _x, _y;
-        private string _mac = "";
+        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false, _saveConfigurationButtonEnabled = false;
+        private string _x = null, _y = null, _mac = null, _selectedSSID = null;
+        private ObservableCollection<string> _ssidsList = null;
         #endregion
 
         #region Public Properties
@@ -39,6 +43,17 @@ namespace Configurator.ViewModels
             }
         }
 
+        public ObservableCollection<string> SSIDList
+        {
+            get => _ssidsList;
+            set
+            {
+                if (_ssidsList == value) return;
+                _ssidsList = value;
+                OnPropertyChanged(nameof(SSIDList));
+            }
+        }
+
         public bool NewDeviceFormEnabled
         {
             get => _newDeviceFormEnabled;
@@ -50,24 +65,24 @@ namespace Configurator.ViewModels
             }
         }
 
-        public double X
+        public string X
         {
             get => _x;
             set
             {
-                if (_x == value) return;
                 _x = value;
+                CheckNewDeviceParameters();
                 OnPropertyChanged(nameof(X));
             }
         }
 
-        public double Y
+        public string Y
         {
             get => _y;
             set
             {
-                if (_y == value) return;
                 _y = value;
+                CheckNewDeviceParameters();
                 OnPropertyChanged(nameof(Y));
             }
         }
@@ -77,18 +92,42 @@ namespace Configurator.ViewModels
             get => _mac;
             set
             {
-                if (_mac == value) return;
+                
                 _mac = value;
+                CheckNewDeviceParameters();
                 OnPropertyChanged(nameof(MAC));
-                if (value == "") AddDeviceButtonEnabled = false;
-                else AddDeviceButtonEnabled = true;
             }
         }
+
+        public string SelectedSSID
+        {
+            get => _selectedSSID;
+            set
+            {
+                if (value is null)
+                {
+                    SaveConfigurationButtonEnabled = false;
+                    return;
+                }
+                if (_selectedSSID == value)
+                    return;
+                _selectedSSID = value;
+                SaveConfigurationButtonEnabled = true;
+                OnPropertyChanged(nameof(SelectedSSID));
+            }
+        }
+
 
         public bool AddDeviceButtonEnabled
         {
             get => _addDeviceButtonEnabled;
             set { if (_addDeviceButtonEnabled == value) return; _addDeviceButtonEnabled = value; OnPropertyChanged(nameof(AddDeviceButtonEnabled)); }
+        }
+
+        public bool SaveConfigurationButtonEnabled
+        {
+            get => _saveConfigurationButtonEnabled;
+            set { if (_saveConfigurationButtonEnabled == value) return; _saveConfigurationButtonEnabled = value; OnPropertyChanged(nameof(SaveConfigurationButtonEnabled)); }
         }
         #endregion
 
@@ -96,20 +135,22 @@ namespace Configurator.ViewModels
         private ICommand _addDeviceCommand = null;
         private ICommand _removeDeviceCommand = null;
         private ICommand _saveConfigurationCommand = null;
+        private ICommand _updateAvaibleSSIDsListCommand = null;
         #endregion
 
         #region Public Commands
         public ICommand AddDeviceCommand => _addDeviceCommand ?? (_addDeviceCommand = new RelayCommand<object>((x) => AddDevice()));
         public ICommand RemoveDeviceCommand => _removeDeviceCommand ?? (_removeDeviceCommand = new RelayCommand<Device>((x) => RemoveDevice(x)));
         public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>((x) => SaveConfiguration()));
-
+        public ICommand UpdateAvaibleSSIDsListCommand => _updateAvaibleSSIDsListCommand ?? (_updateAvaibleSSIDsListCommand = new RelayCommand<object>((x) => UpdateAvaibleSSIDsList()));
         #endregion
 
         #region Private Methods
         private void AddDevice()
         {
             if (_mac == "") return;
-            Devices.Add(new Device { X_Position = _x, Y_Position = _y, MAC = _mac });
+            Devices.Add(new Device { X_Position = Double.Parse(_x), Y_Position = Double.Parse(_y), MAC = _mac });
+            MAC = "";
         }
 
         private void RemoveDevice(Device x)
@@ -117,11 +158,44 @@ namespace Configurator.ViewModels
             Devices.Remove(x);
         }
 
+        private void UpdateAvaibleSSIDsList()
+        {
+            SSIDList = new ObservableCollection<string>();
+            List<string> ssids = LocalNetworkConnection.GetAvaibleWifiNetworksSSIDList().Distinct().OrderBy(s => s).ToList();
+            if (ssids is null) return;
+            foreach (string ssid in ssids)
+                _ssidsList.Add(ssid);
+        }
+
+        private void CheckNewDeviceParameters()
+        {
+            Double value;
+
+            if (_mac is null || _mac == "")
+            {
+                AddDeviceButtonEnabled = false;
+                return;
+            }
+
+            try
+            {
+                value = Double.Parse(_x);
+                value = Double.Parse(_y);
+            }
+            catch
+            {
+                AddDeviceButtonEnabled = false;
+                return;
+            }
+            AddDeviceButtonEnabled = true;
+        }
+
         private void SaveConfiguration()
         {
             configuration = new Configuration();
             foreach (Device d in Devices)
                 configuration.AddDevice(d);
+            configuration.SSID = _selectedSSID;
             configuration.SaveConfiguration();
         }
         #endregion
