@@ -5,10 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 
 namespace Core.Models
 {
-    static class LocalNetworkConnection
+    public static class LocalNetworkConnection
     {
 
         public static IPAddress GetLocalIp()
@@ -89,6 +90,23 @@ namespace Core.Models
                 connectedSsids.Add(new String(Encoding.ASCII.GetChars(ssid.SSID, 0, (int)ssid.SSIDLength)));*/
             }
             return connectedSsids;
+        }
+
+        public static List<string> GetAvaibleWifiNetworksSSIDList()
+        {
+            List<string> ssids = new List<string>();
+
+            WlanClient wlan = new WlanClient();
+            foreach(WlanClient.WlanInterface wlanInterface in wlan.Interfaces)
+            {
+                try
+                {
+                    ssids.AddRange(wlanInterface.GetAvailableNetworkList(Wlan.WlanGetAvailableNetworkFlags.IncludeAllManualHiddenProfiles).ToList().ConvertAll(n => Encoding.ASCII.GetString(n.dot11Ssid.SSID, 0, (int)n.dot11Ssid.SSIDLength)));
+                }
+                catch { }                
+            }
+
+            return ssids;
         }
     }
 }
