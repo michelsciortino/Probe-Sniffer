@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Core.DBConnection;
 using Core.DeviceCommunication;
 using Core.Models;
+using Core.Models.Database;
 
 namespace Core.DataCollection
 {
@@ -75,15 +77,17 @@ namespace Core.DataCollection
                         Debug.WriteLine(ex.Message);
                     }
                     
-                processingThread = new Thread(() => ProcessDeviceData(intervalData,connectionManager.Devices));
+                processingThread = new Thread(() => ProcessDevicesDataAsync(intervalData,connectionManager.Devices));
                 processingThread.Start();
             }
         }
 
-        private void ProcessDeviceData(List<DeviceData> intervalData,List<ESP32_Device> eSP32_Devices)
+        private async Task ProcessDevicesDataAsync(List<DeviceData> intervalData,List<ESP32_Device> eSP32_Devices)
         {
             DatabaseConnection dbConnection=new DatabaseConnection();
-            List<DatabaseEntry> newEntries = new List<DatabaseEntry>();
+            IntervalDescriptionEntry newIntervalDescription = null;
+            List<IntervalDataEntry> newIntervalData = null;
+            int newIntervalId;
 
             int tries = 0;
             while (tries < 3)
@@ -97,41 +101,57 @@ namespace Core.DataCollection
             if (dbConnection.Connected)
                 _initialized = true;
 
-            int IntervalId = dbConnection.GetMaxIntervalID().Result+1;
 
-            
+            //Getting the last IntervalId
+            IntervalDescriptionEntry lastIntervalDescription = await dbConnection.GetLastIntervalDescritpionEntryAsync();
+
+            if (lastIntervalDescription is null || dbConnection.Connected)
+                newIntervalId = 0;
+            else
+                newIntervalId = lastIntervalDescription.IntervalId + 1;
+                        
             //Filtering the Packets lists
             intervalData=FilterDeviceDataList(intervalData);
 
-            List<Device> ActiveESPs = eSP32_Devices.FindAll(esp => intervalData.FindAll(d => d.Esp_Mac == esp.MAC).Any()).
-                                                    Select(esp => new Device
-                                                    {
-                                                        MAC = esp.MAC,
-                                                        X_Position = esp.X_Position,
-                                                        Y_Position = esp.Y_Position
-                                                    }).ToList();
+            Dictionary<string, ESP32_Device> ActiveESPs = eSP32_Devices.FindAll(esp => intervalData.FindAll(d => d.Esp_Mac == esp.MAC).Any()).ToDictionary(d => d.MAC);
 
-            //Creating the database entries calculating the devices position
-            foreach (Packet packet in intervalData[0].Packets)
+            
+
+            newIntervalData = new List<IntervalDataEntry>();
+
+            
+            for(int i=0;i<intervalData[0].Packets.Count;i++)
             {
-                DatabaseEntry entry = new DatabaseEntry
+
+                List<KeyValuePair<ESP32_Device, int>> packetInterpolationData = new List<KeyValuePair<ESP32_Device, int>>();
+                foreach (DeviceData dd in intervalData)
+                    packetInterpolationData.Add(new KeyValuePair<ESP32_Device, int>(ActiveESPs[dd.Esp_Mac], dd.Packets[i].SignalStrength));
+
+                KeyValuePair<double, double> senderPosition = new KeyValuePair<double, double>() ;//TODO=Interpolator.FindPacketSenderPosition(packetInterpolationData);
+                IntervalDataEntry entry = new IntervalDataEntry
                 {
-                    Hash = packet.Hash,
-                    IntervalId = IntervalId,
-                    SSID = packet.SSID,
-                    Timestamp = packet.Timestamp,
-                    ActiveESP32s = ActiveESPs,
-                    Device = new Device()
+                    Hash = intervalData[0].Packets[i].Hash,
+                    IntervalId = lastIntervalDescription.IntervalId,
+                    SSID = intervalData[0].Packets[i].SSID,
+                    Timestamp = intervalData[0].Packets[i].Timestamp,
+                    Sender = new Device { MAC= intervalData[0].Packets[i].MAC,X_Position=senderPosition.Key,Y_Position=senderPosition.Value}
                 };
-                entry.Device.MAC = packet.MAC;
-                //TO DO
-                entry.Device.X_Position = -1;//???
-                entry.Device.Y_Position = -1;//??
-                
-                newEntries.Add(entry);
+
+                newIntervalData.Add(entry);
             }
 
-            dbConnection.Store(newEntries);
+
+
+            newIntervalDescription = new IntervalDescriptionEntry
+            {
+                ActiveEsps = ActiveESPs.Values.ToList().ConvertAll(esp => new Device { MAC = esp.MAC, X_Position = esp.X_Position, Y_Position = esp.Y_Position }).ToList(),
+                IntervalId = newIntervalId,
+                Timestamp = DateTime.Now,
+            };
+
+
+            await dbConnection.StoreIntervalDescriptionEntryAsync(newIntervalDescription);
+            await dbConnection.StoreIntervalDataEntriesAsync(newIntervalData);
         }
 
         private List<DeviceData> FilterDeviceDataList( List<DeviceData> dirty)
