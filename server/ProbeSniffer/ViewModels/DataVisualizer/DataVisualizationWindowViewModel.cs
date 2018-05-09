@@ -28,6 +28,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             _hiddenDevicesVM = new HiddenDevicesViewModel();
             _sliderViewVM = new SliderViewViewModel();
             _currentPage = new LiveViewView(_liveViewVM);
+            _liveViewVM.RunUpdater();
         }
         #endregion
 
@@ -60,10 +61,16 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
         #region Private Methods
         private void Navigate(SelectionChangedEventArgs destination)
         {
+            if(destination.GetType() != typeof(LiveViewView))
+            {
+                _liveViewVM.StopUpdater();
+            }
+            
             switch (((ListBoxItem)((ListBox)destination.Source).SelectedItem).Tag)
             {
                 case "liveview":
                     CurrentPage = new LiveViewView(_liveViewVM);
+                    _liveViewVM.RunUpdater();
                     break;
                 case "statistics":
                     CurrentPage = new StatisticsView(_statisticsVM);
