@@ -66,6 +66,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\PointsGraph\PointsGraph.xaml.cs">
+      <DependentUpon>PointsGraph.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\PolylineGraph\PolylineGraph.xaml.cs">
       <DependentUpon>PolylineGraph.xaml</DependentUpon>
     </Compile>
@@ -109,6 +112,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Controls\PointsGraph\PointsGraph.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\PolylineGraph\PolylineGraph.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
