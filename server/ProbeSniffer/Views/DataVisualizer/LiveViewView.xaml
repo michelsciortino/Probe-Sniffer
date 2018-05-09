@@ -5,11 +5,11 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:ProbeSniffer.Views.DataVisualizer"
       xmlns:vm="clr-namespace:ProbeSniffer.ViewModels.DataVisualizer"
-      xmlns:controls="clr-namespace:ProbeSniffer.Controls"
+      xmlns:controls="clr-namespace:ProbeSniffer.Controls.PointsGraph"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
       Title="LiveViewPage">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
         <Grid Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -37,18 +37,17 @@
                         BorderThickness="0"
                         Padding="5"
                         ClipToBounds="True">
-                    <controls:PolylineGraph ItemsSource="{Binding Points}"
-                                            PolylineColor="{StaticResource AzureColorBrush}"
-                                            AxisColor="{StaticResource GreenColorBrush}"
-                                            VerticalSteps="5"
-                                            LabelsColor="{StaticResource GreenColorBrush}"
-                                            AttachGraphToAxis="False"
-                                            XScaleFactor="45"
-                                            YScaleFactor="2"
-                                            YAxisName="Devices"
-                                            XAxisName="Interval"
-                                            GraphContentPadding="10"
-                                            VerticalAlignment="Bottom"/>
+                    <controls:PointsGraph Points="{Binding Points}"
+                                          PolylineColor="{StaticResource AzureColorBrush}"
+                                          AxisColor="{StaticResource GreenColorBrush}"
+                                          VerticalSteps="5"
+                                          LabelsColor="{StaticResource GreenColorBrush}"
+                                          YAxisName="n° of devices"
+                                          XAxisName="Interval"
+                                          GraphContentPadding="10"
+                                          HorizontalSteps="20"
+                                          HorizontalStepsWidth="30"
+                                          VerticalAlignment="Bottom"/>
                 </Border>
             </Grid>
             
@@ -63,8 +62,8 @@
                             Padding="10"
                             Background="{StaticResource BackgroundLightColorBrush}">
 
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto"
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Hidden"
                                   HorizontalContentAlignment="Left"
                                   VerticalContentAlignment="Top">
                             <Grid x:Name="MapContainer">
