@@ -1,5 +1,4 @@
-﻿using Core.Models;
-using MongoDB.Bson;
+﻿using Core.Models.Database;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using System;
@@ -32,15 +31,24 @@ namespace Core.DBConnection
             return Connected;
         }
 
-        private IMongoCollection<DatabaseEntry> GetCollection()
+        private IMongoCollection<IntervalDataEntry> GetIntervalDataCollection()
         {
             lock (ThreadSafeLock)
             {
                 if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
-                return client.GetDatabase(DatabaseName).GetCollection<DatabaseEntry>("DeviceProbeLog");
+                return client.GetDatabase(DatabaseName).GetCollection<IntervalDataEntry>("IntervalData");
             }
         }
 
+        private IMongoCollection<IntervalDescriptionEntry> GetIntervalDescriptionCollection()
+        {
+            lock (ThreadSafeLock)
+            {
+                if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
+                return client.GetDatabase(DatabaseName).GetCollection<IntervalDescriptionEntry>("IntervalDescription");
+            }
+        }
+        /*
         public IList<DatabaseEntry> GetAllData()
         {
             List<DatabaseEntry> entries = new List<DatabaseEntry>();
@@ -61,45 +69,62 @@ namespace Core.DBConnection
             }
             return entries;
         }
-
-        public async Task<IList<DatabaseEntry>> GetLastIntervalEntries()
+        */
+        public async Task<List<IntervalDataEntry>> GetLastIntervalDataEntriesAsync()
         {
-            List<DatabaseEntry> entries = new List<DatabaseEntry>();
+            List<IntervalDataEntry> entries = new List<IntervalDataEntry>();
 
-            int maxIntervalId = GetMaxIntervalID().Result;
-            Debug.WriteLine("Max found: " + maxIntervalId);
+            IntervalDescriptionEntry last= await GetLastIntervalDescritpionEntryAsync();
+            Debug.WriteLine("Max found: " + last.IntervalId);
 
-            entries.AddRange((await GetCollection().FindAsync((entry) => entry.IntervalId == maxIntervalId)).ToList());
+            entries.AddRange((await GetIntervalDataCollection().FindAsync((entry) => entry.IntervalId == last.IntervalId)).ToList());
 
             return entries;
         }
 
-        public void Store(List<DatabaseEntry> entries)
+        public async Task<IntervalDescriptionEntry> GetLastIntervalDescritpionEntryAsync()
         {
-            lock (ThreadSafeLock)
+            IntervalDescriptionEntry entry;
+            
+            var options = new FindOptions<IntervalDescriptionEntry, IntervalDescriptionEntry>
             {
-                try
-                {
-                    CancellationTokenSource source = new CancellationTokenSource();
-                    client.StartSession(null, source.Token);
-                    GetCollection().InsertManyAsync(entries);
-                    source.Cancel();
-                }catch(Exception e)
-                {
-                    Debug.WriteLine(e.Message);
-                }
+                Limit = 1,
+                Sort = Builders<IntervalDescriptionEntry>.Sort.Descending(e => e.IntervalId)
+            };
+
+            entry = (await GetIntervalDescriptionCollection().FindAsync(FilterDefinition<IntervalDescriptionEntry>.Empty, options)).FirstOrDefault();
+            return entry;
+        }
+
+        public async Task StoreIntervalDescriptionEntryAsync(IntervalDescriptionEntry entry)
+        {
+            CancellationTokenSource source = new CancellationTokenSource();
+            try
+            {
+                client.StartSession(null, source.Token);
+                await GetIntervalDescriptionCollection().InsertOneAsync(entry);
+                source.Cancel();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
             }
         }
 
-        public async Task<int> GetMaxIntervalID()
+        public async Task StoreIntervalDataEntriesAsync(List<IntervalDataEntry> entries)
         {
-            var options = new FindOptions<DatabaseEntry, DatabaseEntry>
+            CancellationTokenSource source = new CancellationTokenSource();
+            try
+            {                
+                client.StartSession(null, source.Token);
+                await GetIntervalDataCollection().InsertManyAsync(entries);
+                source.Cancel();
+            }
+            catch (Exception e)
             {
-                Limit = 1,
-                Sort = Builders<DatabaseEntry>.Sort.Descending(entry => entry.IntervalId)
-            };
-            DatabaseEntry max = (await GetCollection().FindAsync(FilterDefinition<DatabaseEntry>.Empty, options)).FirstOrDefault();
-            return max.IntervalId;
+                source.Cancel();
+                Debug.WriteLine(e.Message);
+            }
         }
     }
 }

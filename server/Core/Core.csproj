@@ -55,10 +55,7 @@
       <HintPath>..\ProbeSniffer\packages\System.Buffers.4.4.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
-      <HintPath>..\ProbeSniffer\packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -82,7 +79,8 @@
     <Compile Include="DeviceCommunication\TcpServer.cs" />
     <Compile Include="DeviceCommunication\UdpBroadcaster.cs" />
     <Compile Include="Models\Configuration.cs" />
-    <Compile Include="Models\DatabaseEntry.cs" />
+    <Compile Include="Models\Database\IntervalDataEntry.cs" />
+    <Compile Include="Models\Database\IntervalDescriptionEntry.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Models\DeviceData.cs" />
     <Compile Include="Models\ESP32_Device.cs" />
