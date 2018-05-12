@@ -29,8 +29,6 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             timer = new Timer((dispatcher) => UpdateAsync(dispatcher),Dispatcher.CurrentDispatcher,Timeout.Infinite,UPDATING_RATE);
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
-
-
             #region TESTING
             Devices = new ObservableCollection<Device>();
             Devices.Add(new Device() { X_Position = 50, Y_Position = 80, MAC = "00:00:00:00:00:00" });
@@ -49,11 +47,11 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             Devices.Add(new Device() { X_Position = 168, Y_Position = 247, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 158, Y_Position = 34, MAC = "00:00:00:00:00:00" });
             
-            ESPDevices = new ObservableCollection<Device>();
-            ESPDevices.Add(new Device() { X_Position = 0, Y_Position = 0, MAC = "00:00:00:00:00:00" });
-            ESPDevices.Add(new Device() { X_Position = 400, Y_Position = 0, MAC = "00:00:00:00:00:00" });
-            ESPDevices.Add(new Device() { X_Position = 0, Y_Position = 400, MAC = "00:00:00:00:00:00" });
-            ESPDevices.Add(new Device() { X_Position = 400, Y_Position = 400, MAC = "00:00:00:00:00:00" });
+            ESPDevices = new ObservableCollection<ESP32_Device>();
+            ESPDevices.Add(new ESP32_Device() { X_Position = 0, Y_Position = 0, MAC = "00:00:00:00:00:00" });
+            ESPDevices.Add(new ESP32_Device() { X_Position = 400, Y_Position = 0, MAC = "00:00:00:00:00:00" });
+            ESPDevices.Add(new ESP32_Device() { X_Position = 0, Y_Position = 400, MAC = "00:00:00:00:00:00" });
+            ESPDevices.Add(new ESP32_Device() { X_Position = 400, Y_Position = 400, MAC = "00:00:00:00:00:00" });
 
             foreach (Device d in Devices)
             {
@@ -93,7 +91,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
 
         #region Public Properties
         public ObservableCollection<Device> Devices { get; set; }
-        public ObservableCollection<Device> ESPDevices { get; set; }
+        public ObservableCollection<ESP32_Device> ESPDevices { get; set; }
         public ObservableCollection<KeyValuePair<int, string>> Points { get; set; }
         public Double MapWidth => _mapWidth + 20; //added offset for device size
         public Double MapHeight => _mapHeight + 20;
@@ -132,12 +130,15 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             });*/
 
             #region Test
-
             ((Dispatcher)dispatcher).Invoke(() => {
                 Points.RemoveAt(0);
-                Random r = new Random(DateTime.Now.Second);
-                int newv = (int)(r.NextDouble() * 1000 % 250); if (newv < 0) newv = (-newv) % 250;
-                Points.Add(new KeyValuePair<int, string>(newv,(int.Parse(Points[Points.Count-1].Value)+1).ToString()));
+                Devices.RemoveAt(0);
+                Random r = new Random(DateTime.Now.Millisecond);
+                int newp = (int)(r.NextDouble() * 1000); if (newp < 0) newp = (-newp);
+                int newx = (int)(r.NextDouble() * 1000); if (newx < 0) newx = (-newx);
+                int newy = (int)(r.NextDouble() * 1000); if (newy < 0) newy = (-newy);
+                Points.Add(new KeyValuePair<int, string>(newp % 250,(int.Parse(Points[Points.Count-1].Value)+1).ToString()));
+                Devices.Add(new Device { MAC = "AA:BB:CC:DD:EE:FF", X_Position= newx % 400 , Y_Position= newy%400  });
             });
             #endregion
         }
