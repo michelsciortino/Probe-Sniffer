@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := firmware
+PROJECT_NAME := main
 
 include $(IDF_PATH)/make/project.mk
 
