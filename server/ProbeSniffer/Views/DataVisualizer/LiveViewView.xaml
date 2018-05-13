@@ -36,19 +36,21 @@
                 <Border x:Name="Graph"
                         BorderBrush="Transparent"
                         BorderThickness="0"
-                        Padding="5"
+                        Padding="10,10,0,10"
                         ClipToBounds="True">
                     <graph:PointsGraph Points="{Binding Points}"
-                                          PolylineColor="{StaticResource AzureColorBrush}"
-                                          AxisColor="{StaticResource GreenColorBrush}"
-                                          VerticalSteps="5"
-                                          LabelsColor="{StaticResource GreenColorBrush}"
-                                          YAxisName="n° of devices"
-                                          XAxisName="Interval"
-                                          GraphContentPadding="10"
-                                          HorizontalSteps="20"
-                                          HorizontalStepsWidth="30"
-                                          VerticalAlignment="Bottom"/>
+                                       PolylineColor="{StaticResource AzureColorBrush}"
+                                       AxisColor="{StaticResource GreenColorBrush}"
+                                       VerticalSteps="5"
+                                       LabelsColor="{StaticResource GreenColorBrush}"
+                                       YAxisName="n° of devices"
+                                       XAxisName="Interval"
+                                       GraphContentPadding="10"
+                                       HorizontalSteps="20"
+                                       AxisOutlineLenght="20"
+                                       HorizontalStepsWidth="30"
+                                       VerticalAlignment="Bottom"
+                                       GraphHeight="200"/>
                 </Border>
             </Grid>
             
