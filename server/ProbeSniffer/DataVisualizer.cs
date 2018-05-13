@@ -83,6 +83,12 @@ namespace ProbeSniffer
             });
             state = VisualizerState.HIDDEN;
         }
+
+        public void Close()
+        {
+            state = VisualizerState.CLOSED;
+            VisualizerThread.Abort();
+        }
         #endregion
     }
 }
