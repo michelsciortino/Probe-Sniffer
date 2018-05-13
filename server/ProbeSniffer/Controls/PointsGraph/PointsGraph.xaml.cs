@@ -44,7 +44,7 @@ namespace ProbeSniffer.Controls.PointsGraph
             double offset = AxisThickness + GraphContentPadding;
             for (int i = 0; i < Points.Count; i++)
             {
-                graphPolyline.Points.Add(new Point(offset, Points[i].Key + AxisThickness + GraphContentPadding - minY));
+                graphPolyline.Points.Add(new Point(offset, ((double)((double)((double)(Points[i].Key-minY))/(maxY-minY)))*(GraphHeight) + AxisThickness + GraphContentPadding));
                 ((TextBlock)XLabels.Children[i]).Text = Points[i].Value;
                 Ellipse e = new Ellipse
                 {
@@ -54,7 +54,7 @@ namespace ProbeSniffer.Controls.PointsGraph
                     ToolTip = PointToolTip(Points[i].Key.ToString())
                 };
                 Canvas.SetLeft(e, offset - PointSize/2);
-                Canvas.SetTop(e, Points[i].Key + AxisThickness + GraphContentPadding - minY - PointSize/2);
+                Canvas.SetTop(e, ((double)((double)((double)(Points[i].Key - minY)) / (maxY - minY))) * (GraphHeight) + AxisThickness + GraphContentPadding- PointSize/2);
                 Graph.Children.Add(e);
                 offset += HorizontalStepsWidth;
             }
@@ -65,7 +65,7 @@ namespace ProbeSniffer.Controls.PointsGraph
             XAxis.Children.Clear();
             XLabels.Children.Clear();
 
-            double lineW = HorizontalStepsWidth * HorizontalSteps + AxisThickness + GraphContentPadding + AxisOutlineLenght;
+            double lineW = HorizontalStepsWidth * (HorizontalSteps - 1) + AxisThickness + GraphContentPadding + AxisOutlineLenght;
 
             //Adding the horizontal axis line
             xAxisLine = new Polyline();
@@ -131,7 +131,7 @@ namespace ProbeSniffer.Controls.PointsGraph
 
             //Adding the vertical axis line
             yAxisLine = new Polyline();
-            double lineH = maxY - minY + AxisThickness + GraphContentPadding + AxisOutlineLenght;
+            double lineH = GraphHeight + AxisThickness + GraphContentPadding + AxisOutlineLenght;
             yAxisLine.Points.Add(new Point(AxisThickness, AxisThickness / 2));
             yAxisLine.Points.Add(new Point(AxisThickness, lineH));
             yAxisLine.Stroke = AxisColor;
@@ -142,13 +142,13 @@ namespace ProbeSniffer.Controls.PointsGraph
             //Calculatin the steps height
             Double offset = 0;
             int n_division = 0;
-            double stepHeight = maxY-minY;
+            double stepHeight = GraphHeight;
             while (stepHeight > 10)
             {
                 n_division++;
                 stepHeight = stepHeight / 10;
             }
-            if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
+            //if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
             stepHeight = Math.Round(stepHeight, MidpointRounding.AwayFromZero);
             for (int i = 0; i < n_division; i++)
                 stepHeight = stepHeight * 10;
@@ -169,7 +169,7 @@ namespace ProbeSniffer.Controls.PointsGraph
 
                 TextBlock stepLabel = new TextBlock
                 {
-                    Text = Math.Round(offset + minY).ToString(),
+                    Text = Math.Round((i*stepHeight)*(maxY-minY)/GraphHeight + minY).ToString(),
                     FontSize = 8,
                     Foreground = LabelsColor
                 };
@@ -179,7 +179,7 @@ namespace ProbeSniffer.Controls.PointsGraph
                 
                 offset += stepHeight;
                 //Avoiding lines over the vertical axis arrow
-                if ((verticalPosition + stepHeight) > lineH - 5)
+                if ((verticalPosition + stepHeight) > lineH - AxisOutlineLenght)
                     break;
             }
 
@@ -202,29 +202,37 @@ namespace ProbeSniffer.Controls.PointsGraph
         private void UpdateXLabels()
         {
             int i;
+
+
             for (i = 0; i < Points.Count; i++)
             {
+                ((Polyline)XAxis.Children[i]).Visibility = Visibility.Visible;
                 ((TextBlock)XLabels.Children[i]).Text = Points[i].Value;
             }
+
             for (i = Points.Count; i < HorizontalSteps; i++)
             {
                 ((Polyline)XAxis.Children[i]).Visibility = Visibility.Hidden;
                 ((TextBlock)XLabels.Children[i]).Text = "";
             }
+
         }
 
         private void FindYAxisBounds()
         {
-            minY = int.MaxValue;
+            minY = int.MaxValue -20;
             maxY = int.MinValue;
             if (Points != null && Points.Count > 0)
             {
                 foreach (KeyValuePair<int, string> pair in Points)
                 {
-                    if (pair.Key < minY) minY = pair.Key;
+                    if (pair.Key < (minY +20)) minY = pair.Key -20;
                     if (pair.Key > maxY) maxY = pair.Key;
-                }
+                }                
             }
+            if (maxY < 50) maxY = 50;
+            if (minY < 0) minY = 0;
+
         }
         #endregion
 
@@ -320,39 +328,11 @@ namespace ProbeSniffer.Controls.PointsGraph
         }
         #endregion
         
-        #region Dependency Properties
-        
-        public ObservableCollection<KeyValuePair<int,string>> Points
+        #region Public Propeties
+        public ObservableCollection<KeyValuePair<int, string>> Points
         {
-            get { return (ObservableCollection<KeyValuePair<int,string>>)GetValue(PointsProperty); }
+            get { return (ObservableCollection<KeyValuePair<int, string>>)GetValue(PointsProperty); }
             set { SetValue(PointsProperty, value); }
-        }
-        public static readonly DependencyProperty PointsProperty =
-            DependencyProperty.Register("Points", typeof(ObservableCollection<KeyValuePair<int,string>>), typeof(PointsGraph), new FrameworkPropertyMetadata(null,OnPointChanged));
-
-        private static void OnPointChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            PointsGraph graph = sender as PointsGraph;
-
-            if (e.OldValue is ObservableCollection<KeyValuePair<int, string>> old_ && old_!=null)
-                old_.CollectionChanged -= graph.OnPointsCollectionChanged;
-            if (e.NewValue is ObservableCollection<KeyValuePair<int, string>> new_ && new_!=null)
-                new_.CollectionChanged += graph.OnPointsCollectionChanged;
-            graph.SetupXAxis();
-            graph.FindYAxisBounds();
-            graph.SetupYAxis();
-            graph.UpdateGraph();
-        }
-
-        private void OnPointsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (sender is ObservableCollection<KeyValuePair<int,string>> points)
-            {
-                UpdateXLabels();
-                FindYAxisBounds();
-                SetupYAxis();
-                UpdateGraph();
-            }
         }
 
         /// <summary>
@@ -363,8 +343,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (SolidColorBrush)GetValue(LabelsColorProperty); }
             set { SetValue(LabelsColorProperty, value); }
         }
-        public static readonly DependencyProperty LabelsColorProperty =
-            DependencyProperty.Register("LabelsColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
 
         /// <summary>
         /// The graph distance from the axis
@@ -374,8 +352,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (Double)GetValue(GraphContentPaddingProperty); }
             set { SetValue(GraphContentPaddingProperty, value); }
         }
-        public static readonly DependencyProperty GraphContentPaddingProperty =
-            DependencyProperty.Register("GraphContentPadding", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)20));
 
         /// <summary>
         /// The thickness of the axis
@@ -385,8 +361,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (Double)GetValue(AxisThicknessProperty); }
             set { SetValue(AxisThicknessProperty, value); }
         }
-        public static readonly DependencyProperty AxisThicknessProperty =
-            DependencyProperty.Register("AxisThickness", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)10));
 
         /// <summary>
         /// The number of steps on the Y axis (could be less)
@@ -396,8 +370,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (Double)GetValue(VerticalStepsProperty); }
             set { if (value > 0) SetValue(VerticalStepsProperty, value); }
         }
-        public static readonly DependencyProperty VerticalStepsProperty =
-            DependencyProperty.Register("VerticalSteps", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)5));
 
         /// <summary>
         /// The color of the axis
@@ -407,8 +379,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (SolidColorBrush)GetValue(AxisColorProperty); }
             set { SetValue(AxisColorProperty, value); }
         }
-        public static readonly DependencyProperty AxisColorProperty =
-            DependencyProperty.Register("AxisColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
 
         /// <summary>
         /// The color of the polyline
@@ -418,9 +388,7 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (SolidColorBrush)GetValue(PolylineColorProperty); }
             set { SetValue(PolylineColorProperty, value); }
         }
-        public static readonly DependencyProperty PolylineColorProperty =
-            DependencyProperty.Register("PolylineColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
-
+        
         /// <summary>
         /// The size of the points
         /// </summary>
@@ -429,8 +397,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (double)GetValue(PointSizeProperty); }
             set { SetValue(PointSizeProperty, value); }
         }
-        public static readonly DependencyProperty PointSizeProperty =
-            DependencyProperty.Register("PointSize", typeof(double), typeof(PolylineGraph), new PropertyMetadata((Double)5));
 
         /// <summary>
         /// The lenght of the axis line out of the graph space
@@ -440,8 +406,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (double)GetValue(AxisOutlineLenghtProperty); }
             set { SetValue(AxisOutlineLenghtProperty, value); }
         }
-        public static readonly DependencyProperty AxisOutlineLenghtProperty =
-            DependencyProperty.Register("AxisOutlineLenght", typeof(double), typeof(PolylineGraph), new PropertyMetadata((Double)10));
 
         /// <summary>
         /// The Y axis name
@@ -451,8 +415,6 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (string)GetValue(YAxisNameProperty); }
             set { SetValue(YAxisNameProperty, value); }
         }
-        public static readonly DependencyProperty YAxisNameProperty =
-            DependencyProperty.Register("YAxisName", typeof(string), typeof(PolylineGraph), new PropertyMetadata(""));
 
         /// <summary>
         /// The X axis name
@@ -462,24 +424,96 @@ namespace ProbeSniffer.Controls.PointsGraph
             get { return (string)GetValue(XAxisNameProperty); }
             set { SetValue(XAxisNameProperty, value); }
         }
-        public static readonly DependencyProperty XAxisNameProperty =
-            DependencyProperty.Register("XAxisName", typeof(string), typeof(PolylineGraph), new PropertyMetadata(""));
 
+        /// <summary>
+        /// The number of steps in the horizontal axis
+        /// </summary>
         public int HorizontalSteps
         {
             get { return (int)GetValue(HorizontalStepsProperty); }
             set { SetValue(HorizontalStepsProperty, value); }
         }
-        public static readonly DependencyProperty HorizontalStepsProperty =
-            DependencyProperty.Register("HorizontalSteps", typeof(int), typeof(PointsGraph), new PropertyMetadata(20));
 
+        /// <summary>
+        /// The space between the horizontal axis steps
+        /// </summary>
         public int HorizontalStepsWidth
         {
             get { return (int)GetValue(HorizontalStepsWidthProperty); }
             set { SetValue(HorizontalStepsWidthProperty, value); }
         }
+
+        /// <summary>
+        /// The height of the graph
+        /// </summary>
+        public double GraphHeight
+        {
+            get { return (double)GetValue(GraphHeightProperty); }
+            set { SetValue(GraphHeightProperty, value); }
+        }
+        #endregion
+
+        #region Dependency Properties
+        public static readonly DependencyProperty PointsProperty =
+            DependencyProperty.Register("Points", typeof(ObservableCollection<KeyValuePair<int,string>>), typeof(PointsGraph), new FrameworkPropertyMetadata(null,OnPointChanged));
+        public static readonly DependencyProperty LabelsColorProperty =
+            DependencyProperty.Register("LabelsColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
+        public static readonly DependencyProperty GraphContentPaddingProperty =
+            DependencyProperty.Register("GraphContentPadding", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)20));
+        public static readonly DependencyProperty AxisThicknessProperty =
+            DependencyProperty.Register("AxisThickness", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)10));
+        public static readonly DependencyProperty VerticalStepsProperty =
+            DependencyProperty.Register("VerticalSteps", typeof(Double), typeof(PolylineGraph), new PropertyMetadata((Double)5));
+        public static readonly DependencyProperty AxisColorProperty =
+            DependencyProperty.Register("AxisColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
+        public static readonly DependencyProperty PolylineColorProperty =
+            DependencyProperty.Register("PolylineColor", typeof(SolidColorBrush), typeof(PolylineGraph), new PropertyMetadata(Brushes.Black));
+        public static readonly DependencyProperty PointSizeProperty =
+            DependencyProperty.Register("PointSize", typeof(double), typeof(PolylineGraph), new PropertyMetadata((Double)5));
+        public static readonly DependencyProperty AxisOutlineLenghtProperty =
+            DependencyProperty.Register("AxisOutlineLenght", typeof(double), typeof(PolylineGraph), new PropertyMetadata((Double)10));
+        public static readonly DependencyProperty YAxisNameProperty =
+            DependencyProperty.Register("YAxisName", typeof(string), typeof(PolylineGraph), new PropertyMetadata(""));
+        public static readonly DependencyProperty XAxisNameProperty =
+            DependencyProperty.Register("XAxisName", typeof(string), typeof(PolylineGraph), new PropertyMetadata(""));
+        public static readonly DependencyProperty HorizontalStepsProperty =
+            DependencyProperty.Register("HorizontalSteps", typeof(int), typeof(PointsGraph), new PropertyMetadata(20));
         public static readonly DependencyProperty HorizontalStepsWidthProperty =
             DependencyProperty.Register("HorizontalStepsWidth", typeof(int), typeof(PointsGraph), new PropertyMetadata(40));
+        public static readonly DependencyProperty GraphHeightProperty =
+            DependencyProperty.Register("GraphHeight", typeof(double), typeof(PointsGraph), new PropertyMetadata((double)300));
+        #endregion
+
+        #region Private Methods
+        private static void OnPointChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            PointsGraph graph = sender as PointsGraph;
+
+            if (e.OldValue is ObservableCollection<KeyValuePair<int, string>> old_ && old_ != null)
+                old_.CollectionChanged -= graph.OnPointsCollectionChanged;
+            if (e.NewValue is ObservableCollection<KeyValuePair<int, string>> new_ && new_ != null)
+                new_.CollectionChanged += graph.OnPointsCollectionChanged;
+            graph.SetupXAxis();
+            graph.FindYAxisBounds();
+            graph.SetupYAxis();
+            graph.UpdateGraph();
+        }
+
+        private void OnPointsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (sender is ObservableCollection<KeyValuePair<int, string>> points)
+            {
+                UpdateXLabels();
+                if (e.Action == NotifyCollectionChangedAction.Remove)
+                    if (((KeyValuePair<int, string>)e.OldItems[e.OldStartingIndex]).Key <= (minY + 20) || ((KeyValuePair<int, string>)e.OldItems[e.OldStartingIndex]).Key>= maxY)
+                        FindYAxisBounds();
+                if(e.Action == NotifyCollectionChangedAction.Add)
+                    if(((KeyValuePair<int, string>)e.NewItems[e.NewItems.Count-1]).Key > maxY || ((KeyValuePair<int, string>)e.NewItems[e.NewItems.Count - 1]).Key < (minY + 20))
+                        FindYAxisBounds();
+                SetupYAxis();
+                UpdateGraph();
+            }
+        }
 
         #endregion
     }
