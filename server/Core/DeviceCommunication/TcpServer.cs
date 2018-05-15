@@ -1,11 +1,19 @@
-﻿using System;
+﻿using Core.DeviceCommunication.Messages.ESP32_Messages;
+using Core.DeviceCommunication.Messages.Server_Messages;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Core.DeviceCommunication
 {
+
+    #region Old TcpServer
+    /*
     public static class TcpServer
     {
 
@@ -233,4 +241,267 @@ namespace Core.DeviceCommunication
         #endregion
 
     }
+    */
+    #endregion
+
+    #region New TcpServer
+
+
+    public class TcpServer
+    {
+        #region Private Members
+        private CancellationTokenSource ListenerThreadCancellationTokenSource = null;
+        private Mutex MessagesQueueMutex = null;
+        private Task ListenerThread = null;
+        private TcpListener listener = null;
+        private Queue<ESP_Message> MessagesQueue { get; set; }
+        #endregion
+
+        #region Public Properties
+        public bool IsStarted = false;
+        public bool FirstTimestampSent { get; set; } = false;
+        public int EnquedMessages
+        {
+            get
+            {
+                int n;
+                MessagesQueueMutex.WaitOne();
+                n = MessagesQueue.Count;
+                MessagesQueueMutex.ReleaseMutex();
+                return n;
+            }
+        }
+        #endregion
+
+        #region Signals
+        public static ManualResetEvent tcpClientConnected = null;
+        #endregion
+
+
+        public TcpServer() {
+            MessagesQueue = new Queue<ESP_Message>();
+            tcpClientConnected = new ManualResetEvent(false);
+            MessagesQueueMutex = new Mutex();
+        }
+
+        public void Start(IPAddress localIp,int port)
+        {
+            if (IsStarted) return;
+            ListenerThreadCancellationTokenSource = new CancellationTokenSource();
+            try
+            {
+                ListenerThread = new Task(() => ListenerCallBack(localIp, port,ListenerThreadCancellationTokenSource.Token));
+                IsStarted = true;
+            }
+            catch(Exception ex)
+            {
+                Debug.WriteLine(ex);
+                IsStarted = false;
+            }
+        }
+
+        private void ListenerCallBack(IPAddress localIp, int port, CancellationToken token)
+        {
+            TcpListener listener = null;
+            IPEndPoint localEndPoint = null;
+            byte[] bytes = new Byte[1024];
+
+            try { localEndPoint = new IPEndPoint(localIp, port); }
+            catch { return; }
+
+            try { listener = new TcpListener(localIp, port); }
+            catch { return; }
+
+            try
+            {
+                listener.Start();
+                while (true)
+                {
+                    if (token.IsCancellationRequested) break;
+                    tcpClientConnected.Reset();
+                    listener.BeginAcceptTcpClient(new AsyncCallback(AcceptCallback), listener);
+                    tcpClientConnected.WaitOne();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return;
+            }
+        }
+
+        private void AcceptCallback(IAsyncResult ar)
+        {
+            TcpListener listener = (TcpListener)ar.AsyncState;
+            TcpClient client = listener.EndAcceptTcpClient(ar);
+            Task serveClient = new Task(() => ServeClient(client));
+            serveClient.Start();
+            tcpClientConnected.Set();
+        }
+
+        private void ServeClient(TcpClient client)
+        {
+            int headerCode;
+            byte[] bytes;
+
+            ESP_Message message;
+
+            while (true)
+            {
+                bytes=Receive(client,1);
+                if (bytes == null) break;
+                headerCode = bytes[0];
+
+                message = null;
+
+                switch (headerCode)
+                {
+                    case Ready_Message.READY_HEADER:
+                        try
+                        {
+                            bytes = Receive(client,Ready_Message.PAYLOAD_LENGTH);
+                            if (bytes == null) return;
+                            if (bytes.Length != Ready_Message.PAYLOAD_LENGTH)
+                            {
+                                message = null;
+                                break;
+                            }
+                            message = new Ready_Message
+                            {
+                                Header = Ready_Message.READY_HEADER,
+                                Payload = Encoding.ASCII.GetString(bytes, 0, Ready_Message.PAYLOAD_LENGTH)
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                            message = null;
+                        }
+                        break;
+
+                    case Data_Message.DATA_HEADER:
+                        try
+                        {
+                            int jsonLenght = -1;
+                            if ((bytes = Receive(client,1)) is null ||
+                                (jsonLenght = bytes[0]) < 0 ||
+                                (bytes = Receive(client,bytes[0])) is null)
+                            {
+                                message = null;
+                                break;
+                            }
+
+                            message = new Data_Message
+                            {
+                                Header = Data_Message.DATA_HEADER,
+                                Payload = Encoding.ASCII.GetString(bytes, 0, jsonLenght)
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                            message = null;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                if(message!=null)
+                {
+                    MessagesQueueMutex.WaitOne();
+                    MessagesQueue.Enqueue(message);
+                    MessagesQueueMutex.ReleaseMutex();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Receives <paramref name="nBytes"/> from the EndPoint
+        /// </summary>
+        /// <param name="nBytes">Number of bytes to receive</param>
+        /// <returns>The received bytes</returns>
+        private static byte[] Receive(TcpClient client,int nBytes)
+        {
+
+            byte[] bytes = new byte[nBytes];
+            int readBytes = 0, leftBytes = nBytes;
+
+            try
+            {
+                NetworkStream stream = client.GetStream();
+                while (leftBytes < nBytes)
+                {
+                    readBytes = stream.Read(bytes, nBytes - leftBytes, nBytes);
+                    leftBytes -= readBytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return null;
+            }
+            return bytes;
+        }
+
+        public Queue<ESP_Message> GetNewMessages(int max)
+        {
+            Queue<ESP_Message> messages = new Queue<ESP_Message>();
+
+            MessagesQueueMutex.WaitOne();
+            for (int i = 0; i < max; i++)
+            {
+                if (MessagesQueue.Count > 0)
+                {
+                    try { messages.Enqueue(MessagesQueue.Dequeue()); }
+                    catch { break; }
+                }
+                else
+                    break;
+            }           
+            MessagesQueueMutex.ReleaseMutex();
+            return messages;
+        }
+
+        public bool SendMessage(IPEndPoint remoteEsp,Server_Message message)
+        {
+            try
+            {
+                TcpClient client = new TcpClient();
+                if(!client.ConnectAsync(remoteEsp.Address, remoteEsp.Port).Wait(1000))
+                    return false;
+                Send(client, message.ToBytes());
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+
+        /// <summary>
+        /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
+        /// </summary>
+        /// <param name="bytes">The array of bytes to send</param>
+        /// <returns>True if the bytes has been sent, False otherwise</returns>
+        private static bool Send(TcpClient client, byte[] bytes)
+        {
+            NetworkStream stream;
+
+            try
+            {
+                stream = client.GetStream();
+                stream.Write(bytes, 0, bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+            return true;
+        }
+    }
+
+
+    #endregion
 }
