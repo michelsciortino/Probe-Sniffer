@@ -11,7 +11,7 @@ namespace Core.Models
 
         private int _nDevices = 0;
         private List<Device> _devices = null;
-        private string _ssid = null;
+        //private string _ssid = null;
 
         #endregion
 
@@ -25,6 +25,7 @@ namespace Core.Models
         }
         #endregion
 
+        /*
         #region Public Properties
         /// <summary>
         /// Get the SSID
@@ -35,7 +36,7 @@ namespace Core.Models
             set => _ssid = value;
         }
         #endregion
-
+        */
 
         #region Public Methods
         /// <summary>
