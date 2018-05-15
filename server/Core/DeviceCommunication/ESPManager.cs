@@ -7,7 +7,7 @@ using Core.DeviceCommunication.Messages.Server_Messages;
 using Core.Models;
 
 namespace Core.DeviceCommunication
-{
+{/*
     public class ESPManager
     {
         #region Private Properties
@@ -180,4 +180,5 @@ namespace Core.DeviceCommunication
 
         #endregion
     }
+    */
 }
