@@ -9,6 +9,8 @@ using Core.DeviceCommunication.Messages.ESP32_Messages;
 
 namespace Core.DeviceCommunication
 {
+    #region Old DeviceConnectionManager
+    /*
     public class DeviceConnectionManager
     {
         #region Const
@@ -206,4 +208,6 @@ namespace Core.DeviceCommunication
         #endregion
 
     }
+    */
+    #endregion
 }
