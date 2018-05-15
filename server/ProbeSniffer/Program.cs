@@ -87,51 +87,44 @@ namespace ProbeSniffer
             Stream iconStream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/icon.ico")).Stream;
             notifyIcon.Icon = new System.Drawing.Icon(iconStream);
             notifyIcon.Visible = true;
-            System.Windows.Forms.MenuItem[] items = new System.Windows.Forms.MenuItem[1];
-            items[0] = new System.Windows.Forms.MenuItem("Exit");
-            items[0].Click += Exit;
-            notifyIcon.ContextMenu = new System.Windows.Forms.ContextMenu(items);
             notifyIcon.Click += NotifyIcon_Click;
             toast = new ToastMenu();
-            toast.MouseDoubleClick += toast_MouseDoubleClick;
+            toast.MouseDoubleClick += Toast_MouseDoubleClick;
             toast.Deactivated += MenuFlyout_Deactivated;
+            toast.ExitCLicked += Exit;
+            toast.ShowGraphClicked += Toast_ShowGraphClicked;                   
 
             //Opening visualizer
             //splash.Close();
             visualizer = new DataVisualizer(configuration?.Devices);
             visualizer.Show();
         }
-        
-        private void ShowErrorMessage(string message)
-        {
-            MessageBox.Show(message,
+
+        private void Toast_ShowGraphClicked(object sender, RoutedEventArgs e) => visualizer.Show();
+
+        private void ShowErrorMessage(string message) => MessageBox.Show(message,
                             "Error",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error,
                             MessageBoxResult.None,
                             MessageBoxOptions.DefaultDesktopOnly);
-        }
 
         private void Exit(object sender, EventArgs e)
         {
-            notifyIcon.Visible = false;
             toast.Close();
             visualizer.Close();
+            notifyIcon.Visible = false;
             Application.Current.Shutdown();
         }
 
-        private void MenuFlyout_Deactivated(object sender, EventArgs e)
-        {
-            toast.Hide();
-        }
+        private void MenuFlyout_Deactivated(object sender, EventArgs e) => toast.Hide();
 
-        private void toast_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            toast.Hide();
-        }
+        private void Toast_MouseDoubleClick(object sender, MouseButtonEventArgs e) => toast.Hide();
 
         private void NotifyIcon_Click(object sender, EventArgs e)
         {
+            toast.Left = SystemParameters.WorkArea.Width - toast.Width;
+            toast.Top = SystemParameters.WorkArea.Height - toast.Height;
             toast.Opacity = 0;
             toast.Show();
             toast.Activate();
