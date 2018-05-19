@@ -228,7 +228,7 @@ void recv_from_server(int s)
 }
 
 //first connection with server at startup (TCP:48448): sends OK + MAC address
-void send_ready()
+int send_ready()
 {
  int s, result, i, sent_len;
  struct sockaddr_in str_sock_s;
@@ -510,6 +510,9 @@ void initialize_st()
 //main function
 void app_main()
 {
+ char buf[BUFLEN];
+ int s, sent_len, i;
+ uint8_t mac[6];
  esp_err_t ret = nvs_flash_init();
  if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
   ESP_ERROR_CHECK(nvs_flash_erase());
