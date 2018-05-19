@@ -369,7 +369,7 @@ static void setup_and_connect_wifi(void)
  wifi_config_t wifi_config = {
   .sta = {
    .ssid = DEFAULT_SSID,
-   .password = DEFAULT_PWD,
+   //.password = DEFAULT_PWD,
    //.scan_method = DEFAULT_SCAN_METHOD,
    //.sort_method = DEFAULT_SORT_METHOD,
    //.threshold.rssi = DEFAULT_RSSI,
