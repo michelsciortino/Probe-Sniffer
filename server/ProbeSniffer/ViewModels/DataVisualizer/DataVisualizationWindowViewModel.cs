@@ -55,7 +55,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
         public ICommand SelectionCommand => _selectionCommand ??
                                             (_selectionCommand = new RelayCommand<object>((x) => Navigate((SelectionChangedEventArgs)x)));
         public ICommand AboutCommand => _aboutCommand ??
-                                        (_aboutCommand = new RelayCommand<object>((x) => MessageBox.Show(AboutMessage, AboutCaption, MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.None,MessageBoxOptions.ServiceNotification)));
+                                        (_aboutCommand = new RelayCommand<object>((x) => ShowAbout()));
         #endregion
 
         #region Private Methods
@@ -86,6 +86,12 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             {
                 default: break;
             }
+        }
+
+        private void ShowAbout()
+        {
+            Core.Controls.MessageBox message = new Core.Controls.MessageBox(AboutMessage, AboutCaption, MessageBoxButton.OK, MessageBoxImage.None, MessageBoxResult.None);
+            message.Show();
         }
         #endregion
     }
