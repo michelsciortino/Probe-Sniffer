@@ -1,4 +1,5 @@
-﻿using Core.Models.Database;
+﻿using Core.Models;
+using Core.Models.Database;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using System;
@@ -13,8 +14,10 @@ namespace Core.DBConnection
     {
         private static Object ThreadSafeLock = new Object();
         private MongoClient client;
-        private string DatabaseName = "ProbeSniffer";
-        
+        private const string DatabaseName = "ProbeSniffer";
+        private const string PacketsCollectionName = "Packets";
+        private const string ESPsCollectionName = "ESPs";
+
 
         public bool Connected { get; set; } = false;
 
@@ -22,7 +25,8 @@ namespace Core.DBConnection
         {
             client = new MongoClient(new MongoClientSettings
             {
-                ConnectTimeout = new TimeSpan(0, 0, 10)
+                ConnectTimeout = new TimeSpan(0, 0, 10),
+                ConnectionMode= ConnectionMode.Direct
             });
             if (client.Cluster.Description.State == MongoDB.Driver.Core.Clusters.ClusterState.Disconnected)
                 Connected = false;
@@ -31,100 +35,78 @@ namespace Core.DBConnection
             return Connected;
         }
 
-        private IMongoCollection<IntervalDataEntry> GetIntervalDataCollection()
+        private IMongoCollection<Packet> GetPacketCollection()
         {
             lock (ThreadSafeLock)
             {
                 if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
-                return client.GetDatabase(DatabaseName).GetCollection<IntervalDataEntry>("IntervalData");
+                return client.GetDatabase(DatabaseName).GetCollection<Packet>(PacketsCollectionName);
             }
         }
 
-        private IMongoCollection<IntervalDescriptionEntry> GetIntervalDescriptionCollection()
+        private IMongoCollection<Device> GetESPsCollection()
         {
             lock (ThreadSafeLock)
             {
                 if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
-                return client.GetDatabase(DatabaseName).GetCollection<IntervalDescriptionEntry>("IntervalDescription");
+                return client.GetDatabase(DatabaseName).GetCollection<Device>(ESPsCollectionName);
             }
         }
-        /*
-        public IList<DatabaseEntry> GetAllData()
+
+        public async Task<List<Packet>> GetIntervalPacketAsync(DateTime start, DateTime end)
         {
-            List<DatabaseEntry> entries = new List<DatabaseEntry>();
-            try
-            {
-                IMongoCollection<DatabaseEntry> collection = GetCollection();
-                if (collection is null) return entries;
-                List<DatabaseEntry> new_entries = null;
-                lock (ThreadSafeLock)
-                {
-                    new_entries = collection.Find(_ => true).ToList();
-                }
-                entries.AddRange(new_entries);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-            }
-            return entries;
-        }
-        */
-        public async Task<List<IntervalDataEntry>> GetLastIntervalDataEntriesAsync()
-        {
-            List<IntervalDataEntry> entries = new List<IntervalDataEntry>();
-
-            IntervalDescriptionEntry last= await GetLastIntervalDescritpionEntryAsync();
-            Debug.WriteLine("Max found: " + last.IntervalId);
-
-            entries.AddRange((await GetIntervalDataCollection().FindAsync((entry) => entry.IntervalId == last.IntervalId)).ToList());
-
+            List<Packet> entries = new List<Packet>();
+            entries.AddRange((await GetPacketCollection().FindAsync((entry) => entry.Timestamp >= start && entry.Timestamp < end)).ToList());
             return entries;
         }
 
-        public async Task<IntervalDescriptionEntry> GetLastIntervalDescritpionEntryAsync()
+        public async Task<ESP32_Device> GetESPPositionByTimestampAsync(string mac, DateTime timestamp)
         {
-            IntervalDescriptionEntry entry;
-            
-            var options = new FindOptions<IntervalDescriptionEntry, IntervalDescriptionEntry>
+            Device entry;
+
+
+            var options = new FindOptions<Device, Device>
             {
                 Limit = 1,
-                Sort = Builders<IntervalDescriptionEntry>.Sort.Descending(e => e.IntervalId)
+                Sort = Builders<Device>.Sort.Descending(e => e.Timestamp),
             };
 
-            entry = (await GetIntervalDescriptionCollection().FindAsync(FilterDefinition<IntervalDescriptionEntry>.Empty, options)).FirstOrDefault();
-            return entry;
+            entry = (await GetESPsCollection().FindAsync(e => e.MAC == mac && e.Timestamp < timestamp, options)).FirstOrDefault();
+            return new ESP32_Device(entry);
         }
 
-        public async Task StoreIntervalDescriptionEntryAsync(IntervalDescriptionEntry entry)
+        public async Task<bool> StoreESPAsync(ESP32_Device entry)
         {
-            CancellationTokenSource source = new CancellationTokenSource();
-            try
+            try { await GetESPsCollection().InsertOneAsync(entry); }
+            catch (Exception ex)
             {
-                client.StartSession(null, source.Token);
-                await GetIntervalDescriptionCollection().InsertOneAsync(entry);
-                source.Cancel();
+                Debug.WriteLine(ex.Message);
+                return false;
             }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e.Message);
-            }
+            return true;
         }
 
-        public async Task StoreIntervalDataEntriesAsync(List<IntervalDataEntry> entries)
+        public async Task<bool> StorePacketAsync(Packet packet)
         {
-            CancellationTokenSource source = new CancellationTokenSource();
-            try
-            {                
-                client.StartSession(null, source.Token);
-                await GetIntervalDataCollection().InsertManyAsync(entries);
-                source.Cancel();
-            }
-            catch (Exception e)
+            try { await GetPacketCollection().InsertOneAsync(packet); }
+            catch (Exception ex)
             {
-                source.Cancel();
-                Debug.WriteLine(e.Message);
+                Debug.WriteLine(ex.Message);
+                return false;
             }
+            return true;
         }
+
+        public async Task<bool> StorePacketListAsync(List<Packet> packets)
+        {
+            try { await GetPacketCollection().InsertManyAsync(packets); }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+            return true;
+        }
+
     }
 }
