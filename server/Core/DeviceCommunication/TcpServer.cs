@@ -1,5 +1,6 @@
 ﻿using Core.DeviceCommunication.Messages.ESP32_Messages;
 using Core.DeviceCommunication.Messages.Server_Messages;
+using Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -45,7 +46,7 @@ namespace Core.DeviceCommunication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log(ex.Message);
                 throw;
             }
             try
@@ -55,7 +56,7 @@ namespace Core.DeviceCommunication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log(ex.Message);
                 _started = false;
             }
             return _started;
@@ -150,7 +151,7 @@ namespace Core.DeviceCommunication
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.Message);
+                    Logger.Log(ex.Message);
                     result = false;
                 }
             }
@@ -184,7 +185,7 @@ namespace Core.DeviceCommunication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log(ex.Message);
                 return null;
             }
             return bytes;
@@ -207,7 +208,7 @@ namespace Core.DeviceCommunication
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine(ex.Message);
+                    Logger.Log(ex.Message);
                     return false;
                 }
             }
@@ -235,7 +236,7 @@ namespace Core.DeviceCommunication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log(ex.Message);
             }
         }
         #endregion
@@ -249,25 +250,60 @@ namespace Core.DeviceCommunication
 
     public class TcpServer
     {
+        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 20000;
+
         #region Private Members
         private CancellationTokenSource ListenerThreadCancellationTokenSource = null;
-        private Mutex MessagesQueueMutex = null;
-        private Task ListenerThread = null;
+        private Mutex messagesQueueMutex = null;
+        private Mutex canReceiveDataMutex = null;
+        private Mutex clientsListMutex = null;
+        private Task listenerTask = null;
         private TcpListener listener = null;
-        private Queue<ESP_Message> MessagesQueue { get; set; }
+        private Queue<Data_Message> messagesQueue = null;
+        private List<TcpClient> clients = null;
+        private Timer syncronizer = null;
+        #endregion
+
+        #region Private Properties
+        private bool _canReceiveData = false;
+        private bool _isStarted = false;
         #endregion
 
         #region Public Properties
-        public bool IsStarted = false;
-        public bool FirstTimestampSent { get; set; } = false;
+        public bool IsStarted => _isStarted;
+
+        public bool CanReceiveData
+        {
+            get => _canReceiveData;
+            set
+            {
+                canReceiveDataMutex.WaitOne();
+                _canReceiveData = value;
+                try
+                {
+                    if (value is true)
+                    {
+                        clientsListMutex.WaitOne();
+                        foreach (var c in clients) Send(c, new Ok_Message().ToBytes());
+                        clientsListMutex.ReleaseMutex();
+                        syncronizer.Change(0, SYNC_INTERVAL);
+                    }
+                    else
+                        syncronizer.Change(Timeout.Infinite, Timeout.Infinite);
+                }
+                catch(Exception ex) { Debug.WriteLine(ex.Message); }
+                canReceiveDataMutex.ReleaseMutex();
+            }
+        }
+
         public int EnquedMessages
         {
             get
             {
                 int n;
-                MessagesQueueMutex.WaitOne();
-                n = MessagesQueue.Count;
-                MessagesQueueMutex.ReleaseMutex();
+                messagesQueueMutex.WaitOne();
+                n = messagesQueue.Count;
+                messagesQueueMutex.ReleaseMutex();
                 return n;
             }
         }
@@ -277,34 +313,59 @@ namespace Core.DeviceCommunication
         public static ManualResetEvent tcpClientConnected = null;
         #endregion
 
-
-        public TcpServer() {
-            MessagesQueue = new Queue<ESP_Message>();
+        #region Constructor
+        public TcpServer()
+        {
+            messagesQueue = new Queue<Data_Message>();
             tcpClientConnected = new ManualResetEvent(false);
-            MessagesQueueMutex = new Mutex();
+            messagesQueueMutex = new Mutex();
+            canReceiveDataMutex = new Mutex();
+            clientsListMutex = new Mutex();
+            clients = new List<TcpClient>();
+            syncronizer = new Timer(SyncronizeClients, null, Timeout.Infinite, Timeout.Infinite);
         }
+        #endregion
 
-        public void Start(IPAddress localIp,int port)
+        #region Public Methods
+        public void Start()
         {
             if (IsStarted) return;
+            IPAddress localIp = LocalNetworkConnection.GetLocalIp();
             ListenerThreadCancellationTokenSource = new CancellationTokenSource();
             try
             {
-                ListenerThread = new Task(() => ListenerCallBack(localIp, port,ListenerThreadCancellationTokenSource.Token));
-                IsStarted = true;
+                listenerTask = new Task(() => ListenerCallBack(localIp, SERVER_PORT,ListenerThreadCancellationTokenSource.Token));
+                listenerTask.Start();
+                _isStarted = true;
             }
             catch(Exception ex)
             {
-                Debug.WriteLine(ex);
-                IsStarted = false;
+                Debug.WriteLine(ex.Message);
+                _isStarted = false;
             }
         }
 
+        public Queue<Data_Message> GetNewMessages()
+        {
+            Queue<Data_Message> messages = new Queue<Data_Message>();
+
+            messagesQueueMutex.WaitOne();
+            while (messagesQueue.Count > 0)
+            {
+                try { messages.Enqueue(messagesQueue.Dequeue()); }
+                catch { break; }
+            }
+            messagesQueueMutex.ReleaseMutex();
+            return messages;
+        }
+        #endregion
+
+        #region Private Methods
+
         private void ListenerCallBack(IPAddress localIp, int port, CancellationToken token)
         {
-            TcpListener listener = null;
+            listener = null;
             IPEndPoint localEndPoint = null;
-            byte[] bytes = new Byte[1024];
 
             try { localEndPoint = new IPEndPoint(localIp, port); }
             catch { return; }
@@ -325,7 +386,7 @@ namespace Core.DeviceCommunication
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Debug.WriteLine(ex.Message);
                 return;
             }
         }
@@ -334,22 +395,25 @@ namespace Core.DeviceCommunication
         {
             TcpListener listener = (TcpListener)ar.AsyncState;
             TcpClient client = listener.EndAcceptTcpClient(ar);
-            Task serveClient = new Task(() => ServeClient(client));
-            serveClient.Start();
+            clientsListMutex.WaitOne();
+            clients.Add(client);
+            clientsListMutex.ReleaseMutex();
+            ServeClientAsync(client);
             tcpClientConnected.Set();
         }
 
-        private void ServeClient(TcpClient client)
+        private async Task ServeClientAsync(TcpClient client)
         {
             int headerCode;
             byte[] bytes;
-
             ESP_Message message;
-
+            ESP32_Device esp = null;
             while (true)
             {
-                bytes=Receive(client,1);
-                if (bytes == null) break;
+                bytes= await ReceiveAsync(client,1);
+                if (bytes == null)
+                    if (client.Connected) continue;
+                    else break;
                 headerCode = bytes[0];
 
                 message = null;
@@ -359,8 +423,9 @@ namespace Core.DeviceCommunication
                     case Ready_Message.READY_HEADER:
                         try
                         {
-                            bytes = Receive(client,Ready_Message.PAYLOAD_LENGTH);
-                            if (bytes == null) return;
+                            bytes = await ReceiveAsync(client,Ready_Message.PAYLOAD_LENGTH);
+                            if (bytes == null)
+                                break;
                             if (bytes.Length != Ready_Message.PAYLOAD_LENGTH)
                             {
                                 message = null;
@@ -376,6 +441,7 @@ namespace Core.DeviceCommunication
                         {
                             Debug.WriteLine(ex.Message);
                             message = null;
+                            break;
                         }
                         break;
 
@@ -383,9 +449,9 @@ namespace Core.DeviceCommunication
                         try
                         {
                             int jsonLenght = -1;
-                            if ((bytes = Receive(client,1)) is null ||
+                            if ((bytes = await ReceiveAsync(client,1)) is null ||
                                 (jsonLenght = bytes[0]) < 0 ||
-                                (bytes = Receive(client,bytes[0])) is null)
+                                (bytes = await ReceiveAsync(client,bytes[0])) is null)
                             {
                                 message = null;
                                 break;
@@ -401,18 +467,43 @@ namespace Core.DeviceCommunication
                         {
                             Debug.WriteLine(ex.Message);
                             message = null;
+                            break;
                         }
                         break;
                     default:
                         break;
                 }
-                if(message!=null)
+
+                if (message is null)
+                    break;
+                if (message is Ready_Message)
                 {
-                    MessagesQueueMutex.WaitOne();
-                    MessagesQueue.Enqueue(message);
-                    MessagesQueueMutex.ReleaseMutex();
+                    if (ESPManager.IsESPConfigured(message.Payload))
+                    {
+                        if(esp is null)
+                        {
+                            esp = ESPManager.GetESPDevice(message.Payload);
+                            Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                        }
+                        if (CanReceiveData is true)
+                            Send(client, new Ok_Message().ToBytes());
+                    }
+                    else
+                        break;
                 }
+                else if (message is Data_Message) EnqueueMessage(message as Data_Message);
             }
+            client.Close();
+            if(esp!=null)
+                Logger.Log("An ESP disconnected\t\tx: " + esp.X_Position + " y: " + esp.Y_Position + "\r\n");
+            KillZombies();
+        }
+
+        private void EnqueueMessage(Data_Message message)
+        {
+            messagesQueueMutex.WaitOne();
+            messagesQueue.Enqueue(message);
+            messagesQueueMutex.ReleaseMutex();
         }
 
         /// <summary>
@@ -420,7 +511,7 @@ namespace Core.DeviceCommunication
         /// </summary>
         /// <param name="nBytes">Number of bytes to receive</param>
         /// <returns>The received bytes</returns>
-        private static byte[] Receive(TcpClient client,int nBytes)
+        private static async Task<byte[]> ReceiveAsync(TcpClient client,int nBytes)
         {
 
             byte[] bytes = new byte[nBytes];
@@ -429,9 +520,9 @@ namespace Core.DeviceCommunication
             try
             {
                 NetworkStream stream = client.GetStream();
-                while (leftBytes < nBytes)
+                while (leftBytes > 0)
                 {
-                    readBytes = stream.Read(bytes, nBytes - leftBytes, nBytes);
+                    readBytes = await stream.ReadAsync(bytes, nBytes - leftBytes, nBytes);
                     leftBytes -= readBytes;
                 }
             }
@@ -442,42 +533,6 @@ namespace Core.DeviceCommunication
             }
             return bytes;
         }
-
-        public Queue<ESP_Message> GetNewMessages(int max)
-        {
-            Queue<ESP_Message> messages = new Queue<ESP_Message>();
-
-            MessagesQueueMutex.WaitOne();
-            for (int i = 0; i < max; i++)
-            {
-                if (MessagesQueue.Count > 0)
-                {
-                    try { messages.Enqueue(MessagesQueue.Dequeue()); }
-                    catch { break; }
-                }
-                else
-                    break;
-            }           
-            MessagesQueueMutex.ReleaseMutex();
-            return messages;
-        }
-
-        public bool SendMessage(IPEndPoint remoteEsp,Server_Message message)
-        {
-            try
-            {
-                TcpClient client = new TcpClient();
-                if(!client.ConnectAsync(remoteEsp.Address, remoteEsp.Port).Wait(1000))
-                    return false;
-                Send(client, message.ToBytes());
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
 
         /// <summary>
         /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
@@ -500,8 +555,41 @@ namespace Core.DeviceCommunication
             }
             return true;
         }
+
+        private void SyncronizeClients(object state)
+        {
+            clientsListMutex.WaitOne();
+            foreach(TcpClient c in clients)
+                if(SendTimestamp(c) is false) c.Close();
+            clientsListMutex.ReleaseMutex();
+        }
+
+        private static bool SendTimestamp(TcpClient client)
+        {
+            NetworkStream stream;
+
+            try
+            {
+                stream = client.GetStream();
+                Timestamp_Message message = new Timestamp_Message();
+                byte[] bytes = message.ToBytes();
+                stream.Write(bytes, 0, bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return false;
+            }
+            return true;
+        }
+
+        private void KillZombies()
+        {
+            clientsListMutex.WaitOne();
+            clients.RemoveAll(c => c.Connected is false);
+            clientsListMutex.ReleaseMutex();
+        }
+        #endregion
     }
-
-
     #endregion
 }
