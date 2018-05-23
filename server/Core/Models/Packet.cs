@@ -9,5 +9,6 @@ namespace Core.Models
         public DateTime Timestamp { get; set; }
         public string Hash { get; set; }
         public int SignalStrength { get; set; }
+        public string ESP_MAC { get; set; }
     }
 }
