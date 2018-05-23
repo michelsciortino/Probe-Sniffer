@@ -31,7 +31,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             dbConnection.Connect();
             #region TESTING
             Devices = new ObservableCollection<Device>();
-            Devices.Add(new Device() { X_Position = 50, Y_Position = 80, MAC = "00:00:00:00:00:00" });
+            /*Devices.Add(new Device() { X_Position = 50, Y_Position = 80, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 17, Y_Position = 180, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 215, Y_Position = 320, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 10, Y_Position = 130, MAC = "00:00:00:00:00:00" });
@@ -46,7 +46,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             Devices.Add(new Device() { X_Position = 198, Y_Position = 357, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 168, Y_Position = 247, MAC = "00:00:00:00:00:00" });
             Devices.Add(new Device() { X_Position = 158, Y_Position = 34, MAC = "00:00:00:00:00:00" });
-            
+            */
             ESPDevices = new ObservableCollection<ESP32_Device>();
             ESPDevices.Add(new ESP32_Device() { X_Position = 0, Y_Position = 0, MAC = "00:00:00:00:00:00" });
             ESPDevices.Add(new ESP32_Device() { X_Position = 400, Y_Position = 0, MAC = "00:00:00:00:00:00" });
@@ -65,7 +65,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             }
 
             Points = new ObservableCollection<KeyValuePair<int,string>>();
-            Points.Add(new KeyValuePair<int, string>(100,"1"));
+            /*Points.Add(new KeyValuePair<int, string>(100,"1"));
             Points.Add(new KeyValuePair<int, string>(180,"2"));
             Points.Add(new KeyValuePair<int, string>(170,"3"));
             Points.Add(new KeyValuePair<int, string>(100,"4"));
@@ -84,7 +84,7 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
             Points.Add(new KeyValuePair<int, string>(186,"17"));
             Points.Add(new KeyValuePair<int, string>(194,"18"));
             Points.Add(new KeyValuePair<int, string>(136,"19"));
-            Points.Add(new KeyValuePair<int, string>(136,"20"));
+            Points.Add(new KeyValuePair<int, string>(136,"20"));*/
             #endregion
         }
         #endregion
@@ -131,13 +131,19 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
 
             #region Test
             ((Dispatcher)dispatcher).Invoke(() => {
-                Points.RemoveAt(0);
-                Devices.RemoveAt(0);
+                int Id;
+                if(Points.Count>=20)
+                    Points.RemoveAt(0);
+                if(Devices.Count > 50)
+                    Devices.RemoveAt(0);
                 Random r = new Random(DateTime.Now.Millisecond);
                 int newp = (int)(r.NextDouble() * 1000); if (newp < 0) newp = (-newp);
                 int newx = (int)(r.NextDouble() * 1000); if (newx < 0) newx = (-newx);
                 int newy = (int)(r.NextDouble() * 1000); if (newy < 0) newy = (-newy);
-                Points.Add(new KeyValuePair<int, string>(newp % 250,(int.Parse(Points[Points.Count-1].Value)+1).ToString()));
+                if (Points.Count == 0) Id = 0;
+                else Id = int.Parse(Points[Points.Count - 1].Value) + 1;
+                //Points.Add(new KeyValuePair<int, string>(0,(Id).ToString()));
+                Points.Add(new KeyValuePair<int, string>(newp % 250,(Id).ToString()));
                 Devices.Add(new Device { MAC = "AA:BB:CC:DD:EE:FF", X_Position= newx % 400 , Y_Position= newy%400  });
             });
             #endregion

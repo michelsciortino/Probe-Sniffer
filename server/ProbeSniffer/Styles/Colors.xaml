@@ -20,6 +20,16 @@
     <Color x:Key="AzureColor">#ff1cbfff</Color>
     <SolidColorBrush x:Key="AzureColorBrush" Color="{StaticResource AzureColor}"/>
 
+    <Color x:Key="BackgroundColor">#ff202020</Color>
+    <SolidColorBrush x:Key="BackgroundColorBrush" Color="{StaticResource BackgroundColor}"/>
+
+    <Color x:Key="BackgroundLighterColor">#ff292929</Color>
+    <SolidColorBrush x:Key="BackgroundLighterColorBrush" Color="{StaticResource BackgroundLighterColor}"/>
+
+    <Color x:Key="BackgroundLightColor">#ff282828</Color>
+    <SolidColorBrush x:Key="BackgroundLightColorBrush" Color="{StaticResource BackgroundLightColor}"/>
+
+    <!--
     <Color x:Key="BackgroundColor">#ff141828</Color>
     <SolidColorBrush x:Key="BackgroundColorBrush" Color="{StaticResource BackgroundColor}"/>
 
@@ -28,6 +38,6 @@
 
     <Color x:Key="BackgroundLightColor">#ff202438</Color>
     <SolidColorBrush x:Key="BackgroundLightColorBrush" Color="{StaticResource BackgroundLightColor}"/>
-
+    -->
 
 </ResourceDictionary>

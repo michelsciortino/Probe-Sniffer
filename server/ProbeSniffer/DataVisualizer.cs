@@ -83,6 +83,19 @@ namespace ProbeSniffer
             });
             state = VisualizerState.HIDDEN;
         }
+
+        public void Close()
+        {
+            Dispatcher VisualizerDispatcher = Dispatcher.FromThread(VisualizerThread);
+            if (VisualizerThread == null)
+                throw new System.Exception("The visualizer dispatcher was not ready");
+            VisualizerDispatcher.Invoke(() =>
+            {
+                _dataVisualizationWindow.Close();
+            });
+            state = VisualizerState.CLOSED;
+            VisualizerThread.Abort();
+        }
         #endregion
     }
 }

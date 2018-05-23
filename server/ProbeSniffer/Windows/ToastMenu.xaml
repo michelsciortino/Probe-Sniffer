@@ -1,0 +1,102 @@
+﻿<Window x:Class="ProbeSniffer.Windows.ToastMenu"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:fluent="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+        xmlns:local="clr-namespace:ProbeSniffer.Windows"
+        mc:Ignorable="d"
+        x:Name="ToastWindow"
+        Height="200"
+        Width="395"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        fluent:AcrylicWindow.ShowTitleBar="False"
+        fluent:AcrylicWindow.NoiseOpacity="0.02"
+        fluent:AcrylicWindow.TintColor="{x:Static fluent:AccentColors.ImmersiveSystemAccentDark1}"
+        fluent:AcrylicWindow.TintOpacity="0.9"
+        fluent:AcrylicWindow.Enabled="True"
+        fluent:AcrylicWindow.ExtendViewIntoTitleBar="True"
+        fluent:AcrylicWindow.FallbackColor="Black"
+        BorderThickness="0"
+        Activated="window_Activated"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <Style x:Key="ToastButton" TargetType="{x:Type Button}">
+            <Setter Property="Width" Value="87"/>
+            <Setter Property="Height" Value="66"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Background" Value="#30ffffff"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="5,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="true">
+                            <ContentPresenter x:Name="contentPresenter" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDefaulted" Value="true">
+                                <Setter Property="BorderBrush" TargetName="border" Value="#c0808080"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="#50ffffff"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.MouseOver.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="true">
+                                <Setter Property="Background" TargetName="border" Value="{x:Static fluent:AccentColors.ImmersiveSystemAccentBrush}"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Pressed.Border}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Background" TargetName="border" Value="transparent"/>
+                                <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource Button.Disabled.Border}"/>
+                                <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{StaticResource Button.Disabled.Foreground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="16" Name="grid">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Height="55">
+            <Label Content="&#xEC05;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Top" FontSize="24" Foreground="White"/>
+            <Label  Content="Probe Sniffer" Foreground="White" VerticalAlignment="Top"  FontSize="18"/>
+        </StackPanel>
+
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Orientation="Horizontal">
+
+            <Button Style="{StaticResource ToastButton}" Click="ShowGraph_button_click">
+                <Grid>
+                    <TextBlock Text="&#xEB05;" FontFamily="Segoe MDL2 Assets" FontSize="16" FontWeight="Light" Margin="0,1"/>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <TextBlock Text="Show"/>
+                        <TextBlock Text="Graph"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+            <Button Style="{StaticResource ToastButton}">
+                <Grid>
+                    <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="16" FontWeight="Light" Margin="0,1"/>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <TextBlock Text="Stop data"/>
+                        <TextBlock Text="collection"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+            <Button Style="{StaticResource ToastButton}" IsEnabled="False" Margin="0,0,5,0"/>
+            <Button Style="{StaticResource ToastButton}" Margin="0" Click="Exit_button_Click">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <TextBlock Text="Exit"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

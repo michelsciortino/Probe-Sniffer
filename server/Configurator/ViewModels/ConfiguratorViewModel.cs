@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Configurator.ViewModels
@@ -20,15 +21,16 @@ namespace Configurator.ViewModels
             configuration = Configuration.LoadConfiguration();
             if (configuration is null) configuration = new Configuration();
             _devices = new ObservableCollection<Device>(configuration.Devices);
-            _selectedSSID = configuration.SSID;
+            //_selectedSSID = configuration.SSID;
         }
         #endregion
 
         #region Private properties
         private ObservableCollection<Device> _devices = null;
-        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false, _saveConfigurationButtonEnabled = false;
-        private string _x = null, _y = null, _mac = null, _selectedSSID = null;
-        private ObservableCollection<string> _ssidsList = null;
+        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false, _saveConfigurationButtonEnabled = true;
+        private string _x = null, _y = null, _mac = null;
+        //private string _selectedSSID = null;
+        //private ObservableCollection<string> _ssidsList = null;
         #endregion
 
         #region Public Properties
@@ -43,7 +45,7 @@ namespace Configurator.ViewModels
             }
         }
 
-        public ObservableCollection<string> SSIDList
+        /*public ObservableCollection<string> SSIDList
         {
             get => _ssidsList;
             set
@@ -52,7 +54,7 @@ namespace Configurator.ViewModels
                 _ssidsList = value;
                 OnPropertyChanged(nameof(SSIDList));
             }
-        }
+        }*/
 
         public bool NewDeviceFormEnabled
         {
@@ -99,7 +101,7 @@ namespace Configurator.ViewModels
             }
         }
 
-        public string SelectedSSID
+        /*public string SelectedSSID
         {
             get => _selectedSSID;
             set
@@ -115,7 +117,7 @@ namespace Configurator.ViewModels
                 SaveConfigurationButtonEnabled = true;
                 OnPropertyChanged(nameof(SelectedSSID));
             }
-        }
+        }*/
 
 
         public bool AddDeviceButtonEnabled
@@ -135,14 +137,14 @@ namespace Configurator.ViewModels
         private ICommand _addDeviceCommand = null;
         private ICommand _removeDeviceCommand = null;
         private ICommand _saveConfigurationCommand = null;
-        private ICommand _updateAvaibleSSIDsListCommand = null;
+        //private ICommand _updateAvaibleSSIDsListCommand = null;
         #endregion
 
         #region Public Commands
         public ICommand AddDeviceCommand => _addDeviceCommand ?? (_addDeviceCommand = new RelayCommand<object>((x) => AddDevice()));
         public ICommand RemoveDeviceCommand => _removeDeviceCommand ?? (_removeDeviceCommand = new RelayCommand<Device>((x) => RemoveDevice(x)));
         public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>((x) => SaveConfiguration()));
-        public ICommand UpdateAvaibleSSIDsListCommand => _updateAvaibleSSIDsListCommand ?? (_updateAvaibleSSIDsListCommand = new RelayCommand<object>((x) => UpdateAvaibleSSIDsList()));
+        //public ICommand UpdateAvaibleSSIDsListCommand => _updateAvaibleSSIDsListCommand ?? (_updateAvaibleSSIDsListCommand = new RelayCommand<object>((x) => UpdateAvaibleSSIDsList()));
         #endregion
 
         #region Private Methods
@@ -158,14 +160,14 @@ namespace Configurator.ViewModels
             Devices.Remove(x);
         }
 
-        private void UpdateAvaibleSSIDsList()
+        /*private void UpdateAvaibleSSIDsList()
         {
             SSIDList = new ObservableCollection<string>();
             List<string> ssids = LocalNetworkConnection.GetAvaibleWifiNetworksSSIDList().Distinct().OrderBy(s => s).ToList();
             if (ssids is null) return;
             foreach (string ssid in ssids)
                 _ssidsList.Add(ssid);
-        }
+        }*/
 
         private void CheckNewDeviceParameters()
         {
@@ -195,8 +197,12 @@ namespace Configurator.ViewModels
             configuration = new Configuration();
             foreach (Device d in Devices)
                 configuration.AddDevice(d);
-            configuration.SSID = _selectedSSID;
-            configuration.SaveConfiguration();
+            //configuration.SSID = _selectedSSID;
+            if (configuration.SaveConfiguration())
+                MessageBox.Show("Configuration saved.", "Save", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.None, MessageBoxOptions.ServiceNotification);
+            else
+                MessageBox.Show("An error occured during configuration saving.", "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.None, MessageBoxOptions.ServiceNotification);
+
         }
         #endregion
     }

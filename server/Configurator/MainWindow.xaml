@@ -191,7 +191,7 @@
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
                         </Button>
-                        <StackPanel Grid.Row="1">
+                        <!--StackPanel Grid.Row="1">
                             <TextBlock Text="Preferred SSID" HorizontalAlignment="Center"/>
                             <ComboBox Width="150"
                                       Height="40"
@@ -208,7 +208,7 @@
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </ComboBox>
-                        </StackPanel>
+                        </-->
                         <Button Content="Save Confituration"
                                 Grid.Row="2"
                                 IsEnabled="{Binding SaveConfigurationButtonEnabled,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
