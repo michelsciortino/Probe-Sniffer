@@ -1,13 +1,12 @@
-﻿using System;
-using System.Net;
-using System.Text;
-using Core.DeviceCommunication.Messages.ESP32_Messages;
-using System.Diagnostics;
-using Core.DeviceCommunication.Messages.Server_Messages;
-using Core.Models;
+﻿using Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace Core.DeviceCommunication
-{/*
+{
+    #region Old ESPManager
+    /*
     public class ESPManager
     {
         #region Private Properties
@@ -181,4 +180,39 @@ namespace Core.DeviceCommunication
         #endregion
     }
     */
+    #endregion
+
+
+    #region New ESPManager
+
+    public static class ESPManager
+    {
+        private static Dictionary<string, ESP32_Device> configuredESP = new Dictionary<string, ESP32_Device>();
+
+        public static void Initialize(List<Device> esps)
+        {
+            foreach (Device d in esps)
+                configuredESP.Add(d.MAC, new ESP32_Device(d) { Active = false });
+        }
+
+        public static List<ESP32_Device> ESPs => configuredESP.Values.ToList();
+
+        public static ESP32_Device GetESPDevice(string mac)
+        {
+            if (configuredESP.ContainsKey(mac))
+                return configuredESP[mac];
+            else
+                return null;
+        }
+
+        public static bool IsESPConfigured(string mac) => configuredESP.ContainsKey(mac);
+
+        public static void WaitForMinESPsToConnect()
+        {
+            while (configuredESP.Where(p => p.Value.Active is true).Count() < 2)
+                Thread.Sleep(1000);
+        }
+    }
+
+    #endregion
 }
