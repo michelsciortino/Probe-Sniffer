@@ -3,8 +3,8 @@
 #include <stdio.h> //DEBUG
 #include <ctype.h> //DEBUG
 #include "freertos/FreeRTOS.h"
-//#include "freertos/task.h"
-//#include "esp_system.h"
+#include "freertos/task.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
@@ -13,6 +13,10 @@
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
+#define DEFAULT_SERVER_IP CONFIG_SERVER_IP
+
+#define ESP_SSID "ESP_wifidirect"
+#define ESP_PASSWORD "password"
 
 #define DEFAULT_SCAN_METHOD WIFI_FAST_SCAN
 #define DEFAULT_RSSI -127
@@ -39,6 +43,12 @@
 #define SSID_LEN 34
 #define TIMER_USEC 60000000
 #define MAC_POS 10
+#define STACK_SIZE 2000
+#define SSID_LEN_POS 37
+
+#define AP_NOT_KING 0
+#define AP_PRESENT 1
+#define AP_KING 2
 
 //codes received from server
 #define CODE_OK 200
@@ -54,6 +64,7 @@ struct packet_info
  char timestamp[TIME_LEN];
  //char hash[HASH_LEN];
  int strength;
+ //printf("\0");
 };
 
 struct packet_node
@@ -72,9 +83,13 @@ struct status
  struct packet_node *packet_list;
  int total_length;
  esp_timer_handle_t timer;
+ bool king;
+ bool AP_detected;
 };
 
 struct status st;
+
+int test_global=0;
 
 void clear_data()
 {
@@ -105,21 +120,30 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
   return;
 
  //to prevent creating nodes during sending process
- if(st.status_value != ST_SNIFFING)
-  return;
+ //if(st.status_value != ST_SNIFFING)
+  //return;
 
  new_node = (struct packet_node *)malloc(sizeof(*new_node));
 
  //print mac address of the device
  for(i=0; i<6; i++)
  {
-  sprintf(new_node->packet.mac, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS]);
+  sprintf(new_node->packet.mac+i*3, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
+  //printf("%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
   if(i != 5)
-   sprintf(new_node->packet.mac, ":");
+   sprintf(new_node->packet.mac+2+i*3, ":");
+   //printf(":");
  }
- printf("\0");
+ //printf("\n");
 
- 
+ char ssid_len_c=((wifi_promiscuous_pkt_t *)buf)->payload[SSID_LEN_POS];
+ int ssid_len=(int)ssid_len_c;
+ printf("sender MAC: %s\n", new_node->packet.mac);
+ printf("SSID length: %d\n", ssid_len);
+ for(i=0; i<ssid_len; i++)
+  printf("%c", ((wifi_promiscuous_pkt_t *)buf)->payload[SSID_LEN_POS+1+i]);
+ printf("\n");
+
 }
 
 //sniffs packets then sends those to server in infinite loop
@@ -145,11 +169,11 @@ void reconnect()
 //handle the end of the timer: send data to server then reset timer and return sniffing
 void timer_handle()
 {
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
- reconnect();
+ //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+ //reconnect();
  //send_data(); //SET ST_SENDING_DATA
- disconnect();
- sniffer();
+ //disconnect();
+ //sniffer();
 }
 
 //save time received from server and time on client when it arrives
@@ -426,17 +450,46 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  }
 }
 
-//omen nomen
-int setup_and_listen_promiscuous()
+//setup promiscuous mode
+int setup_promiscuous()
 {
  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 
  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
  return 1;
 }
+*/
 
+/*
+int AP_protocol()
+{
+ if(detect_ESP_AP())
+  return AP_PRESENT;
+
+ TaskHandle_t tasks[2];
+
+ //create task to broadcast my MAC (AP protocol)
+ TaskHandle_t MAC_listen_handle = NULL;
+
+ xTaskCreate( MAC_listen, "MAC_broadcast_listen", STACK_SIZE, NULL, tskIDLE_PRIORITY, &MAC_listen_handle );
+ configASSERT( MAC_listem_handle );
+ tasks[0] = MAC_listem_handle;
+
+ //create task to listen to other MAC_broadcast
+ TaskHandle_t MAC_broadcast_handle = NULL;
+
+ xTaskCreate( MAC_send, "MAC_broadcast_send", STACK_SIZE, NULL, tskIDLE_PRIORITY, &MAC_send_handle );
+ configASSERT( MAC_send_handle );
+ tasks[1] = MAC_send_handle;
+
+ //sleep(AP_TIMER);
+
+ if(MAC_listen_handle != NULL)
+  vTaskDelete(MAC_listen_handle);
+ if(MAC_semd_handle != NULL)
+  vTaskDelete(MAC_send_handle);
+}
 */
 
 //initialize the main structure
@@ -464,6 +517,8 @@ void app_main()
 
  initialize_st();
 
+ //ret = AP_protocol();
+
  //create timer
  esp_timer_create_args_t create_args;
  create_args.callback = timer_handle;
@@ -477,6 +532,7 @@ void app_main()
  setup_and_connect_wifi();
  while(st.status_value==ST_DISCONNECTED);
 
+/*
  acquire_server_ip();
  if(st.status_value==ST_GOT_IP)
  {
@@ -484,11 +540,17 @@ void app_main()
  }
  else
   esp_restart();
- send_ready();
- if(st.status_value!=ST_SNIFFING)
+*/
+ strcpy(st.server_ip, DEFAULT_SERVER_IP);
+ while(1){
+  send_ready();
+  printf("sending ready\n");
+  sleep(10);
+ }
+ /*if(st.status_value!=ST_SNIFFING)
   esp_restart();
  disconnect();
-
+*/
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
 
