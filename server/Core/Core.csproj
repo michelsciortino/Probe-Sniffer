@@ -71,7 +71,6 @@
     <Compile Include="Controls\MessageBox.xaml.cs">
       <DependentUpon>MessageBox.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\MessageBoxcode.cs" />
     <Compile Include="DatabaseConnection\DatabaseConnection.cs" />
     <Compile Include="DataCollection\DataCollector.cs" />
     <Compile Include="DeviceCommunication\ESPManager.cs" />
