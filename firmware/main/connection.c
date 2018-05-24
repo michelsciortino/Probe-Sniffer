@@ -1,5 +1,5 @@
 #include "connection.h"
-#include "codes.h"
+#include "sniffer.h"
 
 extern struct status st;
 
@@ -164,7 +164,7 @@ void acquire_server_ip()
 }
 
 //handle wifi connection related events
-static esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
+esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
 {
  switch (event->event_id) {
   case SYSTEM_EVENT_STA_START:
@@ -188,7 +188,7 @@ static esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
 }
 
 //does what the name says
-static void setup_and_connect_wifi(void)
+void setup_and_connect_wifi(void)
 {
  tcpip_adapter_init();
  ESP_ERROR_CHECK(esp_event_loop_init(event_handler_wifi, NULL));
@@ -204,4 +204,26 @@ static void setup_and_connect_wifi(void)
  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
  ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
  ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+//save time received from server and time on client when it arrives
+void save_timestamp(char *buf)
+{
+ struct tm timestamp;
+ char srv_time[TIME_LEN];
+ int y, mon, d, h, min, sec;
+
+ strncpy(srv_time, buf+2, TIME_LEN-2);
+ srv_time[TIME_LEN-2]='\0';
+ sscanf(srv_time, "%d:%d:%d:%d:%d:%d", &y, &mon, &d, &h, &min, &sec);
+ timestamp.tm_year = y-1900;
+ timestamp.tm_mon = mon;
+ timestamp.tm_mday = d;
+ timestamp.tm_hour = h;
+ timestamp.tm_min = min;
+ timestamp.tm_sec = sec;
+
+ st.srv_time = mktime(&timestamp);
+
+ st.client_time=time(NULL);
 }

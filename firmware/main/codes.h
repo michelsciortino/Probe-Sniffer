@@ -1,3 +1,17 @@
+#ifndef H_CODES
+#define H_CODES
+
+#include <stdio.h> //DEBUG
+#include <ctype.h> //DEBUG
+#include <time.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "nvs_flash.h"
+#include "sys/socket.h"
+
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
@@ -26,7 +40,7 @@
 #define ST_WAITING_TIME 6
 
 #define HEADER_LEN 10
-#define MAC_LEN 17
+#define MAC_LEN 19
 #define TIME_LEN 22
 #define SSID_LEN 34
 #define TIMER_USEC 60000000
@@ -48,8 +62,8 @@
 struct packet_info
 {
  char mac[MAC_LEN];
- char ssid[SSID_LEN];
- char timestamp[TIME_LEN];
+ char timestamp[TIME_LEN+13];
+ //char ssid[SSID_LEN];
  //char hash[HASH_LEN];
  int strength;
 };
@@ -65,11 +79,12 @@ struct status
  int status_value;
  char server_ip[IPLEN];
  int port;
- char srv_time[TIME_LEN];
+ time_t srv_time;
  time_t client_time;
  struct packet_node *packet_list;
  int total_length;
  esp_timer_handle_t timer;
  bool king;
- bool AP_detected;
 };
+
+#endif

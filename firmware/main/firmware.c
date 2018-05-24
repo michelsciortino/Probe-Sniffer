@@ -1,59 +1,12 @@
 //main source file for the MalnatiProject firmware of ESP32
 
-#include <stdio.h> //DEBUG
-#include <ctype.h> //DEBUG
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event_loop.h"
-#include "nvs_flash.h"
-#include "sys/socket.h"
-
 #include "codes.h"
+#include "connection.h"
+#include "sniffer.h"
 
 struct status st;
 
 int test_global=0;
-
-void clear_data()
-{
- struct packet_node *next;
- struct packet_node *p=st.packet_list;
- while(p!=NULL)
- {
-  next=p->next;
-  free(p);
-  p=next;
- }
- st.total_length=0;
-}
-
-void start_timer()
-{
- esp_err_t ret;
- uint64_t usec=TIMER_USEC;
- ret = esp_timer_start_once(st.timer, usec);
- ESP_ERROR_CHECK( ret );
-}
-
-//handle the end of the timer: send data to server then reset timer and return sniffing
-void timer_handle()
-{
- //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
- //reconnect();
- //send_data(); //SET ST_SENDING_DATA
- //disconnect();
- //sniffer();
-}
-
-//save time received from server and time on client when it arrives
-void save_timestamp(char *buf)
-{
- strncpy(st.srv_time, buf+2, TIME_LEN-2);
- st.srv_time[TIME_LEN-2]='\0';
- st.client_time=time(NULL);
-}
 
 /* #HEX+ASCII PRINTER#
 //print payload data in hex and ascii, for debug purposes
@@ -169,14 +122,15 @@ int AP_protocol()
 //initialize the main structure
 void initialize_st()
 {
- st.status_value=ST_DISCONNECTED;
+ st.status_value = ST_DISCONNECTED;
  strcpy(st.server_ip, "\0");
- st.port=-1;
- strcpy(st.srv_time, "\0");
- st.client_time=0;
- st.packet_list=NULL;
- st.total_length=0;
- st.timer=NULL;
+ st.port = -1;
+ st.srv_time = 0;
+ st.client_time = 0;
+ st.packet_list = NULL;
+ st.total_length = 0;
+ st.timer = NULL;
+ st.king = false;
 }
 
 //main function
@@ -214,14 +168,13 @@ void app_main()
  }
  else
   esp_restart();
-*/
  strcpy(st.server_ip, DEFAULT_SERVER_IP);
  while(1){
   send_ready();
   printf("sending ready\n");
   sleep(10);
  }
- /*if(st.status_value!=ST_SNIFFING)
+ if(st.status_value!=ST_SNIFFING)
   esp_restart();
  disconnect();
 */

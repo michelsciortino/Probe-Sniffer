@@ -1,7 +1,13 @@
+#include "sniffer.h"
+#include "connection.h"
+
+extern struct status st;
+
 void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 {
  int i;
- struct packet_node *new_node, *p;
+ struct packet_node *new_node;
+ char new_time[TIME_LEN+13];
  if(type != WIFI_PKT_MGMT)
   return;
 
@@ -22,14 +28,17 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  }
  //printf("\n");
 
- char ssid_len_c=((wifi_promiscuous_pkt_t *)buf)->payload[SSID_LEN_POS];
- int ssid_len=(int)ssid_len_c;
- printf("sender MAC: %s\n", new_node->packet.mac);
- printf("SSID length: %d\n", ssid_len);
- for(i=0; i<ssid_len; i++)
-  printf("%c", ((wifi_promiscuous_pkt_t *)buf)->payload[SSID_LEN_POS+1+i]);
- printf("\n");
+ //find_ssid(ssid);
 
+ calculate_timestamp(new_time);
+ strcpy(new_node->packet.timestamp, new_time);
+ printf("%s\n", new_time);
+
+ new_node->packet.strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
+
+ new_node->next = st.packet_list;
+
+ st.packet_list = new_node;
 }
 
 //sniffs packets then sends those to server in infinite loop
@@ -41,4 +50,55 @@ void sniffer()
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
 }
 
+void clear_data()
+{
+ struct packet_node *next;
+ struct packet_node *p=st.packet_list;
+ while(p!=NULL)
+ {
+  next=p->next;
+  free(p);
+  p=next;
+ }
+ st.total_length=0;
+}
 
+void start_timer()
+{
+ esp_err_t ret;
+ uint64_t usec=TIMER_USEC;
+ ret = esp_timer_start_once(st.timer, usec);
+ ESP_ERROR_CHECK( ret );
+}
+
+//handle the end of the timer: send data to server then reset timer and return sniffing
+void timer_handle()
+{
+ ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+ //reconnect();
+ send_data(); //SET ST_SENDING_DATA
+ //disconnect();
+ sniffer();
+}
+
+void send_data()
+{
+ struct packet_node *p = st.packet_list;
+
+ while(p != NULL)
+ {
+  printf("%s\n", p->packet.mac);
+  p = p->next;
+ }
+}
+
+//add elapsed time to timestamp received from server
+void calculate_timestamp(char *new_time)
+{
+ time_t sec_elapsed = time(NULL)-st.client_time;
+ time_t timestamp = st.srv_time + sec_elapsed;
+ struct tm *timestamp_str;
+
+ timestamp_str = localtime(&timestamp);
+ sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.000000+02:00", timestamp_str->tm_year+1900, timestamp_str->tm_mon, timestamp_str->tm_mday, timestamp_str->tm_hour, timestamp_str->tm_min, timestamp_str->tm_sec);
+}
