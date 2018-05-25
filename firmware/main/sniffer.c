@@ -8,6 +8,7 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  int i;
  struct packet_node *new_node;
  char new_time[TIME_LEN+13];
+ char hash_str[HASH_LEN];
  if(type != WIFI_PKT_MGMT)
   return;
 
@@ -17,7 +18,7 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 
  new_node = (struct packet_node *)malloc(sizeof(*new_node));
 
- //print mac address of the device
+ //save mac address of sender device
  for(i=0; i<6; i++)
  {
   sprintf(new_node->packet.mac+i*3, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
@@ -30,14 +31,20 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 
  //find_ssid(ssid);
 
+ //save timestamp
  calculate_timestamp(new_time);
  strcpy(new_node->packet.timestamp, new_time);
- printf("%s\n", new_time);
 
+ //save rssi
  new_node->packet.strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
+ //printf("%s rssi:%d\n", new_time, new_node->packet.strength);
+
+ hash((const BYTE *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, (BYTE *)hash_str);
+ for(i = 0; i < HASH_LEN; i++)
+  sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
+ //printf("Hash: %s\n", new_node->packet.hash);
 
  new_node->next = st.packet_list;
-
  st.packet_list = new_node;
 }
 
@@ -61,6 +68,7 @@ void clear_data()
   p=next;
  }
  st.total_length=0;
+ st.packet_list = NULL;
 }
 
 void start_timer()
@@ -101,4 +109,13 @@ void calculate_timestamp(char *new_time)
 
  timestamp_str = localtime(&timestamp);
  sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.000000+02:00", timestamp_str->tm_year+1900, timestamp_str->tm_mon, timestamp_str->tm_mday, timestamp_str->tm_hour, timestamp_str->tm_min, timestamp_str->tm_sec);
+}
+
+void hash(const BYTE *v, int length, BYTE *hash_str)
+{
+ SHA256_CTX ctx;
+
+ sha256_init(&ctx);
+ sha256_update(&ctx, v, length);
+ sha256_final(&ctx, hash_str);
 }

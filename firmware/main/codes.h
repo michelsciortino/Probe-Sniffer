@@ -11,6 +11,7 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 #include "sys/socket.h"
+#include "sha256.h"
 
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
@@ -47,6 +48,7 @@
 #define MAC_POS 10
 #define STACK_SIZE 2000
 #define SSID_LEN_POS 37
+#define HASH_LEN SHA256_BLOCK_SIZE
 
 #define AP_NOT_KING 0
 #define AP_PRESENT 1
@@ -64,7 +66,7 @@ struct packet_info
  char mac[MAC_LEN];
  char timestamp[TIME_LEN+13];
  //char ssid[SSID_LEN];
- //char hash[HASH_LEN];
+ char hash[(HASH_LEN*2)+1];
  int strength;
 };
 
