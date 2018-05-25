@@ -39,6 +39,7 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  new_node->packet.strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
  //printf("%s rssi:%d\n", new_time, new_node->packet.strength);
 
+ //calculate and save hash
  hash((const BYTE *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, (BYTE *)hash_str);
  for(i = 0; i < HASH_LEN; i++)
   sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
@@ -84,12 +85,12 @@ void timer_handle()
 {
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
- send_data(); //SET ST_SENDING_DATA
+ print_data(); //SET ST_SENDING_DATA
  //disconnect();
  sniffer();
 }
 
-void send_data()
+void print_data()
 {
  struct packet_node *p = st.packet_list;
 

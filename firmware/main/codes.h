@@ -81,6 +81,7 @@ struct status
  int status_value;
  char server_ip[IPLEN];
  int port;
+ int socket;
  time_t srv_time;
  time_t client_time;
  struct packet_node *packet_list;

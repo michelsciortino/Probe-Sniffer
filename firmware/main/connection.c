@@ -23,7 +23,7 @@ int read_header(char *buf)
 }
 
 //receive packets frome server and decides what to do
-void recv_from_server(int s)
+void recv_from_server()
 {
  char buf[BUFLEN];
  int recv_len, code;
@@ -31,7 +31,15 @@ void recv_from_server(int s)
  recv_len=1;
  while(recv_len>0)
  {
-  recv_len=recv(s, buf, BUFLEN, 0);
+  recv_len=recv(st.socket, buf, BUFLEN, 0);
+  if(recv_len <= 0)
+  {
+   close(st.socket);
+   connect_to_server();
+   if(st.status_value != ST_ERR)
+    recv_len=1;
+   continue;
+  }
   code=read_header(buf);
   switch(code)
   {
@@ -45,59 +53,63 @@ void recv_from_server(int s)
     //start_sniffing();
     break;
    case CODE_RESET:
-    close(s);
+    close(st.socket);
     esp_restart();
     break;
    default:
-    close(s);
+    close(st.socket);
     esp_restart();
     break;
   }
  }
- close(s);
+ close(st.socket);
 }
 
-void send_ready()
+void connect_to_server()
 {
- int s, result, i, sent_len;
  struct sockaddr_in str_sock_s;
- char buf[BUFLEN];
- //unsigned int sockaddrlen;
+ int result;
  struct in_addr in_addr;
- uint8_t mac[6];
 
- s=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
- if(s<0)
+ st.socket=socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+ if(st.socket<0)
  {
   st.status_value=ST_ERR;
   return;
  }
-
  memset(&str_sock_s, 0, sizeof(str_sock_s));
  str_sock_s.sin_family=AF_INET;
  str_sock_s.sin_port=htons(SPORT);
  if(inet_aton(st.server_ip, &in_addr)==0)
  {
-  close(s);
+  close(st.socket);
   st.status_value=ST_ERR;
   return;
  }
  str_sock_s.sin_addr=in_addr;
 
- //printf("Trying to connect to %s:%d\n", inet_ntoa(str_sock_s.sin_addr), ntohs(str_sock_s.sin_port));
-
- result=connect(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
+ result=connect(st.socket, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
  if(result==-1)
  {
-  close(s);
+  close(st.socket);
   st.status_value=ST_ERR;
   return;
  }
+}
+
+void send_ready()
+{
+ int i, sent_len;
+ char buf[BUFLEN];
+ uint8_t mac[6];
+
+ connect_to_server();
+ if(st.status_value == ST_ERR)
+  return;
 
  if(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac) != ESP_OK)
  {
-  close(s);
+  close(st.socket);
   st.status_value=ST_ERR;
   return;
  }
@@ -108,14 +120,14 @@ void send_ready()
   sprintf(buf+HEADER_LEN+(i*3), "%02x:", mac[i]);
  buf[9+(i*3)]='\0';
 
- sent_len=send(s, buf, HEADER_LEN+MAC_LEN, 0);
+ sent_len=send(st.socket, buf, HEADER_LEN+MAC_LEN, 0);
  if(sent_len<0)
  {
-  close(s);
+  close(st.socket);
   st.status_value=ST_ERR;
   return;
  }
- recv_from_server(s);
+ //recv_from_server(st.socket);
 }
 
 //receive the broadcast packet from server (UDP:45445) containing server ip address
@@ -226,4 +238,9 @@ void save_timestamp(char *buf)
  st.srv_time = mktime(&timestamp);
 
  st.client_time=time(NULL);
+}
+
+void send_data()
+{
+ 
 }
