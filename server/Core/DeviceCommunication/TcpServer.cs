@@ -13,253 +13,25 @@ using System.Threading.Tasks;
 namespace Core.DeviceCommunication
 {
 
-    #region Old TcpServer
-    /*
-    public static class TcpServer
+    public enum ServerMode
     {
-
-        #region Private Properties
-        private static TcpListener _listener = null;
-        private static TcpClient _client = null;
-        private static IPAddress _remoteEndPointAddress = null;
-        private static bool _started = false;
-        private static bool _connected = false;
-        #endregion
-
-        #region Public Properties
-        public static IPAddress RemoteEndPointAddress => _remoteEndPointAddress;
-        public static bool Started => _started;
-        public static bool Connected => _connected;
-        #endregion
-
-        #region Public Methods
-        /// <summary>
-        /// Starts the listening for new connections
-        /// </summary>
-        /// <returns>True if started, False otherwise</returns>
-        public static bool Start(IPAddress localIP, int port)
-        {
-            if (_started) return _started;
-            try
-            {
-                _listener = new TcpListener(localIP, port);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex.Message);
-                throw;
-            }
-            try
-            {
-                _listener.Start();
-                _started = true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex.Message);
-                _started = false;
-            }
-            return _started;
-        }
-
-        /// <summary>
-        /// Accepts a new connection
-        /// </summary>
-        /// <param name="timeout">The timeout for new connection accepting in seconds (-1 = infinite)</param>
-        /// <returns>The IP address of the connected EndPoint</returns>
-        public static IPAddress AcceptNewConnection(int timeout)
-        {
-            //If already connected with a client -> disconnect
-            if (_client?.Connected is true || _connected is true)
-            {
-                if (_client?.Connected is true)
-                    _client.Close();
-                _connected = false;
-            }
-            try
-            {
-                //Waiting for new Connection request
-                Stopwatch stopwatch = new Stopwatch();
-                if(timeout>0)
-                    stopwatch.Start();
-                while (true)
-                {
-                    //If Timed Out -> return null
-                    if (timeout> 0 && stopwatch.Elapsed.Seconds > timeout)
-                    {
-                        stopwatch.Stop();
-                        _connected = false;
-                        return null;
-                    }
-                    if (!_listener.Pending())
-                        Thread.Sleep(100);
-                    else break;
-                }
-                if(timeout>0)
-                stopwatch.Stop();
-                
-                //Accepting the new Connection
-                _client = _listener.AcceptTcpClient();
-                _remoteEndPointAddress = ((IPEndPoint)_client.Client.RemoteEndPoint).Address;
-                _connected = _client.Connected;
-            }
-            catch (Exception)
-            {
-                _remoteEndPointAddress = null;
-                _connected = (bool)_client?.Connected;
-            }
-            return _remoteEndPointAddress;
-        }
-
-        /// <summary>
-        /// Connects to a Remote EndPoint
-        /// </summary>
-        /// <param name="remoteEndPointAddress">The IP address of the EndPoint</param>
-        /// <param name="port">The port for the connection</param>
-        /// <param name="timeout">A timeout for the connection request in seconds (-1 = infinite)</param>
-        /// <returns></returns>
-        public static bool Connect(IPAddress remoteEndPointAddress, int port, int timeout = -1)
-        {
-            bool result = false;
-
-            if ((bool)_client?.Connected)
-            {
-                _client.Close();
-            }
-
-            Stopwatch stopwatch = new Stopwatch();
-            if (timeout > 0)
-                stopwatch.Start();
-            while (true)
-            {
-                if (timeout>0 && stopwatch.Elapsed.TotalSeconds > timeout)
-                {
-                    stopwatch.Stop();
-                    result = false;
-                    break;
-                }
-                try
-                {
-                    _client.Connect(remoteEndPointAddress, port);
-                    if (_client.Connected)
-                    {
-                        result = true;
-                        stopwatch.Stop();
-                        _connected = _client.Connected;
-                        break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log(ex.Message);
-                    result = false;
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// Receives <paramref name="nBytes"/> from the EndPoint
-        /// </summary>
-        /// <param name="nBytes">Number of bytes to receive</param>
-        /// <returns>The received bytes</returns>
-        public static byte[] Receive(int nBytes)
-        {
-            if (_started is false)
-                throw new Exception("TcpReceiver not started");
-            if (_connected is false)
-                throw new Exception("TcpReceiver not not connected to an EndPoint");
-
-            byte[] bytes = new byte[nBytes];
-            int readBytes = 0, leftBytes = nBytes;
-
-            try
-            {
-                //stream for read data
-                NetworkStream stream = _client.GetStream();
-                while (leftBytes < nBytes)
-                {
-                    readBytes = stream.Read(bytes, nBytes - leftBytes, nBytes);
-                    leftBytes -= readBytes;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex.Message);
-                return null;
-            }
-            return bytes;
-        }
-
-        /// <summary>
-        /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
-        /// </summary>
-        /// <param name="bytes">The array of bytes to send</param>
-        /// <returns>True if the bytes has been sent, False otherwise</returns>
-        public static bool Send(byte[] bytes)
-        {
-            NetworkStream stream;
-            if (_connected)
-            {
-                try
-                {
-                    stream = _client.GetStream();
-                    stream.Write(bytes,0, bytes.Length);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log(ex.Message);
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Closes the connection with the current connected client (if any)
-        /// </summary>
-        public static void CloseConnection()
-        {
-            if ((bool)_client?.Connected)
-                _client.Close();
-        }
-
-        /// <summary>
-        /// Stops the TcpListener
-        /// </summary>
-        public static void StopListener()
-        {
-            try
-            {
-                _listener.Stop();
-                _started = false;
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex.Message);
-            }
-        }
-        #endregion
-
+        DATACOLLECTION_MODE =0,
+        CONFIGURATION_MODE
     }
-    */
-    #endregion
-
-    #region New TcpServer
-
 
     public class TcpServer
     {
         public const int SERVER_PORT = 48448, SYNC_INTERVAL = 20000;
 
         #region Private Members
+        private ServerMode mode;
         private CancellationTokenSource ListenerThreadCancellationTokenSource = null;
         private Mutex messagesQueueMutex = null;
         private Mutex canReceiveDataMutex = null;
         private Mutex clientsListMutex = null;
         private Task listenerTask = null;
         private TcpListener listener = null;
-        private Queue<Data_Message> messagesQueue = null;
+        private Queue<ESP_Message> messagesQueue = null;
         private List<TcpClient> clients = null;
         private Timer syncronizer = null;
         #endregion
@@ -314,9 +86,10 @@ namespace Core.DeviceCommunication
         #endregion
 
         #region Constructor
-        public TcpServer()
+        public TcpServer(ServerMode mode)
         {
-            messagesQueue = new Queue<Data_Message>();
+            this.mode = mode;
+            messagesQueue = new Queue<ESP_Message>();
             tcpClientConnected = new ManualResetEvent(false);
             messagesQueueMutex = new Mutex();
             canReceiveDataMutex = new Mutex();
@@ -334,20 +107,20 @@ namespace Core.DeviceCommunication
             ListenerThreadCancellationTokenSource = new CancellationTokenSource();
             try
             {
-                listenerTask = new Task(() => ListenerCallBack(localIp, SERVER_PORT,ListenerThreadCancellationTokenSource.Token));
+                listenerTask = new Task(() => ListenerCallBack(localIp, SERVER_PORT, ListenerThreadCancellationTokenSource.Token));
                 listenerTask.Start();
                 _isStarted = true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
                 _isStarted = false;
             }
         }
 
-        public Queue<Data_Message> GetNewMessages()
+        public Queue<ESP_Message> GetNewMessages()
         {
-            Queue<Data_Message> messages = new Queue<Data_Message>();
+            Queue<ESP_Message> messages = new Queue<ESP_Message>();
 
             messagesQueueMutex.WaitOne();
             while (messagesQueue.Count > 0)
@@ -357,6 +130,16 @@ namespace Core.DeviceCommunication
             }
             messagesQueueMutex.ReleaseMutex();
             return messages;
+        }
+
+        public ESP_Message GetNextMessage()
+        {
+            ESP_Message ret = null;
+            messagesQueueMutex.WaitOne();
+            if (messagesQueue.Count > 0)
+                ret = messagesQueue.Dequeue();
+            messagesQueueMutex.ReleaseMutex();
+            return ret;
         }
         #endregion
 
@@ -410,10 +193,12 @@ namespace Core.DeviceCommunication
             ESP32_Device esp = null;
             while (true)
             {
-                bytes= await ReceiveAsync(client,1);
+                bytes = await ReceiveAsync(client, 1);
                 if (bytes == null)
-                    if (client.Connected) continue;
-                    else break;
+                    if (client.Connected)
+                        continue;
+                    else
+                        break;
                 headerCode = bytes[0];
 
                 message = null;
@@ -423,7 +208,7 @@ namespace Core.DeviceCommunication
                     case Ready_Message.READY_HEADER:
                         try
                         {
-                            bytes = await ReceiveAsync(client,Ready_Message.PAYLOAD_LENGTH);
+                            bytes = await ReceiveAsync(client, Ready_Message.PAYLOAD_LENGTH);
                             if (bytes == null)
                                 break;
                             if (bytes.Length != Ready_Message.PAYLOAD_LENGTH)
@@ -449,9 +234,16 @@ namespace Core.DeviceCommunication
                         try
                         {
                             int jsonLenght = -1;
-                            if ((bytes = await ReceiveAsync(client,1)) is null ||
-                                (jsonLenght = bytes[0]) < 0 ||
-                                (bytes = await ReceiveAsync(client,bytes[0])) is null)
+                            bytes = await ReceiveAsync(client, 2);
+                            if(bytes is null)
+                            {
+                                message = null;
+                                break;
+                            }
+                            jsonLenght = BitConverter.ToUInt16(bytes,0);
+
+                            bytes = await ReceiveAsync(client, jsonLenght);
+                            if (bytes is null)
                             {
                                 message = null;
                                 break;
@@ -478,28 +270,34 @@ namespace Core.DeviceCommunication
                     break;
                 if (message is Ready_Message)
                 {
-                    if (ESPManager.IsESPConfigured(message.Payload))
-                    {
-                        if(esp is null)
+                    if (mode == ServerMode.CONFIGURATION_MODE)
+                        EnqueueMessage(message);
+                    else if (mode == ServerMode.DATACOLLECTION_MODE)
+                        if (ESPManager.IsESPConfigured(message.Payload))
                         {
-                            esp = ESPManager.GetESPDevice(message.Payload);
-                            Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                            if (esp is null)
+                            {
+                                esp = ESPManager.GetESPDevice(message.Payload);
+                                Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                ESPManager.SetDeviceStatus(esp.MAC, true);
+                            }
+                            if (CanReceiveData is true)
+                                Send(client, new Ok_Message().ToBytes());
                         }
-                        if (CanReceiveData is true)
-                            Send(client, new Ok_Message().ToBytes());
-                    }
-                    else
-                        break;
+                        else
+                            break;
                 }
-                else if (message is Data_Message) EnqueueMessage(message as Data_Message);
+                else if (message is Data_Message && mode == ServerMode.DATACOLLECTION_MODE)
+                    EnqueueMessage(message);
             }
             client.Close();
-            if(esp!=null)
+            if (esp != null)
                 Logger.Log("An ESP disconnected\t\tx: " + esp.X_Position + " y: " + esp.Y_Position + "\r\n");
             KillZombies();
+            ESPManager.SetDeviceStatus(esp?.MAC, false);
         }
 
-        private void EnqueueMessage(Data_Message message)
+        private void EnqueueMessage(ESP_Message message)
         {
             messagesQueueMutex.WaitOne();
             messagesQueue.Enqueue(message);
@@ -591,5 +389,4 @@ namespace Core.DeviceCommunication
         }
         #endregion
     }
-    #endregion
 }
