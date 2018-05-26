@@ -30,10 +30,12 @@
                        x:Name="Caption"
                        FontSize="14"
                        HorizontalAlignment="Left"/>
-            <Button x:Name="Exit" Content="&#xE8BB;"
-                    Style="{StaticResource WindowControlsButton}"
+
+            <Button x:Name="ExitButton" Content="&#xE8BB;"
+                    FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource ExitControlButton}"
                     Height="30" Width="30" Foreground="White"
-                    FontFamily="Segoe MDL2 Assets" FontSize="10"
+                    FontSize="10"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"/>
         </Grid>
