@@ -62,6 +62,7 @@
 #define CODE_OK 200
 #define CODE_TIME 202
 #define CODE_RESET 203
+#define CODE_SRV_ADV 201
 #define CODE_READY 100
 #define CODE_DATA 101
 

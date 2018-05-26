@@ -175,8 +175,11 @@ void app_main()
 
  if(st.status_value != ST_SNIFFING)
   esp_restart();
-
-
+/*
+ acquire_server_ip();
+ connect_to_server();  //DEBUG
+ send_ready();         //DEBUG
+*/
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
 

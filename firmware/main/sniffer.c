@@ -95,7 +95,7 @@ void timer_handle()
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
  //print_data(); //SET ST_SENDING_DATA
- send_data();
+ //send_data();
  //disconnect();
  sniffer();
 }
@@ -104,6 +104,7 @@ void print_data()
 {
  char buf[BUFLEN];
  struct packet_node *p;
+ int i = 0;
 
  //printf("%lu", (long unsigned int)(st.total_length + JSON_LEN));
  printf("{\"Esp_Mac\":\"");
@@ -116,6 +117,8 @@ void print_data()
  {
   printf("{\"MAC\":\"%s\",\n\"SSID\":\"%s\",\n\"Timestamp\":\"%s\",\n\"Hash\":\"%s\",\n\"SignalStrength\":%03d,},]\n", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
   p = p->next;
+  if(i != 0 && (i++%100) == 0)
+   esp_sleep_enable_timer_wakeup((uint64_t) 50000);
  }
 }
 

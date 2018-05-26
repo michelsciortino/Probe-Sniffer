@@ -161,12 +161,13 @@ void acquire_server_ip()
  while(1)
  {
   recv_len=recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *)&str_sock_c, &sockaddrlen);
-  if(strncmp(buf, "server:", 7)==0)
+  if(recv_len > 0 && read_header(buf) == CODE_SRV_ADV)
   {
-   for(i=0; i<recv_len-7 && buf[7+i]!=':'; i++)
-   st.server_ip[i]=buf[7+i];
-   st.server_ip[i]='\0';
+   for(i = 0; i < BUFLEN && (buf[i+1]!='\r' || buf[i+2]!='\n'); i++)
+    st.server_ip[i] = buf[i+1];
+   st.server_ip[i] = '\0';
    st.status_value=ST_GOT_IP;
+   printf("Got server IP: %s\n", st.server_ip);
    close(s);
    break;
   }
