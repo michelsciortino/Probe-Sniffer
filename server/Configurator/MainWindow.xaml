@@ -6,19 +6,90 @@
         xmlns:local="clr-namespace:Configurator"
         xmlns:vm="clr-namespace:Configurator.ViewModels"
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-        xmlns:command="http://www.galasoft.ch/mvvmlight"
+        xmlns:command="http://www.galasoft.ch/mvvmlight"        
         mc:Ignorable="d"
-        Title="   System Condifuration"
-        Height="500" Width="500"
-        MinHeight="500" MinWidth="550"
-        
-        BorderThickness="0"
+        Background="{StaticResource BackgroundColorBrush}"
+        WindowStyle="None"
         Foreground="White"
-        Background="{StaticResource BackgroundColorBrush}">
+        ResizeMode="CanResize"
+        BorderBrush="{x:Static SystemParameters.WindowGlassBrush}"
+        BorderThickness="1"
+        Title="System Condifuration"
+        Height="500" Width="500"
+        MinHeight="500" MinWidth="550">
     <Window.DataContext>
         <vm:ConfiguratorViewModel/>
     </Window.DataContext>
+
+    <Window.Template>
+        <ControlTemplate TargetType="{x:Type Window}">
+            <Border Background="{StaticResource BackgroundColorBrush}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title Bar -->
+                    <Grid Grid.Row="0" MouseDown="{Binding TitleBar_MouseDown}"
+                          Background="{StaticResource BackgroundLighterColorBrush}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Margin="8,0"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Text="&#xEC05;"
+                                       FontSize="20"/>
+                            <TextBlock Text="{TemplateBinding Title}"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"
+                                       FontSize="14"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                    FlowDirection="RightToLeft"
+                                    TextElement.FontSize="10" TextElement.FontFamily="Segoe MDL2 Assets">
+                            <Button x:Name="ExitBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource ExitControlButton}"
+                                    Visibility="Visible"
+                                    Content="&#xE8BB;"
+                                    Click="{Binding Exit}"/>
+                            <Button x:Name="MaximizeBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource MaximizeControlButton}"
+                                    Content="&#xE922;"
+                                    Click="{Binding Maximize}"/>
+                            <Button x:Name="MinimizeBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource MinimizeControlButton}"
+                                    Content="&#xE921;"
+                                    Click="{Binding Minimize}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Window Content -->
+                    <ContentPresenter Grid.Row="1"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </Window.Template>
     
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      UseAeroCaptionButtons="False"
+                      GlassFrameThickness="1"
+                      CornerRadius="0"
+                      ResizeBorderThickness="5"/>
+    </WindowChrome.WindowChrome>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" MinWidth="180" MaxWidth="220"/>
@@ -105,7 +176,13 @@
                         Margin="0,20"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center"
-                        BorderThickness="0"/>
+                        BorderThickness="0">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <command:EventToCommand Command="{Binding SearchForDevicesCommand}" PassEventArgsToCommand="False" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
                 
                 <Grid Grid.Column="0"
                       Grid.Row="1"
