@@ -174,6 +174,7 @@ namespace Core.DeviceCommunication
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning")]
         private void AcceptCallback(IAsyncResult ar)
         {
             TcpListener listener = (TcpListener)ar.AsyncState;

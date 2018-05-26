@@ -25,11 +25,13 @@ namespace Core.DataCollection
 
 
         #region Private Properties
-        private bool _initialized = false;        
-        private bool _runnig;
+        private bool _initialized = false;
+        private bool _runnig = false;
         #endregion
 
         #region Constructor
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning")]
         public DataCollector()
         {
             dataCollectionTokenSource = new CancellationTokenSource();
