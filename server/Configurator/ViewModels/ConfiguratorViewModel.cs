@@ -1,9 +1,12 @@
-﻿using Core.Models;
+﻿using Core.DeviceCommunication;
+using Core.DeviceCommunication.Messages.ESP32_Messages;
+using Core.DeviceCommunication.Messages.Server_Messages;
+using Core.Models;
 using Core.ViewModelBase;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 
@@ -11,8 +14,11 @@ namespace Configurator.ViewModels
 {
     public class ConfiguratorViewModel : BaseViewModel
     {
-        #region Private Variables
+        #region Private Members
         private Configuration configuration = null;
+        private Thread broadcaster = null;
+        private CancellationTokenSource cancTokenSource = new CancellationTokenSource();
+        private TcpServer server = null;
         #endregion
 
         #region Constructor
@@ -21,6 +27,9 @@ namespace Configurator.ViewModels
             configuration = Configuration.LoadConfiguration();
             if (configuration is null) configuration = new Configuration();
             _devices = new ObservableCollection<Device>(configuration.Devices);
+            cancTokenSource = new CancellationTokenSource();
+            broadcaster = new Thread(() => UdpBroadcaster.Broadcast(new Server_Advertisement_Message(), cancTokenSource.Token));
+            server = new TcpServer(ServerMode.CONFIGURATION_MODE);
             //_selectedSSID = configuration.SSID;
         }
         #endregion
@@ -137,6 +146,7 @@ namespace Configurator.ViewModels
         private ICommand _addDeviceCommand = null;
         private ICommand _removeDeviceCommand = null;
         private ICommand _saveConfigurationCommand = null;
+        private ICommand _searchForDevicesCommand = null;
         //private ICommand _updateAvaibleSSIDsListCommand = null;
         #endregion
 
@@ -144,10 +154,37 @@ namespace Configurator.ViewModels
         public ICommand AddDeviceCommand => _addDeviceCommand ?? (_addDeviceCommand = new RelayCommand<object>((x) => AddDevice()));
         public ICommand RemoveDeviceCommand => _removeDeviceCommand ?? (_removeDeviceCommand = new RelayCommand<Device>((x) => RemoveDevice(x)));
         public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>((x) => SaveConfiguration()));
+        public ICommand SearchForDevicesCommand => _searchForDevicesCommand ?? (_searchForDevicesCommand = new RelayCommand<object>((x)=>SearchForDevices()));
         //public ICommand UpdateAvaibleSSIDsListCommand => _updateAvaibleSSIDsListCommand ?? (_updateAvaibleSSIDsListCommand = new RelayCommand<object>((x) => UpdateAvaibleSSIDsList()));
         #endregion
 
         #region Private Methods
+
+        private void SearchForDevices()
+        {
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+            if (broadcaster.IsAlive is false) broadcaster.Start();
+            if (server.IsStarted is false) server.Start();
+
+            ESP_Message message = null;
+            while (!(message is Ready_Message))
+            {
+                while (server.EnquedMessages is 0)
+                {
+                    if (watch.ElapsedMilliseconds > int.MaxValue)
+                    {
+                        Core.Controls.MessageBox mox = new Core.Controls.MessageBox("No device found", "", MessageBoxButton.OK);
+                        mox.Show();
+                        return;
+                    }
+                    Thread.Sleep(500);
+                }
+                message = server.GetNextMessage();
+            }
+            MAC = message.Payload;
+        }
+
         private void AddDevice()
         {
             if (_mac == "") return;
@@ -198,10 +235,11 @@ namespace Configurator.ViewModels
             foreach (Device d in Devices)
                 configuration.AddDevice(d);
             //configuration.SSID = _selectedSSID;
+
             if (configuration.SaveConfiguration())
-                MessageBox.Show("Configuration saved.", "Save", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.None, MessageBoxOptions.ServiceNotification);
+                new Core.Controls.MessageBox("Configuration saved.", "Save", MessageBoxButton.OK, MessageBoxImage.Information).Show();
             else
-                MessageBox.Show("An error occured during configuration saving.", "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.None, MessageBoxOptions.ServiceNotification);
+                new Core.Controls.MessageBox("An error occured during configuration saving.", "Error", MessageBoxButton.OK, MessageBoxImage.Error).Show();
 
         }
         #endregion
