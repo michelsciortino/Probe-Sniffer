@@ -160,7 +160,6 @@ void app_main()
  setup_and_connect_wifi();
  while(st.status_value==ST_DISCONNECTED);
 
-/*
  acquire_server_ip();
  if(st.status_value==ST_GOT_IP)
  {
@@ -169,15 +168,15 @@ void app_main()
  else
   esp_restart();
  strcpy(st.server_ip, DEFAULT_SERVER_IP);
- while(1){
-  send_ready();
-  printf("sending ready\n");
-  sleep(10);
- }
- if(st.status_value!=ST_SNIFFING)
+
+ connect_to_server();
+ send_ready();
+ recv_from_server();
+
+ if(st.status_value != ST_SNIFFING)
   esp_restart();
- disconnect();
-*/
+
+
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
 

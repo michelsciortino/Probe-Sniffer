@@ -40,7 +40,7 @@
 #define ST_SNIFFING 5
 #define ST_WAITING_TIME 6
 
-#define HEADER_LEN 10
+#define HEADER_LEN 1
 #define MAC_LEN 19
 #define TIME_LEN 22
 #define SSID_LEN 34
@@ -49,6 +49,10 @@
 #define STACK_SIZE 2000
 #define SSID_LEN_POS 37
 #define HASH_LEN SHA256_BLOCK_SIZE
+#define JSON_FIELD_LEN 64
+#define JSON_LEN 25+MAC_LEN
+#define N_RECONNECT 5
+#define JSON_MAC_POS 14 
 
 #define AP_NOT_KING 0
 #define AP_PRESENT 1
@@ -65,7 +69,7 @@ struct packet_info
 {
  char mac[MAC_LEN];
  char timestamp[TIME_LEN+13];
- //char ssid[SSID_LEN];
+ char ssid[SSID_LEN];
  char hash[(HASH_LEN*2)+1];
  int strength;
 };
@@ -81,11 +85,10 @@ struct status
  int status_value;
  char server_ip[IPLEN];
  int port;
- int socket;
  time_t srv_time;
  time_t client_time;
  struct packet_node *packet_list;
- int total_length;
+ uint16_t total_length;
  esp_timer_handle_t timer;
  bool king;
 };

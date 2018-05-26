@@ -1,5 +1,9 @@
 #include "sniffer.h"
 #include "connection.h"
+#include "utilities.h"
+#include <inttypes.h>
+
+#define TASK_STACK_SIZE 10000
 
 extern struct status st;
 
@@ -45,6 +49,11 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
   sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
  //printf("Hash: %s\n", new_node->packet.hash);
 
+ sprintf(new_node->packet.ssid, "test_ssid");
+
+ st.total_length += strlen(new_node->packet.ssid);
+ st.total_length += MAC_LEN-2 + TIME_LEN+11 + (HASH_LEN*2) + 4 + JSON_FIELD_LEN;
+
  new_node->next = st.packet_list;
  st.packet_list = new_node;
 }
@@ -85,18 +94,27 @@ void timer_handle()
 {
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
- print_data(); //SET ST_SENDING_DATA
+ //print_data(); //SET ST_SENDING_DATA
+ send_data();
  //disconnect();
  sniffer();
 }
 
 void print_data()
 {
- struct packet_node *p = st.packet_list;
+ char buf[BUFLEN];
+ struct packet_node *p;
 
+ //printf("%lu", (long unsigned int)(st.total_length + JSON_LEN));
+ printf("{\"Esp_Mac\":\"");
+ get_device_mac(buf);
+ printf("%s", buf);
+ printf("\",\n\"Packets\":[\n");
+
+ p = st.packet_list;
  while(p != NULL)
  {
-  printf("%s\n", p->packet.mac);
+  printf("{\"MAC\":\"%s\",\n\"SSID\":\"%s\",\n\"Timestamp\":\"%s\",\n\"Hash\":\"%s\",\n\"SignalStrength\":%03d,},]\n", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
   p = p->next;
  }
 }
