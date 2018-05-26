@@ -91,7 +91,7 @@ namespace Core.Controls
         }
 
 
-        public MessageBoxResult Show()
+        public new MessageBoxResult Show()
         { 
             ShowDialog();
             return _result;
