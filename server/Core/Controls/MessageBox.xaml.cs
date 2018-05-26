@@ -15,9 +15,7 @@ namespace Core.Controls
     /// </summary>
     public partial class MessageBox : Window
     {
-        private MessageBoxResult _result = MessageBoxResult.None;
-        private string _message = "",_caption = "";
-        public MessageBoxResult Result => _result;
+        public MessageBoxResult Result { get; private set; } = MessageBoxResult.None;
         public MessageBox(string messageBoxText, string caption, MessageBoxButton button = MessageBoxButton.OK, MessageBoxImage icon =0, MessageBoxResult defaultResult= MessageBoxResult.None)
         {
             InitializeComponent();
@@ -48,9 +46,6 @@ namespace Core.Controls
 
             if (icon != 0)
             {
-                /*SystemIconConverter converter = new SystemIconConverter();
-                MessageIcon.Source = (BitmapSource)converter.Convert(null, null, icon.ToString(), null);
-                if (MessageIcon.Source != null) MessageIcon.Visibility = Visibility.Visible;*/
                 switch (icon)
                 {
                     case MessageBoxImage.Error:
@@ -75,7 +70,7 @@ namespace Core.Controls
                 }
             }
 
-            _result = defaultResult;
+            Result = defaultResult;
             Message.Text = messageBoxText;
             Caption.Text = caption;
         }
@@ -87,60 +82,41 @@ namespace Core.Controls
             Width = WindowContent.DesiredSize.Width;
             Top = SystemParameters.WorkArea.Height / 2 - Height / 2;
             Left = SystemParameters.WorkArea.Width / 2 - Width / 2;
-            //Height = Caption.DesiredSize.Height + Body.DesiredSize.Height + Body.Margin.Top + Body.Margin.Bottom + Footer.DesiredSize.Height;
         }
-
-
+        
         public new MessageBoxResult Show()
         { 
             ShowDialog();
-            return _result;
+            return Result;
         }
-
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            _result = MessageBoxResult.Cancel;
+            Result = MessageBoxResult.Cancel;
             Close();
         }
 
         private void NoButton_Click(object sender, RoutedEventArgs e)
         {
-            _result = MessageBoxResult.No;
+            Result = MessageBoxResult.No;
             Close();
         }
 
         private void YesButton_Click(object sender, RoutedEventArgs e)
         {
-            _result = MessageBoxResult.Yes;
+            Result = MessageBoxResult.Yes;
             Close();
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            _result = MessageBoxResult.OK;
+            Result = MessageBoxResult.OK;
             Close();
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             DragMove();
-        }
-
-        [ValueConversion(typeof(string), typeof(BitmapSource))]
-        public class SystemIconConverter : IValueConverter
-        {
-            public object Convert(object value, Type type, object parameter, CultureInfo culture)
-            {
-                Icon icon = (Icon)typeof(SystemIcons).GetProperty(parameter.ToString(), BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
-                BitmapSource bs = Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                return bs;
-            }
-
-            public object ConvertBack(object value, Type type, object parameter, CultureInfo culture)
-            {
-                throw new NotSupportedException();
-            }
         }
     }
 }
