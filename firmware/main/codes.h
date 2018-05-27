@@ -16,7 +16,7 @@
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
 #define DEFAULT_PWD CONFIG_WIFI_PASSWORD
-#define DEFAULT_SERVER_IP CONFIG_SERVER_IP
+//#define DEFAULT_SERVER_IP CONFIG_SERVER_IP
 
 #define ESP_SSID "ESP_wifidirect"
 #define ESP_PASSWORD "password"
@@ -41,18 +41,18 @@
 #define ST_WAITING_TIME 6
 
 #define HEADER_LEN 1
-#define MAC_LEN 19
-#define TIME_LEN 22
+#define MAC_LEN 17
+#define TIME_LEN 32
 #define SSID_LEN 34
 #define TIMER_USEC 60000000
 #define MAC_POS 10
 #define STACK_SIZE 2000
 #define SSID_LEN_POS 37
-#define HASH_LEN SHA256_BLOCK_SIZE
-#define JSON_FIELD_LEN 64
-#define JSON_LEN 25+MAC_LEN
+#define HASH_LEN 32
+#define JSON_FIELD_LEN 69
+#define JSON_HEAD_LEN 25+MAC_LEN
 #define N_RECONNECT 5
-#define JSON_MAC_POS 14 
+#define JSON_MAC_POS 15 
 
 #define AP_NOT_KING 0
 #define AP_PRESENT 1
@@ -68,7 +68,7 @@
 
 struct packet_info
 {
- char mac[MAC_LEN];
+ char mac[MAC_LEN+1];
  char timestamp[TIME_LEN+13];
  char ssid[SSID_LEN];
  char hash[(HASH_LEN*2)+1];

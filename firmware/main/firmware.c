@@ -160,6 +160,7 @@ void app_main()
  setup_and_connect_wifi();
  while(st.status_value==ST_DISCONNECTED);
 
+/*
  acquire_server_ip();
  if(st.status_value==ST_GOT_IP)
  {
@@ -167,7 +168,6 @@ void app_main()
  }
  else
   esp_restart();
- strcpy(st.server_ip, DEFAULT_SERVER_IP);
 
  connect_to_server();
  send_ready();
@@ -175,7 +175,7 @@ void app_main()
 
  if(st.status_value != ST_SNIFFING)
   esp_restart();
-/*
+
  acquire_server_ip();
  connect_to_server();  //DEBUG
  send_ready();         //DEBUG

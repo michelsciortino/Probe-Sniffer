@@ -246,23 +246,25 @@ void send_data()
  struct packet_node *p;
 
  buf[0] = header;
- st.total_length += JSON_LEN;
+ st.total_length += JSON_HEAD_LEN+2;
  buf[1] = (char) (st.total_length >> 8);
  buf[2] = (char) (st.total_length & 0xff);
  sprintf(buf+3, "{\"Esp_Mac\":\"");
  get_device_mac(buf+JSON_MAC_POS);
- sprintf(buf+32, "\",\"Packets\":[");
- Send((const void *)buf, 45, 0);
+ sprintf(buf+JSON_MAC_POS+MAC_LEN, "\",\"Packets\":[");
+ Send((const void *)buf, JSON_HEAD_LEN+3, 0);
 
  buf[0] = '\0';
 
  p = st.packet_list;
  while(p != NULL)
  {
-  sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%03d,},]", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
+  sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
   Send(buf, strlen(buf), 0);
   p = p->next;
  }
+ sprintf(buf, "]}");
+ Send(buf, strlen(buf), 0);
 }
 
 int Send(const void *data, size_t datalen, int flags)
