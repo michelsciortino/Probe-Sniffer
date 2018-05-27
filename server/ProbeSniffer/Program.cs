@@ -12,7 +12,7 @@ using System.Reflection;
 
 namespace ProbeSniffer
 {
-    public class Program
+    /*public class Program
     {
         private Configuration configuration = null;
         private DataCollector dataCollector = null;
@@ -128,5 +128,5 @@ namespace ProbeSniffer
             toast.Activate();
         }
 
-    }
+    }*/
 }
