@@ -16,6 +16,7 @@ namespace ProbeSniffer
     {
         private Configuration configuration = null;
         private DataCollector dataCollector = null;
+        private CancellationTokenSource broadcasterTokenS = null;
         private System.Windows.Forms.NotifyIcon notifyIcon = null;
 
 
@@ -71,6 +72,8 @@ namespace ProbeSniffer
 
             //Connecting to Devices
             splash.ShowDeviceAwaitingSplashScreen();
+            broadcasterTokenS = new CancellationTokenSource();
+            UdpBroadcaster.Start(broadcasterTokenS.Token);
             dataCollector = new DataCollector();
             while(dataCollector.Initialize() is false);
             dataCollector.StartDataCollection();
@@ -105,6 +108,7 @@ namespace ProbeSniffer
         {
             toast.Close();
             visualizer.Close();
+            broadcasterTokenS.Cancel();
             notifyIcon.Visible = false;
             try { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; } catch { }
             Application.Current.Shutdown();
