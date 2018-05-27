@@ -28,10 +28,13 @@ namespace ProbeSniffer.Windows
 
         private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left && e.ClickCount == 2)
-                Maximize(null, null);
-            else
-                DragMove();
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                if (e.ClickCount == 2)
+                    Maximize(null, null);
+                else
+                    DragMove();
+            }
         }
 
         public void Exit(object sender, RoutedEventArgs e) => Close();
@@ -53,7 +56,7 @@ namespace ProbeSniffer.Windows
                     Left = 0;
                     Height = SystemParameters.WorkArea.Height;
                     Width = SystemParameters.WorkArea.Width;
-                    state=WindowState.Maximized;                    
+                    state = WindowState.Maximized;
                     break;
 
                 case WindowState.Maximized:
