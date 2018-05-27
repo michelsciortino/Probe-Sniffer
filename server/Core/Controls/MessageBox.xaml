@@ -36,6 +36,7 @@
                     Style="{StaticResource ExitControlButton}"
                     Height="30" Width="30" Foreground="White"
                     FontSize="10"
+                    Click="ExitButton_Click"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"/>
         </Grid>
