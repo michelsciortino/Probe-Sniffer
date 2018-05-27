@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using static System.Math;
+using System.Windows;
 
 namespace Core.DataCollection
 {
@@ -12,15 +13,15 @@ namespace Core.DataCollection
         /// Find a point given a list of devices and a SignalStrength
         /// </summary>
         /// <param name="deviceList">List of Device with SignalStrength(Db)</param>
-        /// <returns>Return intersection point</returns>
-        public static ICollection<KeyValuePair<double, double>> Interpolates(List<KeyValuePair<ESP32_Device, int>> deviceList)
+        /// <returns>Return intersection Point</returns>
+        public static Point Interpolates(List<KeyValuePair<ESP32_Device, int>> deviceList)
         {
             bool firstCouple = false;
             bool first = false;
-            ICollection<KeyValuePair<double, double>> point = new Dictionary<double, double>();
-            List<KeyValuePair<double, double>> twoIntersect = new List<KeyValuePair<double, double>>();
-            List<KeyValuePair<double, double>> totalPoint = new List<KeyValuePair<double, double>>();
-            List<KeyValuePair<double, double>> firstPoint = new List<KeyValuePair<double, double>>();
+            Point point = new Point();
+            List<Point> twoIntersect = new List<Point>();
+            List<Point> totalPoint = new List<Point>();
+            List<Point> firstPoint = new List<Point>();
 
             for (int i = 0; i < deviceList.Count; i++)
             {
@@ -50,7 +51,7 @@ namespace Core.DataCollection
         #endregion
        
         #region Private Method
-        private static List<KeyValuePair<double, double>> InterpolatesTwoDevice(KeyValuePair<ESP32_Device, int> first, KeyValuePair<ESP32_Device, int> second)
+        private static List<Point> InterpolatesTwoDevice(KeyValuePair<ESP32_Device, int> first, KeyValuePair<ESP32_Device, int> second)
         {
             //find distance from Db ---> radius
             //Distance(km) = 10(Free Space Path Loss – 32.44 – 20log10(f)) / 20       MHz e Km
@@ -72,16 +73,16 @@ namespace Core.DataCollection
             Circumference c1 = new Circumference(radius1, first.Key.X_Position, first.Key.Y_Position);
             Circumference c2 = new Circumference(radius2, second.Key.X_Position, second.Key.Y_Position);
 
-            List<KeyValuePair<double, double>> twoIntersect = new List<KeyValuePair<double, double>>();
+            List<Point> twoIntersect = new List<Point>();
 
             twoIntersect = TwoCircumferenceIntersection(c1, c2);
 
             return twoIntersect;
         }
 
-        private static List<KeyValuePair<double, double>> TwoCircumferenceIntersection(Circumference c1, Circumference c2)
+        private static List<Point> TwoCircumferenceIntersection(Circumference c1, Circumference c2)
         {
-            List<KeyValuePair<double, double>> twoIntersect = new List<KeyValuePair<double, double>>();
+            List<Point> twoIntersect = new List<Point>();
 
             double xc1 = c1.Xcenter, yc1 = c1.Ycenter, xc2 = c2.Xcenter, yc2 = c2.Ycenter, r1 = c1.Radius, r2 = c2.Radius;
 
@@ -103,9 +104,9 @@ namespace Core.DataCollection
                 double Y2 = y_cost + y_variable;
                 //Console.WriteLine("X1:{0}   Y1:{1}\nX2:{2}    Y2:{3}", Round(X1, 3), Round(Y1, 3), Round(X2, 3), Round(Y2, 3));     //stampo con tre cifre significative
 
-                twoIntersect.Add(new KeyValuePair<double, double>(X1, Y1));
+                twoIntersect.Add(new Point(X1, Y1));
 
-                twoIntersect.Add(new KeyValuePair<double, double>(X2, Y2));
+                twoIntersect.Add(new Point(X2, Y2));
 
                 return twoIntersect;
             }
@@ -115,24 +116,24 @@ namespace Core.DataCollection
             }
         }
 
-        private static List<KeyValuePair<double, double>> CheckPoint(List<KeyValuePair<double, double>> twoIntersect, List<KeyValuePair<double, double>> totalPoint, List<KeyValuePair<double, double>> firstPoint, bool first)
+        private static List<Point> CheckPoint(List<Point> twoIntersect, List<Point> totalPoint, List<Point> firstPoint, bool first)
         {
             double min = 100;
-            List<KeyValuePair<double, double>> pointsNear = new List<KeyValuePair<double, double>>();
+            List<Point> pointsNear = new List<Point>();
             if (first == true)
             {
-                foreach (KeyValuePair<double, double> couple in twoIntersect)
+                foreach (Point couple in twoIntersect)
                 {
-                    if (Abs(couple.Key - (firstPoint[0].Key)) < min)
+                    if (Abs(couple.X - (firstPoint[0].X)) < min)
                     {
-                        min = Abs(couple.Key - (firstPoint[0].Key));
+                        min = Abs(couple.X - (firstPoint[0].X));
                         pointsNear.Clear();
                         pointsNear.Add(couple);
                         pointsNear.Add(firstPoint[0]);
                     }
-                    if (Abs(couple.Key - (firstPoint[1].Key)) < min)
+                    if (Abs(couple.X - (firstPoint[1].X)) < min)
                     {
-                        min = Abs(couple.Key - (firstPoint[1].Key));
+                        min = Abs(couple.X - (firstPoint[1].X));
                         pointsNear.Clear();
                         pointsNear.Add(couple);
                         pointsNear.Add(firstPoint[1]);
@@ -142,13 +143,13 @@ namespace Core.DataCollection
             }
             else
             {
-                foreach (KeyValuePair<double, double> couple in twoIntersect)
+                foreach (Point couple in twoIntersect)
                 {
-                    foreach (KeyValuePair<double, double> point in totalPoint)
+                    foreach (Point point in totalPoint)
                     {
-                        if (Abs(couple.Key - (point.Key)) < min)
+                        if (Abs(couple.X - (point.X)) < min)
                         {
-                            min = Abs(couple.Key - (point.Key));
+                            min = Abs(couple.X - (point.X));
                             pointsNear.Clear();
                             pointsNear.Add(couple);
                         }
@@ -158,19 +159,17 @@ namespace Core.DataCollection
             }
         }
 
-        private static ICollection<KeyValuePair<double, double>> MediumPoints(List<KeyValuePair<double, double>> totalPoint)
+        private static Point MediumPoints(List<Point> totalPoint)
         {
-            ICollection<KeyValuePair<double, double>> point = new Dictionary<double, double>();
-
             double sumX = 0, sumY = 0, X = 0, Y = 0;
-            foreach (KeyValuePair<double, double> couple in totalPoint)
+            foreach (Point couple in totalPoint)
             {
-                sumX += couple.Key;
-                sumY += couple.Value;
+                sumX += couple.X;
+                sumY += couple.Y;
             }
             X = sumX / totalPoint.Count;
             Y = sumY / totalPoint.Count;
-            point.Add(new KeyValuePair<double, double>(X, Y));
+            Point point = new Point(X, Y);
             return point;
         }
         #endregion
