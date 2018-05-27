@@ -36,8 +36,15 @@ namespace Core.DeviceCommunication
             IPEndPoint lEndPoint = new IPEndPoint(LocalNetworkConnection.GetLocalIp(), ESP_PORT);
             try
             {
-                client = new UdpClient(lEndPoint);
-                client.Connect(rEndPoint);
+                while (token.IsCancellationRequested is false)
+                {
+                    client = new UdpClient(lEndPoint);
+                    client.EnableBroadcast = true;
+                    client.Connect(rEndPoint);
+                    Send(message.ToBytes());
+                    client.Close();
+                    Thread.Sleep(6000);
+                }
             }
             catch
             {
@@ -45,11 +52,7 @@ namespace Core.DeviceCommunication
                 err.Show();
                 return;
             }
-            while (token.IsCancellationRequested is false)
-            {
-                Send(message.ToBytes());
-                Thread.Sleep(6000);
-            }
+            
         }
 
         public static void Start(CancellationToken token)
