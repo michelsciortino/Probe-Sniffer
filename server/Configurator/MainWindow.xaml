@@ -20,6 +20,13 @@
     <Window.DataContext>
         <vm:ConfiguratorViewModel/>
     </Window.DataContext>
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      UseAeroCaptionButtons="False"
+                      GlassFrameThickness="1"
+                      CornerRadius="0"
+                      ResizeBorderThickness="5"/>
+    </WindowChrome.WindowChrome>
 
     <Window.Template>
         <ControlTemplate TargetType="{x:Type Window}">
@@ -33,7 +40,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Title Bar -->
-                    <Grid Grid.Row="0" MouseDown="{Binding TitleBar_MouseDown}"
+                    <Grid Grid.Row="0" MouseDown="TitleBar_MouseDown"
                           Background="{StaticResource BackgroundLighterColorBrush}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock VerticalAlignment="Center"
@@ -57,19 +64,19 @@
                                     Style="{StaticResource ExitControlButton}"
                                     Visibility="Visible"
                                     Content="&#xE8BB;"
-                                    Click="{Binding Exit}"/>
+                                    Click="Exit"/>
                             <Button x:Name="MaximizeBtn"
                                     Width="30" Height="30"
                                     Foreground="White"
                                     Style="{StaticResource MaximizeControlButton}"
                                     Content="&#xE922;"
-                                    Click="{Binding Maximize}"/>
+                                    Click="Maximize"/>
                             <Button x:Name="MinimizeBtn"
                                     Width="30" Height="30"
                                     Foreground="White"
                                     Style="{StaticResource MinimizeControlButton}"
                                     Content="&#xE921;"
-                                    Click="{Binding Minimize}"/>
+                                    Click="Minimize"/>
                         </StackPanel>
                     </Grid>
 
@@ -82,13 +89,7 @@
         </ControlTemplate>
     </Window.Template>
     
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0"
-                      UseAeroCaptionButtons="False"
-                      GlassFrameThickness="1"
-                      CornerRadius="0"
-                      ResizeBorderThickness="5"/>
-    </WindowChrome.WindowChrome>
+    
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -176,6 +177,7 @@
                         Margin="0,20"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Center"
+                        IsEnabled="{Binding SearchForDeviceButtonEnabled, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
                         BorderThickness="0">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
