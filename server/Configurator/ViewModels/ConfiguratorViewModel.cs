@@ -6,7 +6,9 @@ using Core.ViewModelBase;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -36,7 +38,7 @@ namespace Configurator.ViewModels
 
         #region Private properties
         private ObservableCollection<Device> _devices = null;
-        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false, _saveConfigurationButtonEnabled = true;
+        private bool _newDeviceFormEnabled = true, _addDeviceButtonEnabled = false, _saveConfigurationButtonEnabled = true, _searchForDeviceButtonEnabled = true;
         private string _x = null, _y = null, _mac = null;
         //private string _selectedSSID = null;
         //private ObservableCollection<string> _ssidsList = null;
@@ -128,6 +130,11 @@ namespace Configurator.ViewModels
             }
         }*/
 
+        public bool SearchForDeviceButtonEnabled
+        {
+            get => _searchForDeviceButtonEnabled;
+            set { if (_searchForDeviceButtonEnabled == value) return; _searchForDeviceButtonEnabled = value; OnPropertyChanged(nameof(SearchForDeviceButtonEnabled)); }
+        }
 
         public bool AddDeviceButtonEnabled
         {
@@ -154,35 +161,47 @@ namespace Configurator.ViewModels
         public ICommand AddDeviceCommand => _addDeviceCommand ?? (_addDeviceCommand = new RelayCommand<object>((x) => AddDevice()));
         public ICommand RemoveDeviceCommand => _removeDeviceCommand ?? (_removeDeviceCommand = new RelayCommand<Device>((x) => RemoveDevice(x)));
         public ICommand SaveConfigurationCommand => _saveConfigurationCommand ?? (_saveConfigurationCommand = new RelayCommand<object>((x) => SaveConfiguration()));
-        public ICommand SearchForDevicesCommand => _searchForDevicesCommand ?? (_searchForDevicesCommand = new RelayCommand<object>((x)=>SearchForDevices()));
+        public ICommand SearchForDevicesCommand => _searchForDevicesCommand ?? (_searchForDevicesCommand = new RelayCommand<object>((x)=>SearchForDevicesAsync()));
         //public ICommand UpdateAvaibleSSIDsListCommand => _updateAvaibleSSIDsListCommand ?? (_updateAvaibleSSIDsListCommand = new RelayCommand<object>((x) => UpdateAvaibleSSIDsList()));
         #endregion
 
         #region Private Methods
 
-        private void SearchForDevices()
+        private async Task SearchForDevicesAsync()
         {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
             if (broadcaster.IsAlive is false) broadcaster.Start();
             if (server.IsStarted is false) server.Start();
-
-            ESP_Message message = null;
-            while (!(message is Ready_Message))
-            {
-                while (server.EnquedMessages is 0)
+            SearchForDeviceButtonEnabled = false;
+            ESP_Message message = await Task.Run(() => {
+                Stopwatch watch = new Stopwatch();
+                ESP_Message m = null;
+                watch.Start();
+                
+                while (!(m is Ready_Message))
                 {
-                    if (watch.ElapsedMilliseconds > int.MaxValue)
+                    while (server.EnquedMessages is 0)
                     {
-                        Core.Controls.MessageBox mox = new Core.Controls.MessageBox("No device found", "", MessageBoxButton.OK);
-                        mox.Show();
-                        return;
+                        if (watch.ElapsedMilliseconds > 20 *1000)
+                        {
+                            watch.Stop();
+                            return null;
+                        }
+                        Thread.Sleep(500);
                     }
-                    Thread.Sleep(500);
+                    m = server.GetNextMessage();
                 }
-                message = server.GetNextMessage();
+                watch.Stop();
+                return m;
+            });
+
+            if (message is null)
+            {
+                Core.Controls.MessageBox mox = new Core.Controls.MessageBox("No device found", ":(", MessageBoxButton.OK);
+                mox.Show();
             }
-            MAC = message.Payload;
+            else
+                MAC = message.Payload;
+            SearchForDeviceButtonEnabled = true;
         }
 
         private void AddDevice()
