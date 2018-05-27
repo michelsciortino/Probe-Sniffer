@@ -1,4 +1,5 @@
 ﻿using Core.Models;
+using System;
 using System.Net;
 
 namespace Core.DeviceCommunication.Messages.Server_Messages
@@ -13,7 +14,7 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
             IPAddress localIP = LocalNetworkConnection.GetLocalIp();
             string ip = localIP.ToString();
             _header = SERVER_ADV;
-            _payload = ip.Length.ToString() + ip;
+            _payload = ip+"\r\n";
         }
         #endregion
     }
