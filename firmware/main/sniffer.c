@@ -1,13 +1,18 @@
 #include "sniffer.h"
 #include "connection.h"
+#include "utilities.h"
+#include <inttypes.h>
+
+#define TASK_STACK_SIZE 10000
 
 extern struct status st;
 
 void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 {
+ char c;
  int i;
- struct packet_node *new_node;
- char new_time[TIME_LEN+13];
+ struct packet_node *new_node = NULL;
+ char new_time[TIME_LEN+1];
  char hash_str[HASH_LEN];
  if(type != WIFI_PKT_MGMT)
   return;
@@ -16,7 +21,16 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  //if(st.status_value != ST_SNIFFING)
   //return;
 
+ c = ((wifi_promiscuous_pkt_t *)buf)->payload[0] & 0xB0;
+ if(c != 0)
+  return;
+
  new_node = (struct packet_node *)malloc(sizeof(*new_node));
+ if(new_node == NULL)
+ {
+  printf("ERROR IN MALLOC\n");
+  esp_restart();
+ }
 
  //save mac address of sender device
  for(i=0; i<6; i++)
@@ -44,6 +58,11 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  for(i = 0; i < HASH_LEN; i++)
   sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
  //printf("Hash: %s\n", new_node->packet.hash);
+
+ sprintf(new_node->packet.ssid, "test_ssid");
+
+ st.total_length += strlen(new_node->packet.ssid);
+ st.total_length += MAC_LEN + TIME_LEN + (HASH_LEN*2) + JSON_FIELD_LEN;
 
  new_node->next = st.packet_list;
  st.packet_list = new_node;
@@ -85,20 +104,42 @@ void timer_handle()
 {
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
- print_data(); //SET ST_SENDING_DATA
+ //print_data(); //SET ST_SENDING_DATA
+ send_data();
  //disconnect();
  sniffer();
 }
 
 void print_data()
 {
- struct packet_node *p = st.packet_list;
+ char buf[BUFLEN];
+ struct packet_node *p;
+ int i = 0;
+ int n;
 
+ st.total_length += JSON_HEAD_LEN+2;
+ n = CODE_DATA;
+
+ buf[0] = (char) (st.total_length >> 8);
+ buf[1] = (char) (st.total_length & 0xff);
+
+ printf("%d ", n);
+ printf("%02x%02x\n", buf[0], buf[1]);
+ //printf("%lu", (long unsigned int)(st.total_length + JSON_LEN));
+ printf("{\"Esp_Mac\":\"");
+ get_device_mac(buf);
+ printf("%s", buf);
+ printf("\",\n\"Packets\":[\n");
+
+ p = st.packet_list;
  while(p != NULL)
  {
-  printf("%s\n", p->packet.mac);
+  printf("{\"MAC\":\"%s\",\n\"SSID\":\"%s\",\n\"Timestamp\":\"%s\",\n\"Hash\":\"%s\",\n\"SignalStrength\":%04d,},\n", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
   p = p->next;
+  if(i != 0 && (i++%50) == 0)
+   usleep(1000000);
  }
+ printf("]}\n");
 }
 
 //add elapsed time to timestamp received from server
