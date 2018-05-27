@@ -21,7 +21,7 @@ namespace Core.DeviceCommunication
 
     public class TcpServer
     {
-        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 20000;
+        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 60000;
 
         #region Private Members
         private ServerMode mode;
@@ -153,7 +153,7 @@ namespace Core.DeviceCommunication
             try { localEndPoint = new IPEndPoint(localIp, port); }
             catch { return; }
 
-            try { listener = new TcpListener(localIp, port); }
+            try { listener = new TcpListener(localEndPoint); }
             catch { return; }
 
             try
