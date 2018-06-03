@@ -263,4 +263,4 @@ __pycache__/
 # Firmware ignore
 build/
 sdkconfig.old
-
+sdkconfig

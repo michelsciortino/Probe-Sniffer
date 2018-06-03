@@ -146,12 +146,11 @@ void app_main()
 
  initialize_st();
 
-/* if(WEB_SERVER_FLAG)
- {
+#ifdef CONFIG_WEB_SERVER_ONLY
   web_server();
   return;
- }
-*/
+#endif
+
  //ret = AP_protocol();
 
  //create timer
