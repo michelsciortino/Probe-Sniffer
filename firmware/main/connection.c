@@ -248,8 +248,8 @@ void send_data()
 
  buf[0] = header;
  st.total_length += JSON_HEAD_LEN+2;
- buf[1] = (char) (st.total_length >> 8);
- buf[2] = (char) (st.total_length & 0xff);
+ buf[2] = (char) (st.total_length >> 8);
+ buf[1] = (char) (st.total_length & 0xff);
  sprintf(buf+3, "{\"Esp_Mac\":\"");
  get_device_mac(buf+JSON_MAC_POS);
  sprintf(buf+JSON_MAC_POS+MAC_LEN, "\",\"Packets\":[");

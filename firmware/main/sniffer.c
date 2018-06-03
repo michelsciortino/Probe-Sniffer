@@ -115,13 +115,14 @@ void print_data()
  char buf[BUFLEN];
  struct packet_node *p;
  int i = 0;
- int n;
+ int n, len;
 
- st.total_length += JSON_HEAD_LEN+2;
+ len = st.total_length;
+ len += JSON_HEAD_LEN+2;
  n = CODE_DATA;
 
- buf[0] = (char) (st.total_length >> 8);
- buf[1] = (char) (st.total_length & 0xff);
+ buf[0] = (char) (len >> 8);
+ buf[1] = (char) (len & 0xff);
 
  printf("%d ", n);
  printf("%02x%02x\n", buf[0], buf[1]);
