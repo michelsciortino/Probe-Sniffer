@@ -4,11 +4,13 @@
 #include <stdio.h> //DEBUG
 #include <ctype.h> //DEBUG
 #include <time.h>
+#include <pthread.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
+#include "esp_pthread.h"
 #include "nvs_flash.h"
 #include "sys/socket.h"
 #include "sha256.h"
@@ -43,6 +45,7 @@
 #define HEADER_LEN 1
 #define MAC_LEN 17
 #define TIME_LEN 32
+#define SRV_TIME_LEN 19
 #define SSID_LEN 34
 #define TIMER_USEC 60000000
 #define MAC_POS 10

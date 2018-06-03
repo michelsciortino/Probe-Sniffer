@@ -74,7 +74,7 @@ void sniffer()
  clear_data();
  start_timer();
 
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+ //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
 }
 
 void clear_data()
@@ -102,9 +102,9 @@ void start_timer()
 //handle the end of the timer: send data to server then reset timer and return sniffing
 void timer_handle()
 {
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+ //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
- //print_data(); //SET ST_SENDING_DATA
+ print_data(); //SET ST_SENDING_DATA
  send_data();
  //disconnect();
  sniffer();

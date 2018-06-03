@@ -221,12 +221,13 @@ void setup_and_connect_wifi(void)
 void save_timestamp(char *buf)
 {
  struct tm timestamp;
- char srv_time[TIME_LEN];
+ char srv_time[SRV_TIME_LEN+1];
  int y, mon, d, h, min, sec;
 
- strncpy(srv_time, buf+2, TIME_LEN-2);
- srv_time[TIME_LEN-2]='\0';
+ strncpy(srv_time, buf+HEADER_LEN, SRV_TIME_LEN);
+ srv_time[SRV_TIME_LEN]='\0';
  sscanf(srv_time, "%d:%d:%d:%d:%d:%d", &y, &mon, &d, &h, &min, &sec);
+ printf("SRV_TIME %s\n", srv_time);
  timestamp.tm_year = y-1900;
  timestamp.tm_mon = mon;
  timestamp.tm_mday = d;

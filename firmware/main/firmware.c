@@ -4,6 +4,8 @@
 #include "connection.h"
 #include "sniffer.h"
 
+#define SNIFFER_STACK_SIZE 2000
+
 struct status st;
 
 int test_global=0;
@@ -119,6 +121,12 @@ int AP_protocol()
 }
 */
 
+void *sniffer_thread(void *p)
+{
+ sniffer();
+ return NULL;
+}
+
 //initialize the main structure
 void initialize_st()
 {
@@ -136,6 +144,7 @@ void initialize_st()
 //main function
 void app_main()
 {
+ pthread_t sniffer_t;
  esp_err_t ret = nvs_flash_init();
  if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
   ESP_ERROR_CHECK(nvs_flash_erase());
@@ -144,6 +153,7 @@ void app_main()
  ESP_ERROR_CHECK( ret );
 
  initialize_st();
+
 
  //ret = AP_protocol();
 
@@ -178,6 +188,9 @@ void app_main()
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
 
+
+ ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
  sniffer();
+ //pthread_create(&sniffer_t, NULL, sniffer_thread, NULL);
 }
 
