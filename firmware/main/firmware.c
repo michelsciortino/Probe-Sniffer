@@ -3,7 +3,7 @@
 #include "codes.h"
 #include "connection.h"
 #include "sniffer.h"
-#include "web_server.h"
+//#include "web_server.h"
 
 #define SNIFFER_STACK_SIZE 2000
 
@@ -146,12 +146,12 @@ void app_main()
 
  initialize_st();
 
- if(WEB_SERVER_FLAG)
+/* if(WEB_SERVER_FLAG)
  {
   web_server();
   return;
  }
-
+*/
  //ret = AP_protocol();
 
  //create timer

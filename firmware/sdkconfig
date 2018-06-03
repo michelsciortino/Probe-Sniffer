@@ -88,7 +88,7 @@ CONFIG_SERVER_IP="192.168.1.15"
 #
 # Debug Mode
 #
-CONFIG_WEB_SERVER_ONLY=y
+CONFIG_WEB_SERVER_ONLY=
 
 #
 # Partition Table
