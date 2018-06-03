@@ -28,5 +28,7 @@ menu "Debug Mode"
 
 config WEB_SERVER_ONLY
     bool "Web Server Only"
+    help
+	Debug mode with only web server active
 
 endmenu

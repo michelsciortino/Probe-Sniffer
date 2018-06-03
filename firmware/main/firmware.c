@@ -146,7 +146,7 @@ void app_main()
 
  initialize_st();
 
- if(CONFIG_WEB_SERVER_ONLY)
+ if(WEB_SERVER_FLAG)
  {
   web_server();
   return;
