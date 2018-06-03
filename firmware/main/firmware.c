@@ -3,12 +3,11 @@
 #include "codes.h"
 #include "connection.h"
 #include "sniffer.h"
+#include "web_server.h"
 
 #define SNIFFER_STACK_SIZE 2000
 
 struct status st;
-
-int test_global=0;
 
 /* #HEX+ASCII PRINTER#
 //print payload data in hex and ascii, for debug purposes
@@ -121,12 +120,6 @@ int AP_protocol()
 }
 */
 
-void *sniffer_thread(void *p)
-{
- sniffer();
- return NULL;
-}
-
 //initialize the main structure
 void initialize_st()
 {
@@ -144,7 +137,6 @@ void initialize_st()
 //main function
 void app_main()
 {
- pthread_t sniffer_t;
  esp_err_t ret = nvs_flash_init();
  if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
   ESP_ERROR_CHECK(nvs_flash_erase());
@@ -154,6 +146,11 @@ void app_main()
 
  initialize_st();
 
+ if(CONFIG_WEB_SERVER_ONLY)
+ {
+  web_server();
+  return;
+ }
 
  //ret = AP_protocol();
 
@@ -191,6 +188,5 @@ void app_main()
 
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
  sniffer();
- //pthread_create(&sniffer_t, NULL, sniffer_thread, NULL);
 }
 
