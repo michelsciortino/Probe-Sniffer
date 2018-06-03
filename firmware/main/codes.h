@@ -43,12 +43,13 @@
 #define ST_ERR 4
 #define ST_SNIFFING 5
 #define ST_WAITING_TIME 6
+#define ST_SENDING_DATA 7
 
 #define HEADER_LEN 1
 #define MAC_LEN 17
 #define TIME_LEN 32
 #define SRV_TIME_LEN 19
-#define SSID_LEN 34
+#define SSID_MAXLEN 32
 #define TIMER_USEC 60000000
 #define MAC_POS 10
 #define STACK_SIZE 2000
@@ -57,7 +58,8 @@
 #define JSON_FIELD_LEN 69
 #define JSON_HEAD_LEN 25+MAC_LEN
 #define N_RECONNECT 5
-#define JSON_MAC_POS 15 
+#define JSON_MAC_POS 15
+#define PAYLOAD_PROBE_POS 24 
 
 #define AP_NOT_KING 0
 #define AP_PRESENT 1
@@ -75,7 +77,7 @@ struct packet_info
 {
  char mac[MAC_LEN+1];
  char timestamp[TIME_LEN+13];
- char ssid[SSID_LEN];
+ char ssid[SSID_MAXLEN+1];
  char hash[(HASH_LEN*2)+1];
  int strength;
 };

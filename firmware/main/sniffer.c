@@ -14,16 +14,20 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  struct packet_node *new_node = NULL;
  char new_time[TIME_LEN+1];
  char hash_str[HASH_LEN];
+ char ssid[SSID_MAXLEN+1];
  if(type != WIFI_PKT_MGMT)
   return;
 
  //to prevent creating nodes during sending process
- //if(st.status_value != ST_SNIFFING)
-  //return;
+ if(st.status_value != ST_SNIFFING)
+  return;
 
  c = ((wifi_promiscuous_pkt_t *)buf)->payload[0] & 0xB0;
  if(c != 0)
   return;
+
+ //print raw packet received for debug purposes
+ //print_raw_data((unsigned char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len);
 
  new_node = (struct packet_node *)malloc(sizeof(*new_node));
  if(new_node == NULL)
@@ -36,14 +40,9 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  for(i=0; i<6; i++)
  {
   sprintf(new_node->packet.mac+i*3, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
-  //printf("%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
   if(i != 5)
    sprintf(new_node->packet.mac+2+i*3, ":");
-   //printf(":");
  }
- //printf("\n");
-
- //find_ssid(ssid);
 
  //save timestamp
  calculate_timestamp(new_time);
@@ -51,15 +50,15 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 
  //save rssi
  new_node->packet.strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
- //printf("%s rssi:%d\n", new_time, new_node->packet.strength);
 
  //calculate and save hash
  hash((const BYTE *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, (BYTE *)hash_str);
  for(i = 0; i < HASH_LEN; i++)
   sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
- //printf("Hash: %s\n", new_node->packet.hash);
 
- sprintf(new_node->packet.ssid, "test_ssid");
+ get_ssid((char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, ssid);
+ printf("SSID: %s\n", ssid);
+ sprintf(new_node->packet.ssid, ssid);
 
  st.total_length += strlen(new_node->packet.ssid);
  st.total_length += MAC_LEN + TIME_LEN + (HASH_LEN*2) + JSON_FIELD_LEN;
@@ -74,6 +73,7 @@ void sniffer()
  clear_data();
  start_timer();
 
+ st.status_value = ST_SNIFFING;
  //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
 }
 
@@ -102,6 +102,7 @@ void start_timer()
 //handle the end of the timer: send data to server then reset timer and return sniffing
 void timer_handle()
 {
+ st.status_value = ST_SENDING_DATA;
  //ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
  //reconnect();
  print_data(); //SET ST_SENDING_DATA
