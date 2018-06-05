@@ -11,7 +11,7 @@ struct status st;
 
 /* #HEX+ASCII PRINTER#
 //print payload data in hex and ascii, for debug purposes
-void print_data(unsigned char *buf, int len)
+void print_raw_data(unsigned char *buf, int len)
 {
  int i, j, c, fill_spaces;
  for(i=0; i < len; i++)

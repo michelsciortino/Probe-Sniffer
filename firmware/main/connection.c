@@ -39,7 +39,10 @@ void recv_from_server()
    close(srv_socket);
    connect_to_server();
    if(st.status_value != ST_ERR)
+   {
     recv_len=1;
+    send_ready();
+   }
    continue;
   }
   code=read_header(buf);
