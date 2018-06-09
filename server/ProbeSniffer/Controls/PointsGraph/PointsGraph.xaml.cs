@@ -220,7 +220,7 @@ namespace ProbeSniffer.Controls.PointsGraph
 
         private void FindYAxisBounds()
         {
-            minY = int.MaxValue -20;
+            minY = int.MaxValue;
             maxY = int.MinValue;
             if (Points != null && Points.Count > 0)
             {
@@ -231,7 +231,7 @@ namespace ProbeSniffer.Controls.PointsGraph
                 }                
             }
             if (maxY < 50) maxY = 50;
-            if (minY < 0) minY = 0;
+            if (minY < 0 || minY > maxY) minY = 0;
 
         }
         #endregion
