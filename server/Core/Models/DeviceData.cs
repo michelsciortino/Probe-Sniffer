@@ -8,10 +8,8 @@ namespace Core.Models
     public class DeviceData
     {
         public string Esp_Mac { get; set; }
-        public DateTime Timestamp { get; set; }
         public List<Packet> Packets { get; set; }
         
-
         public DeviceData()
         {
             Packets = new List<Packet>();
