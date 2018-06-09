@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,7 +14,7 @@ namespace Core.DataCollection
     public class DataCollector
     {
         #region Private Members
-        private TcpServer server = null;
+        private TcpServer2 server = null;
         private DatabaseConnection dbConnection = null;
         private Thread collectorThread = null;
         private Thread dbStoreThread = null;
@@ -37,7 +38,7 @@ namespace Core.DataCollection
             dataCollectionTokenSource = new CancellationTokenSource();
             collectorThread = new Thread(() => DataCollectionLoop(dataCollectionTokenSource.Token));
             dbStoreThread = new Thread(() => DataStoreLoopAsync(dataCollectionTokenSource.Token));
-            server = new TcpServer(ServerMode.DATACOLLECTION_MODE);
+            server = new TcpServer2(ServerMode.DATACOLLECTION_MODE);
             packets = new Queue<Packet>();
             packetsMutex = new Mutex();
             storeFails = new Queue<Packet>();
@@ -84,30 +85,26 @@ namespace Core.DataCollection
 
         private void DataCollectionLoop(CancellationToken token)
         {
-            Queue<ESP_Message> messages = null;
             while (token.IsCancellationRequested is false)
             {
                 if (server.IsStarted)
                 {
-                    while (server.EnquedMessages == 0)
-                    {
-                        if (token.IsCancellationRequested) return;
-                        Thread.Sleep(100);
-                    }
-                    messages = server.GetNewMessages();
+                    if (token.IsCancellationRequested) return;
+
+                    server.NewMessageEvent.WaitOne(2000);
+                    if (server.EnquedMessages == 0) continue;
+                    
+                    Data_Message message = server.GetNextMessage() as Data_Message;
+                    if (message is null) continue;
+
+                    DeviceData data = DeviceData.FromJson(message.Payload);
+                    if (data is null) continue;
 
                     packetsMutex.WaitOne();
-                    while (messages.Count > 0)
+                    foreach (Packet p in data.Packets)
                     {
-                        Data_Message message = messages.Dequeue() as Data_Message;
-                        if (message is null) continue;
-                        DeviceData data = DeviceData.FromJson(message.Payload);
-                        if (data is null) continue;
-                        foreach (Packet p in data.Packets)
-                        {
-                            p.ESP_MAC = data.Esp_Mac;
-                            packets.Enqueue(p);
-                        }
+                        p.ESP_MAC = data.Esp_Mac;
+                        packets.Enqueue(p);
                     }
                     packetsMutex.ReleaseMutex();
                 }
@@ -172,8 +169,11 @@ namespace Core.DataCollection
                     try
                     {
                         bool result= await dbConnection.StorePacketAsync(p);
-                        if(result is false) storeFails.Enqueue(p);
-                        break;
+                        if (result is false)
+                        {
+                            storeFails.Enqueue(p);
+                            break;
+                        }
                     }
                     catch
                     { //Se lo store del dato è fallito, segnalo e interrompo
