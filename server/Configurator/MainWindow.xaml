@@ -144,7 +144,7 @@
                                 <TextBlock Padding="5,0" Text="{Binding MAC}"/>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Padding="5,0" Text="x:"/>
-                                    <TextBlock Padding="5,0" Text="{Binding X_position}"/>
+                                    <TextBlock Padding="5,0" Text="{Binding X_Position}"/>
                                     <TextBlock Padding="5,0" Text="y:"/>
                                     <TextBlock Padding="5,0" Text="{Binding Y_Position}"/>
                                 </StackPanel>
