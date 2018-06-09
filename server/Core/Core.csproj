@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="DnsClient, Version=1.0.7.0, Culture=neutral, PublicKeyToken=4574bb5573c51424, processorArchitecture=MSIL">
@@ -74,6 +76,7 @@
     </Compile>
     <Compile Include="DatabaseConnection\DatabaseConnection.cs" />
     <Compile Include="DataCollection\DataCollector.cs" />
+    <Compile Include="DataCollection\Interpolator.cs" />
     <Compile Include="DeviceCommunication\ESPManager.cs" />
     <Compile Include="DeviceCommunication\Messages\ESP32 Messages\Data_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\ESP32 Messages\Ready_Message.cs" />
@@ -84,6 +87,7 @@
     <Compile Include="DeviceCommunication\Messages\Server Messages\Server_Advertisement_Message.cs" />
     <Compile Include="DeviceCommunication\Messages\Server Messages\Timestamp_Message.cs" />
     <Compile Include="DeviceCommunication\TcpServer.cs" />
+    <Compile Include="DeviceCommunication\TcpServer2.cs" />
     <Compile Include="DeviceCommunication\UdpBroadcaster.cs" />
     <Compile Include="Models\Configuration.cs" />
     <Compile Include="Models\Database\IntervalDataEntry.cs" />
