@@ -16,7 +16,7 @@ namespace ProbeSniffer
     /// Logica di interazione per App.xaml
     /// </summary>
     public partial class App : Application
-    {
+    {/*
         private Configuration configuration = null;
         private DataCollector dataCollector = null;
         private CancellationTokenSource broadcasterTokenS = null;
@@ -28,14 +28,15 @@ namespace ProbeSniffer
         private DataVisualizer visualizer = null;
         private ToastMenu toast = null;
         #endregion
-
-        /*protected override void OnStartup(StartupEventArgs e)
+        */
+        protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             Program program = new Program();
             program.Main();
-        }*/
+        }
 
+        /*
         protected new void Run()
         {
             //Showing Splash Screen
@@ -44,7 +45,7 @@ namespace ProbeSniffer
 
             //Loading configuration
             splash.ShowConfLoadingSplashScreen();
-            configuration = Configuration.LoadConfiguration();
+            /*configuration = Configuration.LoadConfiguration();
 
             if (configuration is null)
             {
@@ -84,7 +85,7 @@ namespace ProbeSniffer
             dataCollector = new DataCollector();
             while (dataCollector.Initialize() is false) ;
             dataCollector.StartDataCollection();
-
+            
             //Setting up the notification icon
             notifyIcon = new System.Windows.Forms.NotifyIcon();
             Stream iconStream = Assembly.GetAssembly(typeof(Core.Controls.MessageBox)).GetManifestResourceStream("Core.Resources.icon.ico");
@@ -135,5 +136,6 @@ namespace ProbeSniffer
             toast.Show();
             toast.Activate();
         }
+        */
     }
 }
