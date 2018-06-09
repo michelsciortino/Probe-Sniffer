@@ -12,7 +12,7 @@ using System.Reflection;
 
 namespace ProbeSniffer
 {
-    /*public class Program
+    public class Program
     {
         private Configuration configuration = null;
         private DataCollector dataCollector = null;
@@ -77,7 +77,7 @@ namespace ProbeSniffer
             dataCollector = new DataCollector();
             while(dataCollector.Initialize() is false);
             dataCollector.StartDataCollection();
-
+            
             //Setting up the notification icon
             notifyIcon = new System.Windows.Forms.NotifyIcon();
             Stream iconStream = Assembly.GetAssembly(typeof(Core.Controls.MessageBox)).GetManifestResourceStream("Core.Resources.icon.ico");
@@ -128,5 +128,5 @@ namespace ProbeSniffer
             toast.Activate();
         }
 
-    }*/
+    }
 }
