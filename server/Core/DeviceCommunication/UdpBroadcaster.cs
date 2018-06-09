@@ -17,11 +17,7 @@ namespace Core.DeviceCommunication
 
         public static bool Send(byte[] packet)
         {
-            try
-            {                
-                client.Send(packet,packet.Length);
-                Debug.WriteLine(BitConverter.ToString(packet));
-            }
+            try {  client.Send(packet,packet.Length); }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
