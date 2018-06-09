@@ -7,13 +7,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using System.Linq;
+using Core.DataCollection;
+using System.Windows;
+using Core.DeviceCommunication;
 
 namespace ProbeSniffer.ViewModels.DataVisualizer
 {
     public class LiveViewViewModel : BaseViewModel
     {
         #region Private Members
-        private const int UPDATING_RATE = 1000;
+        private const int UPDATING_RATE = 60000;
         private Timer timer = null;
         private DatabaseConnection dbConnection = null;
         #endregion
@@ -68,37 +72,109 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
 
         public async Task UpdateAsync(object dispatcher)
         {
-            if ((Dispatcher)dispatcher is null)
+            StopUpdater();
+            Dispatcher disp = dispatcher as Dispatcher;
+            if(disp is null)
                 return;
-            /*IntervalDescriptionEntry lastIntervalDescription = await dbConnection.GetLastIntervalDescritpionEntryAsync();
-            List<IntervalDataEntry> lastIntervalData = await dbConnection.GetLastIntervalDataEntriesAsync();
+            DateTime old = DateTime.Now;
+            old=old.Subtract(new TimeSpan(0,2,0));
+            DateTime newd = DateTime.Now;
 
-            Dictionary<string, Device> lastIntervalDetectedDevices = new Dictionary<string, Device>();
-            foreach(IntervalDataEntry entry in lastIntervalData)
+            List<Packet> intervalPackets=await dbConnection.GetIntervalPacketAsync(old, newd);
+
+            //Per ogni pacchetto nell'intervallo ottengo un dizionario di <Hash pacchetto, Lista pacchetti con lo stesso hash>
+            Dictionary<string, List<Packet>> PacketForHash = new Dictionary<string, List<Packet>>();
+            foreach(Packet p in intervalPackets)
             {
-                if (lastIntervalDetectedDevices.ContainsKey(entry.Sender.MAC))
-                    lastIntervalDetectedDevices[entry.Sender.MAC] = entry.Sender;
+                if (PacketForHash.ContainsKey(p.Hash))
+                    PacketForHash[p.Hash].Add(p);
                 else
-                    lastIntervalDetectedDevices.Add(entry.Sender.MAC, entry.Sender);
+                    PacketForHash.Add(p.Hash, new List<Packet> { p });
             }
 
-            ((Dispatcher)dispatcher).Invoke(() =>
+            //elimino dati che non servono più
+            intervalPackets.Clear();
+
+            //Elimino tutti i probe non detected da almeno 2 ESP
+            Dictionary<string, List<Packet>> PurgedPacketForHash = new Dictionary<string, List<Packet>>();
+            foreach(var pair in PacketForHash)
             {
-                _devices.Clear();
-                foreach(Device d in lastIntervalDetectedDevices.Values)
-                    _devices.Add(d);
-                _espDevices.Clear();
-                foreach (Device d in lastIntervalDescription.ActiveEsps)
-                    _espDevices.Add(d);
-                if (_points.Count >= 20)
-                    _points.RemoveAt(0);
-                ObservableCollection<Point> newPoints = _points;
-                newPoints.Add(new Point(lastIntervalDescription.IntervalId, lastIntervalDescription.NumberOfDetectedDevices));
-                _points = newPoints;
-            });*/
+                if (pair.Value.Count >= 2)
+                    PurgedPacketForHash.Add(pair.Key,pair.Value);
+            }
+            PacketForHash = PurgedPacketForHash;
+
+            //Per ogni mac di device trovato, prendo l'ultimo probe che questo ha generato nell'intervallo
+            Dictionary<string, string> latestHashForMac = new Dictionary<string, string>();
+
+            foreach (string key in PacketForHash?.Keys)
+            {
+                List<Packet> value = PacketForHash[key];
+                if (latestHashForMac.ContainsKey(value[0].MAC))
+                {
+                    if (PacketForHash[latestHashForMac[value[0].MAC]][0].Timestamp > value[0].Timestamp)
+                        latestHashForMac[value[0].MAC] = key;
+                }
+                else
+                    latestHashForMac.Add(value[0].MAC, key);
+            }
+
+            List<Device> newMapDevices = new List<Device>();
+
+            Dictionary<string,ESP32_Device> esps = ESPManager.ESPs.ToDictionary(e => e.MAC);
+            foreach (var pair in esps) pair.Value.Active = false;
+
+            foreach(KeyValuePair<string,string> pair in latestHashForMac)
+            {
+                Point point= default;
+                List<KeyValuePair<ESP32_Device, int>> detections = new List<KeyValuePair<ESP32_Device, int>>();
+                List<Packet> packets = PacketForHash[pair.Value];
+
+                foreach(Packet p in packets)
+                {
+                    detections.Add(new KeyValuePair<ESP32_Device, int>(esps[p.ESP_MAC], p.SignalStrength));
+                    if (esps[p.ESP_MAC].Active == false) esps[p.ESP_MAC].Active = true;
+                }
+
+
+                try
+                {
+                    point = Interpolator.Interpolate(detections);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                newMapDevices.Add(new Device
+                {
+                    MAC = pair.Key,
+                    Timestamp = PacketForHash[pair.Value][0].Timestamp,
+                    X_Position = point.X,
+                    Y_Position = point.Y
+                });
+            }
+
+            latestHashForMac.Clear();
+            PacketForHash.Clear();
+
+            disp.Invoke(() =>
+            {
+                Devices.Clear();
+                foreach (Device d in newMapDevices)
+                    Devices.Add(d);
+                    ESPDevices.Clear();
+                foreach (ESP32_Device d in esps.Values)
+                    if(d.Active)
+                    ESPDevices.Add(d);
+                if (Points.Count >= 20)
+                    Points.RemoveAt(0);
+                Points.Add(new KeyValuePair<int, string>(Devices.Count, newd.Hour.ToString()+":"+newd.Minute.ToString()));
+            });
 
             #region Test
-            ((Dispatcher)dispatcher).Invoke(() => {
+            /*
+            disp.Invoke(() => {
                 int Id;
                 if(Points.Count>=20)
                     Points.RemoveAt(0);
@@ -114,11 +190,13 @@ namespace ProbeSniffer.ViewModels.DataVisualizer
                 Points.Add(new KeyValuePair<int, string>(newp % 250,(Id).ToString()));
                 Devices.Add(new Device { MAC = "AA:BB:CC:DD:EE:FF", X_Position= newx % 400 , Y_Position= newy%400  });
             });
+            */
             #endregion
+            RunUpdater();
         }
 
-        public void RunUpdater() => timer.Change(0, UPDATING_RATE);
-        public void StopUpdater() => timer.Change(Timeout.Infinite, UPDATING_RATE);
+        public void RunUpdater() => timer.Change(UPDATING_RATE, UPDATING_RATE);
+        public void StopUpdater() => timer.Change(Timeout.Infinite, Timeout.Infinite);
         #endregion
     }
 }
