@@ -48,7 +48,7 @@
                                        GraphContentPadding="10"
                                        HorizontalSteps="20"
                                        AxisOutlineLenght="20"
-                                       HorizontalStepsWidth="30"
+                                       HorizontalStepsWidth="40"
                                        VerticalAlignment="Bottom"
                                        GraphHeight="200"/>
                 </Border>
