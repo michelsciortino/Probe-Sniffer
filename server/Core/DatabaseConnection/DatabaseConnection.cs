@@ -56,7 +56,11 @@ namespace Core.DBConnection
         public async Task<List<Packet>> GetIntervalPacketAsync(DateTime start, DateTime end)
         {
             List<Packet> entries = new List<Packet>();
-            entries.AddRange((await GetPacketCollection().FindAsync((entry) => entry.Timestamp >= start && entry.Timestamp < end)).ToList());
+            try
+            {
+                entries.AddRange((await GetPacketCollection().FindAsync((entry) => entry.Timestamp >= start && entry.Timestamp < end)).ToList());
+            }
+            catch(Exception ex) { Logger.Log(ex.Message); }
             return entries;
         }
 
