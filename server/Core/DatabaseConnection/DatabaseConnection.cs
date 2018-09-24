@@ -35,6 +35,20 @@ namespace Core.DBConnection
             return Connected;
         }
 
+        public bool TestConnection()
+        {
+            int tries = 0;
+            while (tries != 3)
+            {
+                Connect();
+                if (Connected) return true;
+                Thread.Sleep(2000);
+                tries++;
+            }
+            return false;
+        }
+
+
         private IMongoCollection<Packet> GetPacketCollection()
         {
             lock (ThreadSafeLock)
