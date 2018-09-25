@@ -27,6 +27,8 @@ namespace Server
 
         public void Main()
         {
+            visualizer = new DataVisualizer();
+
             //Showing Splash Screen
             splash = new SplashScreen();
             splash.Show();
@@ -67,6 +69,9 @@ namespace Server
             }*/
             Thread.Sleep(1000);
 
+
+            
+
             //Setting up the notification icon
             notifyIcon = new System.Windows.Forms.NotifyIcon();
             Stream iconStream = Assembly.GetAssembly(typeof(Core.Controls.MessageBox)).GetManifestResourceStream("Core.Resources.icon.ico");
@@ -80,17 +85,23 @@ namespace Server
             toast.ShowGraphClicked += Toast_ShowGraphClicked;
 
             //starting data collection
-            //dataCollector.StartDataCollection();
 
+            ShowMessage("Starting data collection");
+            //dataCollector.StartDataCollection();
+            
             //Opening visualizer
             splash.Close();
-            visualizer = new DataVisualizer();
-            visualizer.Show();
         }
 
         private void ShowErrorMessage(string message)
         {
             Core.Controls.MessageBox errorBox = new Core.Controls.MessageBox(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.None);
+            errorBox.Show();
+        }
+
+        private void ShowMessage(string message)
+        {
+            Core.Controls.MessageBox errorBox = new Core.Controls.MessageBox(message, "Probe Sniffer", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.None);
             errorBox.Show();
         }
 
