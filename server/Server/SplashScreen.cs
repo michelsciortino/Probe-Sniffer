@@ -22,11 +22,12 @@ namespace Server
                 splashWindow = new SplashScreenWindow();
                 splashWindow.Show();
                 Dispatcher.Run();
-
-            }));
-            SplashThread.Priority = ThreadPriority.AboveNormal;
-            SplashThread.SetApartmentState(ApartmentState.STA);
-            SplashThread.IsBackground = false;
+            }))
+            {
+                Priority = ThreadPriority.AboveNormal,
+                IsBackground = false
+            };
+            SplashThread.SetApartmentState(ApartmentState.STA);            
             SplashThread.Start();
             while (true)
             {
@@ -72,7 +73,11 @@ namespace Server
 
         public void Close()
         {
-            SplashThread.Abort();
+            Dispatcher dispatcher = Dispatcher.FromThread(SplashThread);
+            if (dispatcher == null) throw new Exception("SplashScreen Dispatcher not running");
+            dispatcher.InvokeShutdown();
+            while (dispatcher.HasShutdownFinished is false) Thread.Sleep(100);
+            SplashThread.Join();
         }
 
         /// <summary>

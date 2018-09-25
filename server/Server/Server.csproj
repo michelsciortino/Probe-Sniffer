@@ -65,6 +65,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DataVisualizer.cs" />
+    <Compile Include="ProcessHost.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SplashScreen.cs" />
     <Compile Include="ViewModels\SplashScreen\SplashViewModel.cs" />

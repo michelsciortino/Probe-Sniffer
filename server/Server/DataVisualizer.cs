@@ -1,6 +1,4 @@
-﻿using Core.Models;
-using System;
-using System.Collections.Generic;
+﻿using System;
 
 namespace Server
 {
@@ -10,17 +8,24 @@ namespace Server
         {
             CLOSED = 0,
             OPEN,
-            HIDDEN
         }
 
+        private ChildProcessHost UiProcess;
+        
         #region Private
         private VisualizerState state = VisualizerState.CLOSED;
         #endregion
 
         #region Constructor
-
-        public DataVisualizer(IList<Device> devices)
+        public DataVisualizer()
         {
+            UiProcess = new ChildProcessHost("ProbeSnifferUi");
+            UiProcess.Child_exited += UiProcess_Child_exited;
+        }
+
+        private void UiProcess_Child_exited(object sender)
+        {
+            if (UiProcess.Running is false) state = VisualizerState.CLOSED;
         }
         #endregion
 
@@ -29,29 +34,18 @@ namespace Server
         {
             if (state == VisualizerState.CLOSED)
             {
-                
+                if(UiProcess.Running==false)
+                    UiProcess.Start("ui_pipe");
+                state = VisualizerState.OPEN;
             }
-            else
-            {
-                
-            }
-            state = VisualizerState.OPEN;
         }
 
         private void VisualizerClosed(object sender, EventArgs e) => Close();
 
-        public void Hide()
-        {
-            if (state == VisualizerState.CLOSED || state == VisualizerState.HIDDEN) return;
-
-            
-            state = VisualizerState.HIDDEN;
-        }
-
         public void Close()
         {
             state = VisualizerState.CLOSED;
-           
+            UiProcess.Dispose();
         }
         #endregion
     }

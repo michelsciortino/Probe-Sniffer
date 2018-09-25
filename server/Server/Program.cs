@@ -37,7 +37,6 @@ namespace Server
             if (configuration is null)
             {
                 ShowErrorMessage("Unable to load the configuration...\nExiting.");
-                splash.Close();
                 Environment.Exit(0);
                 return;
             }
@@ -46,27 +45,27 @@ namespace Server
             //Testing Database connection
             splash.ShowDBConneLoadingSplashScreen();
             DatabaseConnection dbConnection = new DatabaseConnection();
-            if (dbConnection.TestConnection() == false) //not connected after 3 tries
+            Thread.Sleep(1000);
+            /*if (dbConnection.TestConnection() == false) //not connected after 3 tries
             {
                 ShowErrorMessage("Unable to connect to Database...\nExiting.");
-                splash.Close();
                 Environment.Exit(0);
                 return;
-            }
+            }*/
 
             //Connecting to Devices
             splash.ShowDeviceAwaitingSplashScreen();
             broadcasterTokenS = new CancellationTokenSource();
             UdpBroadcaster.Start(broadcasterTokenS.Token);
             dataCollector = new DataCollector();
-            dataCollector.Initialize();
+            /*dataCollector.Initialize();
             if(dataCollector.Initialized is false)
             {
                 ShowErrorMessage("Unable to initialize devices...\nExiting.");
-                splash.Close();
                 Environment.Exit(0);
                 return;
-            }
+            }*/
+            Thread.Sleep(1000);
 
             //Setting up the notification icon
             notifyIcon = new System.Windows.Forms.NotifyIcon();
@@ -81,11 +80,11 @@ namespace Server
             toast.ShowGraphClicked += Toast_ShowGraphClicked;
 
             //starting data collection
-            dataCollector.StartDataCollection();
+            //dataCollector.StartDataCollection();
 
             //Opening visualizer
             splash.Close();
-            visualizer = new DataVisualizer(configuration?.Devices);
+            visualizer = new DataVisualizer();
             visualizer.Show();
         }
 
@@ -103,6 +102,7 @@ namespace Server
             notifyIcon.Visible = false;
             try { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; } catch { }
             Application.Current.Shutdown();
+            Environment.Exit(0);
         }
 
         private void Toast_ShowGraphClicked(object sender, RoutedEventArgs e) => visualizer.Show();
