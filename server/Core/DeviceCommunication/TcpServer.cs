@@ -4,6 +4,7 @@ using Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,28 +13,29 @@ using System.Threading.Tasks;
 
 namespace Core.DeviceCommunication
 {
-
     public enum ServerMode
     {
-        DATACOLLECTION_MODE =0,
+        DATACOLLECTION_MODE = 0,
         CONFIGURATION_MODE
     }
 
     public class TcpServer
     {
-        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 60000;
-
+        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 30000;
+        
         #region Private Members
         private ServerMode mode;
-        private CancellationTokenSource ListenerThreadCancellationTokenSource = null;
-        private Mutex messagesQueueMutex = null;
-        private Mutex canReceiveDataMutex = null;
-        private Mutex clientsListMutex = null;
-        private Task listenerTask = null;
-        private TcpListener listener = null;
-        private Queue<ESP_Message> messagesQueue = null;
-        private List<TcpClient> clients = null;
+        private Socket listener = null;
         private Timer syncronizer = null;
+        private Thread listenerThread = null;
+        private Mutex connectionsMutex = null;
+        public Mutex messagesQueueMutex = null;
+        public Mutex canReceiveDataMutex = null;
+        private List<Socket> ConnectedEsps = null;
+        public AutoResetEvent NewMessageEvent = null;
+        private Queue<ESP_Message> messagesQueue = null;
+        private ManualResetEventSlim EspConnectedEvent = null;
+        private CancellationTokenSource StopServer = null;
         #endregion
 
         #region Private Properties
@@ -55,15 +57,12 @@ namespace Core.DeviceCommunication
                 {
                     if (value is true)
                     {
-                        clientsListMutex.WaitOne();
-                        foreach (var c in clients) Send(c, new Ok_Message().ToBytes());
-                        clientsListMutex.ReleaseMutex();
                         syncronizer.Change(0, SYNC_INTERVAL);
                     }
                     else
                         syncronizer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
-                catch(Exception ex) { Debug.WriteLine(ex.Message); }
+                catch (Exception ex) { Debug.WriteLine(ex.Message); }
                 canReceiveDataMutex.ReleaseMutex();
             }
         }
@@ -81,34 +80,33 @@ namespace Core.DeviceCommunication
         }
         #endregion
 
-        #region Signals
-        public static ManualResetEvent tcpClientConnected = null;
-        #endregion
-
         #region Constructor
         public TcpServer(ServerMode mode)
         {
             this.mode = mode;
-            messagesQueue = new Queue<ESP_Message>();
-            tcpClientConnected = new ManualResetEvent(false);
+            connectionsMutex = new Mutex();
             messagesQueueMutex = new Mutex();
             canReceiveDataMutex = new Mutex();
-            clientsListMutex = new Mutex();
-            clients = new List<TcpClient>();
+            messagesQueue = new Queue<ESP_Message>();
+            ConnectedEsps = new List<Socket>();
             syncronizer = new Timer(SyncronizeClients, null, Timeout.Infinite, Timeout.Infinite);
+            EspConnectedEvent=new ManualResetEventSlim();
+            NewMessageEvent = new AutoResetEvent(false);
         }
         #endregion
-
+        
         #region Public Methods
         public void Start()
         {
             if (IsStarted) return;
-            IPAddress localIp = LocalNetworkConnection.GetLocalIp();
-            ListenerThreadCancellationTokenSource = new CancellationTokenSource();
+            StopServer = new CancellationTokenSource();
             try
             {
-                listenerTask = new Task(() => ListenerCallBack(localIp, SERVER_PORT, ListenerThreadCancellationTokenSource.Token));
-                listenerTask.Start();
+                listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                listener.Bind(new IPEndPoint(IPAddress.Any, SERVER_PORT));
+                listener.Listen(10);
+                listenerThread = new Thread(() => AcceptNewConnections(StopServer.Token));
+                listenerThread.Start();
                 _isStarted = true;
             }
             catch (Exception ex)
@@ -118,18 +116,13 @@ namespace Core.DeviceCommunication
             }
         }
 
-        public Queue<ESP_Message> GetNewMessages()
+        public void Stop()
         {
-            Queue<ESP_Message> messages = new Queue<ESP_Message>();
-
-            messagesQueueMutex.WaitOne();
-            while (messagesQueue.Count > 0)
-            {
-                try { messages.Enqueue(messagesQueue.Dequeue()); }
-                catch { break; }
-            }
-            messagesQueueMutex.ReleaseMutex();
-            return messages;
+            StopServer.Cancel();
+            listener.Close();
+            connectionsMutex.WaitOne();
+            foreach (var socket in ConnectedEsps) socket.Close();
+            connectionsMutex.ReleaseMutex();            
         }
 
         public ESP_Message GetNextMessage()
@@ -141,134 +134,41 @@ namespace Core.DeviceCommunication
             messagesQueueMutex.ReleaseMutex();
             return ret;
         }
+
         #endregion
 
         #region Private Methods
-
-        private void ListenerCallBack(IPAddress localIp, int port, CancellationToken token)
+        private void AcceptNewConnections(CancellationToken token)
         {
-            listener = null;
-            IPEndPoint localEndPoint = null;
-
-            try { localEndPoint = new IPEndPoint(localIp, port); }
-            catch { return; }
-
-            try { listener = new TcpListener(localEndPoint); }
-            catch { return; }
-
-            try
+            while (token.IsCancellationRequested is false)
             {
-                listener.Start();
-                while (true)
-                {
-                    if (token.IsCancellationRequested) break;
-                    tcpClientConnected.Reset();
-                    listener.BeginAcceptTcpClient(new AsyncCallback(AcceptCallback), listener);
-                    tcpClientConnected.WaitOne();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                return;
+                EspConnectedEvent.Reset();
+                listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
+                EspConnectedEvent.Wait();
             }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning")]
         private void AcceptCallback(IAsyncResult ar)
         {
-            TcpListener listener = (TcpListener)ar.AsyncState;
-            TcpClient client = listener.EndAcceptTcpClient(ar);
-            clientsListMutex.WaitOne();
-            clients.Add(client);
-            clientsListMutex.ReleaseMutex();
-            ServeClientAsync(client);
-            tcpClientConnected.Set();
+            Socket socket= listener.EndAccept(ar);
+            connectionsMutex.WaitOne();
+            ConnectedEsps.Add(socket);
+            connectionsMutex.ReleaseMutex();
+            EspConnectedEvent.Set();
+            Task.Run(() => ServeEspClientAsync(socket));
         }
 
-        private async Task ServeClientAsync(TcpClient client)
+        private async Task ServeEspClientAsync(Socket socket)
         {
-            int headerCode;
-            byte[] bytes;
-            ESP_Message message;
+            ESP_Message message = null;
             ESP32_Device esp = null;
-            while (true)
+
+            while (StopServer.IsCancellationRequested is false && socket.Connected)
             {
-                bytes = await ReceiveAsync(client, 1);
-                if (bytes == null)
-                    if (client.Connected)
-                        continue;
-                    else
-                        break;
-                headerCode = bytes[0];
+                message = await ReceiveMessageAsync(socket);
+                if (message is null) break;
 
-                message = null;
-
-                switch (headerCode)
-                {
-                    case Ready_Message.READY_HEADER:
-                        try
-                        {
-                            bytes = await ReceiveAsync(client, Ready_Message.PAYLOAD_LENGTH);
-                            if (bytes == null)
-                                break;
-                            if (bytes.Length != Ready_Message.PAYLOAD_LENGTH)
-                            {
-                                message = null;
-                                break;
-                            }
-                            message = new Ready_Message
-                            {
-                                Header = Ready_Message.READY_HEADER,
-                                Payload = Encoding.ASCII.GetString(bytes, 0, Ready_Message.PAYLOAD_LENGTH)
-                            };
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                            message = null;
-                            break;
-                        }
-                        break;
-
-                    case Data_Message.DATA_HEADER:
-                        try
-                        {
-                            int jsonLenght = -1;
-                            bytes = await ReceiveAsync(client, 2);
-                            if(bytes is null)
-                            {
-                                message = null;
-                                break;
-                            }
-                            jsonLenght = BitConverter.ToUInt16(bytes,0);
-
-                            bytes = await ReceiveAsync(client, jsonLenght);
-                            if (bytes is null)
-                            {
-                                message = null;
-                                break;
-                            }
-
-                            message = new Data_Message
-                            {
-                                Header = Data_Message.DATA_HEADER,
-                                Payload = Encoding.ASCII.GetString(bytes, 0, jsonLenght)
-                            };
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                            message = null;
-                            break;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-
-                if (message is null)
-                    break;
                 if (message is Ready_Message)
                 {
                     if (mode == ServerMode.CONFIGURATION_MODE)
@@ -279,50 +179,98 @@ namespace Core.DeviceCommunication
                             if (esp is null)
                             {
                                 esp = ESPManager.GetESPDevice(message.Payload);
-                                Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
-                                ESPManager.SetDeviceStatus(esp.MAC, true);
+                                if (esp.Active == false)
+                                {
+                                    ESPManager.SetDeviceStatus(esp.MAC, true);
+                                    Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                }
+                                else
+                                {
+                                    Logger.Log("An ESP32 disconnected\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                    Logger.Log("An ESP32 reconnected\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                }
                             }
                             if (CanReceiveData is true)
-                                Send(client, new Ok_Message().ToBytes());
+                                if (Send(socket, new Ok_Message().ToBytes()) is false)
+                                    break;
                         }
                         else
                             break;
                 }
                 else if (message is Data_Message && mode == ServerMode.DATACOLLECTION_MODE)
+                {
                     EnqueueMessage(message);
+                    Logger.Log("An ESP sent DEVICE_DATA\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                }
             }
-            client.Close();
-            if (esp != null)
-                Logger.Log("An ESP disconnected\t\tx: " + esp.X_Position + " y: " + esp.Y_Position + "\r\n");
-            KillZombies();
-            ESPManager.SetDeviceStatus(esp?.MAC, false);
+
+            socket.Close();
+
+            connectionsMutex.WaitOne();
+            ConnectedEsps.Remove(socket);
+            connectionsMutex.ReleaseMutex();
+
+            /*if (esp != null)
+            {
+                ESPManager.SetDeviceStatus(esp.MAC, false);
+            }*/
         }
 
-        private void EnqueueMessage(ESP_Message message)
+        private static async Task<ESP_Message> ReceiveMessageAsync(Socket socket)
         {
-            messagesQueueMutex.WaitOne();
-            messagesQueue.Enqueue(message);
-            messagesQueueMutex.ReleaseMutex();
-        }
+            ESP_Message ret = null;
+            int headerCode = -1;
+            byte[] result = null;
 
-        /// <summary>
-        /// Receives <paramref name="nBytes"/> from the EndPoint
-        /// </summary>
-        /// <param name="nBytes">Number of bytes to receive</param>
-        /// <returns>The received bytes</returns>
-        private static async Task<byte[]> ReceiveAsync(TcpClient client,int nBytes)
-        {
 
-            byte[] bytes = new byte[nBytes];
-            int readBytes = 0, leftBytes = nBytes;
+            try { result = await ReceiveAsync(socket, 1); }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return null;
+            }
+            if (result is null) return null;
 
+            headerCode = result[0];
             try
             {
-                NetworkStream stream = client.GetStream();
-                while (leftBytes > 0)
+                switch (headerCode)
                 {
-                    readBytes = await stream.ReadAsync(bytes, nBytes - leftBytes, nBytes);
-                    leftBytes -= readBytes;
+                    case Ready_Message.READY_HEADER:
+
+                        result = new byte[Ready_Message.PAYLOAD_LENGTH];
+                        result = await ReceiveAsync(socket, Ready_Message.PAYLOAD_LENGTH);
+                        if (result is null)
+                            return null;
+
+                        ret = new Ready_Message
+                        {
+                            Header = Ready_Message.READY_HEADER,
+                            Payload = Encoding.ASCII.GetString(result, 0, Ready_Message.PAYLOAD_LENGTH)
+                        };
+                        break;
+
+                    case Data_Message.DATA_HEADER:
+
+                        int jsonLenght = -1;
+                        result = await ReceiveAsync(socket, 2);
+                        if (result is null)
+                            return null;
+
+                        jsonLenght = BitConverter.ToUInt16(result, 0);
+                        
+                        result = await ReceiveAsync(socket, jsonLenght);
+                        if (result is null)
+                            return null;
+
+                        ret = new Data_Message
+                        {
+                            Header = Data_Message.DATA_HEADER,
+                            Payload = Encoding.ASCII.GetString(result, 0, jsonLenght)
+                        };
+                        break;
+                    default:
+                        break;
                 }
             }
             catch (Exception ex)
@@ -330,22 +278,37 @@ namespace Core.DeviceCommunication
                 Debug.WriteLine(ex.Message);
                 return null;
             }
-            return bytes;
+            return ret;
         }
 
-        /// <summary>
-        /// Sends <paramref name="bytes"/> to the connected Remote EndPoint
-        /// </summary>
-        /// <param name="bytes">The array of bytes to send</param>
-        /// <returns>True if the bytes has been sent, False otherwise</returns>
-        private static bool Send(TcpClient client, byte[] bytes)
+        private static async Task<byte[]> ReceiveAsync(Socket socket,int nBytes)
         {
-            NetworkStream stream;
+            var buff = new byte[nBytes];
+            int leftBytes = nBytes;
+            while (leftBytes > 0)
+            {
+                try
+                {
+                    var recvLen = await Task.Factory.FromAsync((callback, state) => socket.BeginReceive(buff, nBytes - leftBytes, leftBytes, SocketFlags.None, callback, state),
+                                                                asyncRes =>
+                                                                {
+                                                                    try { return socket.EndReceive(asyncRes); }
+                                                                    catch { return -1; }
+                                                                },null);
+                    if (recvLen == -1)
+                        return null;
+                    leftBytes -= recvLen;
+                }
+                catch { return null; }                
+            }
+            return buff;
+        }
 
+        private static bool Send(Socket socket, byte[] bytes)
+        {
             try
             {
-                stream = client.GetStream();
-                stream.Write(bytes, 0, bytes.Length);
+                socket.Send(bytes);
             }
             catch (Exception ex)
             {
@@ -353,40 +316,22 @@ namespace Core.DeviceCommunication
                 return false;
             }
             return true;
+        }
+
+        private void EnqueueMessage(ESP_Message message)
+        {
+            messagesQueueMutex.WaitOne();
+            messagesQueue.Enqueue(message);
+            messagesQueueMutex.ReleaseMutex();
+            NewMessageEvent.Set();
         }
 
         private void SyncronizeClients(object state)
         {
-            clientsListMutex.WaitOne();
-            foreach(TcpClient c in clients)
-                if(SendTimestamp(c) is false) c.Close();
-            clientsListMutex.ReleaseMutex();
-        }
-
-        private static bool SendTimestamp(TcpClient client)
-        {
-            NetworkStream stream;
-
-            try
-            {
-                stream = client.GetStream();
-                Timestamp_Message message = new Timestamp_Message();
-                byte[] bytes = message.ToBytes();
-                stream.Write(bytes, 0, bytes.Length);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                return false;
-            }
-            return true;
-        }
-
-        private void KillZombies()
-        {
-            clientsListMutex.WaitOne();
-            clients.RemoveAll(c => c.Connected is false);
-            clientsListMutex.ReleaseMutex();
+            connectionsMutex.WaitOne();
+            foreach (var esp in ConnectedEsps)
+                if (Send(esp, new Timestamp_Message().ToBytes()) is false) esp.Close();
+            connectionsMutex.ReleaseMutex();
         }
         #endregion
     }

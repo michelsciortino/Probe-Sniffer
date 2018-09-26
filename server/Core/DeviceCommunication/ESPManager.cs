@@ -55,7 +55,7 @@ namespace Core.DeviceCommunication
                 espMutex.WaitOne();
                 result = configuredESP.Where(e => e.Value.Active).ToList();
                 espMutex.ReleaseMutex();
-                if (result.Count() < 2)
+                if (result.Count() < 1)
                     Thread.Sleep(1000);
                 else
                     break;

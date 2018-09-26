@@ -59,7 +59,7 @@ namespace Server
             {
                 _childProcess = Process.Start(processInfo);
             }
-            catch(Exception ex)
+            catch
             {
                 Console.WriteLine(string.Format("Failed to start {0}.exe", _hostProgramName));
                 return false;

@@ -47,31 +47,27 @@ namespace Server
             //Testing Database connection
             splash.ShowDBConneLoadingSplashScreen();
             DatabaseConnection dbConnection = new DatabaseConnection();
-            Thread.Sleep(1000);
-            /*if (dbConnection.TestConnection() == false) //not connected after 3 tries
+
+            if (dbConnection.TestConnection() == false) //not connected after 3 tries
             {
                 ShowErrorMessage("Unable to connect to Database...\nExiting.");
                 Environment.Exit(0);
                 return;
-            }*/
+            }
 
             //Connecting to Devices
             splash.ShowDeviceAwaitingSplashScreen();
             broadcasterTokenS = new CancellationTokenSource();
             UdpBroadcaster.Start(broadcasterTokenS.Token);
             dataCollector = new DataCollector();
-            /*dataCollector.Initialize();
+            dataCollector.Initialize();
             if(dataCollector.Initialized is false)
             {
                 ShowErrorMessage("Unable to initialize devices...\nExiting.");
                 Environment.Exit(0);
                 return;
-            }*/
-            Thread.Sleep(1000);
-
-
+            }
             
-
             //Setting up the notification icon
             notifyIcon = new System.Windows.Forms.NotifyIcon();
             Stream iconStream = Assembly.GetAssembly(typeof(Core.Controls.MessageBox)).GetManifestResourceStream("Core.Resources.icon.ico");
@@ -87,7 +83,7 @@ namespace Server
             //starting data collection
 
             ShowMessage("Starting data collection");
-            //dataCollector.StartDataCollection();
+            dataCollector.StartDataCollection();
             
             //Opening visualizer
             splash.Close();

@@ -16,7 +16,7 @@
         fluent:AcrylicWindow.TintColor="{x:Static fluent:AccentColors.ImmersiveSystemAccentDark1}"
         fluent:AcrylicWindow.TintOpacity="0.9"
         fluent:AcrylicWindow.Enabled="True"
-        fluent:AcrylicWindow.ExtendViewIntoTitleBar="True"
+        fluent:AcrylicWindow.ExtendViewIntoTitleBar="False"
         fluent:AcrylicWindow.FallbackColor="Black"
         BorderThickness="0"
         Activated="window_Activated"

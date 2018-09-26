@@ -14,7 +14,7 @@ namespace Core.DataCollection
     public class DataCollector
     {
         #region Private Members
-        private TcpServer2 server = null;
+        private TcpServer server = null;
         private DatabaseConnection dbConnection = null;
         private Thread collectorThread = null;
         private Thread dbStoreThread = null;
@@ -38,7 +38,7 @@ namespace Core.DataCollection
             dataCollectionTokenSource = new CancellationTokenSource();
             collectorThread = new Thread(() => DataCollectionLoop(dataCollectionTokenSource.Token));
             dbStoreThread = new Thread(() => DataStoreLoopAsync(dataCollectionTokenSource.Token));
-            server = new TcpServer2(ServerMode.DATACOLLECTION_MODE);
+            server = new TcpServer(ServerMode.DATACOLLECTION_MODE);
             packets = new Queue<Packet>();
             packetsMutex = new Mutex();
             storeFails = new Queue<Packet>();
