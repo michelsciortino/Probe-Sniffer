@@ -4,8 +4,11 @@
 #include "connection.h"
 #include "sniffer.h"
 //#include "web_server.h"
+#include "driver/gpio.h"
 
 #define SNIFFER_STACK_SIZE 2000
+#define LED_BUILTIN 2
+#define GPIO_OUTPUT_PIN_SEL (1ULL<<LED_BUILTIN)
 
 struct status st;
 
@@ -175,11 +178,31 @@ void app_main()
   esp_restart();
 
  connect_to_server();
+ if(st.status_value==ST_ERR)
+ {
+  printf("Error connecting to server\n");
+  esp_restart();
+ }
  send_ready();
  recv_from_server();
 
  if(st.status_value != ST_SNIFFING)
   esp_restart();
+
+ //configuration for LED
+ gpio_config_t io_conf;
+ //disable interrupt
+ io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
+ //set as output mode
+ io_conf.mode = GPIO_MODE_OUTPUT;
+ //bit mask of the pins you want to set
+ io_conf.pin_bit_mask = GPIO_OUTPUT_PIN_SEL;
+ //disable pull-down and pull-up mode
+ io_conf.pull_down_en = 0;
+ io_conf.pull_up_en = 0;
+ //configure gpio in the given settings
+ gpio_config(&io_conf);
+ gpio_set_level(LED_BUILTIN, 1);
 
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
