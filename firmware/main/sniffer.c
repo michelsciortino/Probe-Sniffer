@@ -15,8 +15,10 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
  char new_time[TIME_LEN+1];
  char hash_str[HASH_LEN];
  char ssid[SSID_MAXLEN+1];
+
+ //print_raw_data()
  if(type != WIFI_PKT_MGMT)
-  return;
+  //return;
 
  //to prevent creating nodes during sending process
  if(st.status_value != ST_SNIFFING)

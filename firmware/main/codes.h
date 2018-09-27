@@ -14,6 +14,7 @@
 #include "nvs_flash.h"
 #include "sys/socket.h"
 #include "sha256.h"
+#include "esp_spiffs.h"
 
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
@@ -30,9 +31,10 @@
 #define DEFAULT_AUTHMODE WIFI_AUTH_OPEN
 #define DEFAULT_SORT_METHOD WIFI_CONNECT_AP_BY_SIGNAL
 
-#define BUFLEN 512
+#define BUFLEN 600
 #define PORT 45445
 #define SPORT 48448
+#define WEB_PORT 80
 #define LISTENQ 3
 #define IPLEN 17
 

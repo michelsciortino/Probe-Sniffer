@@ -56,15 +56,11 @@ void recv_from_server()
     if(st.status_value != ST_SNIFFING)
     {
      st.status_value=ST_SNIFFING;
-     return;
     }
     //start_timer();
     //start_sniffing();
     break;
    case CODE_RESET:
-    close(srv_socket);
-    esp_restart();
-    break;
    default:
     close(srv_socket);
     esp_restart();
@@ -110,6 +106,9 @@ void connect_to_server()
   printf("ERR failed to connect to server\n");
   esp_restart();
  }
+
+ int yes = 1;
+ setsockopt(srv_socket, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(int));
 }
 
 void send_ready()
