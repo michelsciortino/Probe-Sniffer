@@ -166,7 +166,10 @@ void app_main()
  ESP_ERROR_CHECK( ret );
 
  //setup_and_listen_promiscuous();
+
  setup_and_connect_wifi();
+ //setup_AP();
+
  while(st.status_value==ST_DISCONNECTED);
 
  acquire_server_ip();
