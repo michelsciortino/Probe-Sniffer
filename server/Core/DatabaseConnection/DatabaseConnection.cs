@@ -4,7 +4,6 @@ using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,9 +14,9 @@ namespace Core.DBConnection
         private static Object ThreadSafeLock = new Object();
         private MongoClient client;
         private const string DatabaseName = "ProbeSniffer";
+        private const string IntervalsCollectionName = "ProbesIntervals";
         private const string PacketsCollectionName = "Packets";
         private const string ESPsCollectionName = "ESPs";
-
 
         public bool Connected { get; set; } = false;
 
@@ -26,7 +25,7 @@ namespace Core.DBConnection
             client = new MongoClient(new MongoClientSettings
             {
                 ConnectTimeout = new TimeSpan(0, 0, 10),
-                ConnectionMode= ConnectionMode.Direct
+                ConnectionMode = ConnectionMode.Direct
             });
             if (client.Cluster.Description.State == MongoDB.Driver.Core.Clusters.ClusterState.Disconnected)
                 Connected = false;
@@ -49,12 +48,20 @@ namespace Core.DBConnection
         }
 
 
-        private IMongoCollection<Packet> GetPacketCollection()
+        private IMongoCollection<Packet> GetPacketsCollection()
         {
             lock (ThreadSafeLock)
             {
                 if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
                 return client.GetDatabase(DatabaseName).GetCollection<Packet>(PacketsCollectionName);
+            }
+        }
+        private IMongoCollection<ProbesInterval> GetIntervalsCollection()
+        {
+            lock (ThreadSafeLock)
+            {
+                if (client.Cluster.Description.State is ClusterState.Disconnected) return null;
+                return client.GetDatabase(DatabaseName).GetCollection<ProbesInterval>(IntervalsCollectionName);
             }
         }
 
@@ -66,65 +73,85 @@ namespace Core.DBConnection
                 return client.GetDatabase(DatabaseName).GetCollection<Device>(ESPsCollectionName);
             }
         }
+        
 
-        public async Task<List<Packet>> GetIntervalPacketAsync(DateTime start, DateTime end)
+        public async Task<bool> StorePacketAsync(Packet packet)
+        {
+            try { await GetPacketsCollection().InsertOneAsync(packet); }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.Message);
+                return false;
+            }
+            return true;
+        }
+        
+        public async Task<bool> StoreProbesIntervalAsync(ProbesInterval interval)
+        {
+            try { await GetIntervalsCollection().InsertOneAsync(interval); }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.Message);
+                return false;
+            }
+            return true;
+        }
+
+        public async Task<List<Packet>> GetRawData(DateTime start,DateTime end)
         {
             List<Packet> entries = new List<Packet>();
             try
             {
-                entries.AddRange((await GetPacketCollection().FindAsync((entry) => entry.Timestamp >= start && entry.Timestamp < end)).ToList());
+                entries.AddRange((await GetPacketsCollection().FindAsync((entry) => entry.Timestamp >= start && entry.Timestamp < end)).ToList());
             }
-            catch(Exception ex) { Logger.Log(ex.Message); }
+            catch (Exception ex) { Logger.Log(ex.Message); }
             return entries;
         }
 
-        public async Task<ESP32_Device> GetESPPositionByTimestampAsync(string mac, DateTime timestamp)
+        public async Task<ProbesInterval> GetLastInterval()
         {
-            Device entry;
-
-
-            var options = new FindOptions<Device, Device>
+            var options = new FindOptions<ProbesInterval>
             {
                 Limit = 1,
-                Sort = Builders<Device>.Sort.Descending(e => e.Timestamp),
+                Sort = Builders<ProbesInterval>.Sort.Descending(p => p.Timestamp),
             };
-
-            entry = (await GetESPsCollection().FindAsync(e => e.MAC == mac && e.Timestamp < timestamp, options)).FirstOrDefault();
-            return new ESP32_Device(entry);
+            return (await GetIntervalsCollection().FindAsync(FilterDefinition<ProbesInterval>.Empty, options)).FirstOrDefault();
         }
 
-        public async Task<bool> StoreESPAsync(ESP32_Device entry)
+        public async Task<List<ProbesInterval>> GetLastNIntervals(int n)
         {
-            try { await GetESPsCollection().InsertOneAsync(entry); }
-            catch (Exception ex)
+            var options = new FindOptions<ProbesInterval>
             {
-                Debug.WriteLine(ex.Message);
-                return false;
-            }
-            return true;
+                Limit = n,
+                Sort = Builders<ProbesInterval>.Sort.Descending(i => i.Timestamp),
+            };
+            return (await GetIntervalsCollection().FindAsync(FilterDefinition<ProbesInterval>.Empty, options)).ToList();
         }
 
-        public async Task<bool> StorePacketAsync(Packet packet)
+        public async Task<List<ProbesInterval>> GetLastIntervalsAfter(DateTime last_interval_timestamp)
         {
-            try { await GetPacketCollection().InsertOneAsync(packet); }
-            catch (Exception ex)
+            var options = new FindOptions<ProbesInterval>
             {
-                Debug.WriteLine(ex.Message);
-                return false;
-            }
-            return true;
+                Sort = Builders<ProbesInterval>.Sort.Descending(i => i.Timestamp),
+            };
+            return (await GetIntervalsCollection().FindAsync((i) => i.Timestamp> last_interval_timestamp, options)).ToList();
         }
-
-        public async Task<bool> StorePacketListAsync(List<Packet> packets)
+        
+        public async Task<DateTime> GetFirstTimestamp()
         {
-            try { await GetPacketCollection().InsertManyAsync(packets); }
-            catch (Exception ex)
+            var options = new FindOptions<Packet>
             {
-                Debug.WriteLine(ex.Message);
-                return false;
+                Limit = 1,
+                Sort = Builders<Packet>.Sort.Descending(p => p.Timestamp),
+            };
+            var a = await GetPacketsCollection().FindAsync(FilterDefinition<Packet>.Empty, options);
+            DateTime ret;
+            try
+            {
+                ret=a.FirstOrDefault().Timestamp;
             }
-            return true;
+            catch(Exception ex) { return default; }
+            return ret;
         }
-
     }
 }
