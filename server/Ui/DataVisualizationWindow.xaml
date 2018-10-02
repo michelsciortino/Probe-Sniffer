@@ -133,20 +133,6 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="1,1">
-                <Button Content="{Binding LogButtonText,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Top"
-                        Background="{StaticResource BackgroundLighterColorBrush}"
-                        BorderBrush="Transparent"
-                        BorderThickness="0" Height="20"
-                        Padding="5,0">
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="Click">
-                            <command:EventToCommand Command="{Binding ShowHideLoggerCommand}" PassEventArgsToCommand="False"/>
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
-                </Button>
-
                 <Button Content="?"
                     HorizontalContentAlignment="Center"
                     VerticalContentAlignment="Top"
@@ -164,18 +150,5 @@
                 </Button>
             </StackPanel>
         </Grid>
-
-        <Grid x:Name="Logger"
-              Visibility="{Binding LoggerVisibility,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-              Grid.Row="0"
-              Grid.Column="2"
-              Background="{StaticResource BackgroundLighterColorBrush}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Hidden">
-                <TextBlock Text="{Binding LoggerText,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" Margin="10"
-                       MaxWidth="400" MinWidth="150"
-                       TextWrapping="Wrap"/>
-            </ScrollViewer>
-        </Grid>
-
     </Grid>
 </Window>
