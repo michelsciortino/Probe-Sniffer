@@ -8,11 +8,7 @@ namespace Core.DataCollection
 {
     public static class Interpolator
     {
-        private static bool gotFirstCouple = false;
-        private static bool gotSecondCouple = false;
-        private static List<Point> pointsList = null;
-
-        #region Public Method
+        #region Public Methods
         /// <summary>
         /// Find a point given a list of devices and a SignalStrength
         /// </summary>
@@ -22,35 +18,47 @@ namespace Core.DataCollection
         /// <exception cref="ArithmeticException">Thrown if at least two intersecting circumferences have not been found</exception>
         public static Point Interpolate(List<KeyValuePair<ESP32_Device, int>> packetDetections)
         {
-            Point[] points = null;
-            gotFirstCouple = false;
-            gotSecondCouple = false;
-            pointsList = new List<Point>();
+            Point[] best_sol = null;
+            bool got_values = true;
+            bool gotFirstCouple = false;
+            bool gotSecondCouple = false;
 
             if (packetDetections.Count < 2)
                 throw new ArgumentException("At least two detection needed; packetDetection contains " + packetDetections.Count + " detections");
 
-            for (int i = 0; i < packetDetections.Count; i++)
+            //We apply a % reducion to the db mesurament values to find the best value of the device position
+            for (double redux = 1; redux > 0 && got_values is true; redux -= 0.1)
             {
-                for (int j = i + 1; j < packetDetections.Count; j++)
+                List<Point> pointsList = new List<Point>();
+                gotFirstCouple = false;
+                gotSecondCouple = false;
+
+                for (int i = 0; i < packetDetections.Count && got_values is true; i++)
                 {
-                    points = InterpolateTwoDetections(packetDetections[i], packetDetections[j]);
-                    if (points is null)
-                        continue;
-                    AddAndCheck(points);
+                    for (int j = i + 1; j < packetDetections.Count && got_values is true; j++)
+                    {
+                        Point[] points = InterpolateTwoDetections(packetDetections[i], packetDetections[j], redux);
+                        if (points is null)
+                        {
+                            got_values = false;
+                            break;
+                        }
+                        AddAndCheck(points, pointsList, ref gotFirstCouple, ref gotSecondCouple);
+                    }
                 }
+                if (got_values is false) break;
+                best_sol = pointsList.ToArray();
             }
 
-            if (gotFirstCouple is false || gotSecondCouple is false)
-                throw new ArithmeticException("At least two circumferences has to intersect");
+            if (best_sol == null) return default;
 
-            return GetMidPoint();
+            return GetMidPoint(best_sol);
         }
 
         #endregion
 
-        #region Private Method
-        private static Point[] InterpolateTwoDetections(KeyValuePair<ESP32_Device, int> first, KeyValuePair<ESP32_Device, int> second)
+        #region Private Methods
+        private static Point[] InterpolateTwoDetections(KeyValuePair<ESP32_Device, int> first, KeyValuePair<ESP32_Device, int> second, double redux)
         {
             //find distance from Db ---> radius
             //Distance(km) = 10(Free Space Path Loss – 32.44 – 20log10(f)) / 20       MHz e Km
@@ -64,9 +72,9 @@ namespace Core.DataCollection
             //return Math.pow(10.0, exp);
 
             double exp = 0.0;
-            exp = (27.55 - (20 * Math.Log10(2412)) + Math.Abs(first.Value)) / 20.0;
+            exp = (27.55 - (20 * Math.Log10(2412)) + Math.Abs(first.Value) * redux) / 20.0;
             double radius1 = Math.Pow(10.0, exp);
-            exp = (27.55 - (20 * Math.Log10(2412)) + Math.Abs(second.Value)) / 20.0;
+            exp = (27.55 - (20 * Math.Log10(2412)) + Math.Abs(second.Value) * redux) / 20.0;
             double radius2 = Math.Pow(10.0, exp);
 
             Circumference c1 = new Circumference(radius1, first.Key.X_Position, first.Key.Y_Position);
@@ -75,7 +83,7 @@ namespace Core.DataCollection
             return Circumference.GetCircumferencesIntersections(c1, c2);
         }
 
-        private static void AddAndCheck(Point[] newPoints)
+        private static void AddAndCheck(Point[] newPoints, List<Point> pointsList, ref bool gotFirstCouple, ref bool gotSecondCouple)
         {
             double min = double.MaxValue;
 
@@ -135,21 +143,21 @@ namespace Core.DataCollection
             }
         }
 
-        private static Point GetMidPoint()
+        private static Point GetMidPoint(Point[] points)
         {
             double sumX = 0, sumY = 0, X = 0, Y = 0;
-            foreach (Point couple in pointsList)
+            foreach (Point couple in points)
             {
                 sumX += couple.X;
                 sumY += couple.Y;
             }
-            X = sumX / pointsList.Count;
-            Y = sumY / pointsList.Count;
+            X = sumX / points.Length;
+            Y = sumY / points.Length;
             return new Point(X, Y);
         }
         #endregion
 
-        #region Class Used
+        #region Private Classes
         /// <summary>
         /// Class used to interpolate
         /// </summary>
