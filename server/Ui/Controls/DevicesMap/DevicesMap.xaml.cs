@@ -29,7 +29,7 @@ namespace Ui.Controls.DevicesMap
                 Margin = new Thickness(0),
                 Padding = new Thickness(0),
                 Text = "\xE704",
-                FontSize = 18,
+                FontSize = 12,
                 FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 Foreground = ESPsColor,
                 ToolTip = New_Device_ToolTip(esp.MAC, esp.X_Position.ToString(), esp.Y_Position.ToString())
@@ -38,15 +38,23 @@ namespace Ui.Controls.DevicesMap
 
         private UIElement New_Device(Device device)
         {
+            Grid container = new Grid();
+            Border background = new Border();
+            background.Background = new SolidColorBrush(Color.FromRgb(32,32,32));
+            background.BorderThickness = new Thickness(0);
+            background.CornerRadius = new CornerRadius(2);
+            background.Margin = new Thickness(2.5,.75,2,.75);
             TextBlock t = new TextBlock();
             t.Margin = new Thickness(0);
             t.Padding = new Thickness(0);
             t.Text = "\xE8EA";
-            t.FontSize = 18;
+            t.FontSize = 12;
             t.FontFamily = new FontFamily("Segoe MDL2 Assets");
             t.Foreground = DevicesColor;
             t.ToolTip = New_Device_ToolTip(device.MAC, device.X_Position.ToString(), device.Y_Position.ToString());
-            return t;
+            container.Children.Add(background);
+            container.Children.Add(t);
+            return container;
         }
 
         private ToolTip New_Device_ToolTip(string MAC, string x, string y)

@@ -8,7 +8,11 @@
              x:Name="Map">
     <Canvas x:Name="DevicesContainer"
             Width="{Binding ElementName=Map, Path=MapWidth}"
-            Height="{Binding ElementName=Map, Path=MapHeight}"/>
+            Height="{Binding ElementName=Map, Path=MapHeight}">
+        <Canvas.LayoutTransform>
+            <ScaleTransform ScaleX="2" ScaleY="2" />
+        </Canvas.LayoutTransform>
+    </Canvas>
         <!--
         <ItemsControl ItemsSource="{Binding ESPDevices,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
                       Width="{Binding MapWidth,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"

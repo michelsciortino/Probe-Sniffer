@@ -92,11 +92,11 @@ namespace Ui.Controls.PointsGraph
                 //Adding the labels
                 TextBlock stepLabel = new TextBlock
                 {
-                    Text = i.ToString(),
-                    FontSize = 8,
+                    Text = "",
+                    FontSize = 10,
                     Foreground = LabelsColor
                 };
-                Canvas.SetBottom(stepLabel, -stepLabel.FontSize);
+                Canvas.SetBottom(stepLabel, -2*stepLabel.FontSize);
                 Canvas.SetLeft(stepLabel, offset - ((stepLabel.Text.Length * stepLabel.FontSize) / 4));
                 XLabels.Children.Add(stepLabel);
                 offset += HorizontalStepsWidth;
@@ -195,7 +195,6 @@ namespace Ui.Controls.PointsGraph
             arrow.StrokeThickness = 1;
             YAxis.Children.Add(yAxisLine);
             YAxis.Children.Add(arrow);
-
             Graph.Height = lineH + label.Height + 10;
         }
 
@@ -230,7 +229,7 @@ namespace Ui.Controls.PointsGraph
                     if (pair.Key > maxY) maxY = pair.Key;
                 }                
             }
-            if (maxY < 50) maxY = 50;
+            if (maxY < 10) maxY = 10;
             if (minY < 0 || minY > maxY) minY = 0;
 
         }
@@ -479,7 +478,7 @@ namespace Ui.Controls.PointsGraph
         public static readonly DependencyProperty HorizontalStepsProperty =
             DependencyProperty.Register("HorizontalSteps", typeof(int), typeof(PointsGraph), new PropertyMetadata(20));
         public static readonly DependencyProperty HorizontalStepsWidthProperty =
-            DependencyProperty.Register("HorizontalStepsWidth", typeof(int), typeof(PointsGraph), new PropertyMetadata(40));
+            DependencyProperty.Register("HorizontalStepsWidth", typeof(int), typeof(PointsGraph), new PropertyMetadata(80));
         public static readonly DependencyProperty GraphHeightProperty =
             DependencyProperty.Register("GraphHeight", typeof(double), typeof(PointsGraph), new PropertyMetadata((double)300));
         #endregion

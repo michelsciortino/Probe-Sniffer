@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              x:Name="PointsGraphContainer"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Grid Margin="12,0,0,10">
+    <Grid Margin="12,0,0,15">
         <Canvas x:Name="XAxis">
             <Canvas.LayoutTransform>
                 <ScaleTransform ScaleX="1" ScaleY="-1" />
