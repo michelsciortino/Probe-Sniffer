@@ -10,7 +10,7 @@
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
       Title="LiveViewPage">
-    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
+    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
         <Grid Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
@@ -48,7 +48,7 @@
                                        GraphContentPadding="10"
                                        HorizontalSteps="20"
                                        AxisOutlineLenght="20"
-                                       HorizontalStepsWidth="40"
+                                       HorizontalStepsWidth="55"
                                        VerticalAlignment="Bottom"
                                        GraphHeight="200"/>
                 </Border>
@@ -70,6 +70,8 @@
                                   HorizontalContentAlignment="Left"
                                   VerticalContentAlignment="Top">
                             <map:DevicesMap DevicesColor="{StaticResource VioletColorBrush}"
+                                            MapWidth="{Binding MapWidth}"
+                                            MapHeight="{Binding MapHeight}"
                                             ESPsColor="{StaticResource AzureColorBrush}"
                                             ESPs="{Binding ESPDevices}"
                                             Devices="{Binding Devices}"/>
@@ -93,7 +95,10 @@
                                 <TextBlock Text="ESP32" FontSize="16" Foreground="White"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Grid.Row="1">
-                                <TextBlock Text="&#xE8EA;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource VioletColorBrush}" Margin="0,0,10,0"/>
+                                <Grid>
+                                    <Border Background="{StaticResource BackgroundColorBrush}" Margin="5,.75,15,.75"/>
+                                    <TextBlock Text="&#xE8EA;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource VioletColorBrush}" Margin="0,0,10,0"/>
+                                </Grid>
                                 <TextBlock Text="Device" FontSize="16" Foreground="White"/>
                             </StackPanel>
                         </Grid>
