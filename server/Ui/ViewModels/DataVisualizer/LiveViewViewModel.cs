@@ -37,7 +37,7 @@ namespace Ui.ViewModels.DataVisualizer
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
             dbConnection.TestConnection();
-            Devices = new ObservableCollection<Device>();
+            Probes = new ObservableCollection<Probe>();
             ESPDevices = new ObservableCollection<ESP32_Device>();
             Points = new ObservableCollection<KeyValuePair<int,string>>();
         }
@@ -64,7 +64,7 @@ namespace Ui.ViewModels.DataVisualizer
         #endregion
 
         #region Public Properties
-        public ObservableCollection<Device> Devices { get; set; }
+        public ObservableCollection<Probe> Probes { get; set; }
         public ObservableCollection<ESP32_Device> ESPDevices { get; set; }
         public ObservableCollection<KeyValuePair<int, string>> Points { get; set; }
         public Double MapHeight
@@ -140,9 +140,9 @@ namespace Ui.ViewModels.DataVisualizer
                         Points.RemoveAt(0);
                     Points.Add(p);
                 }
-                Devices.Clear();
+                Probes.Clear();
                 foreach (Probe p in i_last)
-                    Devices.Add(p.Sender);
+                    Probes.Add(p);
                 ESPDevices.Clear();
                 foreach (ESP32_Device esp in new_intervals[new_intervals.Count - 1].ActiveEsps)
                 {

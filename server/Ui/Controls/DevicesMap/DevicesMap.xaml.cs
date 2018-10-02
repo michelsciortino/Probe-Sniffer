@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Core.Models;
+using Core.Models.Database;
 
 namespace Ui.Controls.DevicesMap
 {
@@ -36,7 +37,7 @@ namespace Ui.Controls.DevicesMap
             };
         }
 
-        private UIElement New_Device(Device device)
+        private UIElement New_Device(Probe probe)
         {
             Grid container = new Grid();
             Border background = new Border();
@@ -51,13 +52,13 @@ namespace Ui.Controls.DevicesMap
             t.FontSize = 12;
             t.FontFamily = new FontFamily("Segoe MDL2 Assets");
             t.Foreground = DevicesColor;
-            t.ToolTip = New_Device_ToolTip(device.MAC, device.X_Position.ToString(), device.Y_Position.ToString());
+            t.ToolTip = New_Device_ToolTip(probe.Sender.MAC, probe.Sender.X_Position.ToString(), probe.Sender.Y_Position.ToString(), probe.SSID);
             container.Children.Add(background);
             container.Children.Add(t);
             return container;
         }
 
-        private ToolTip New_Device_ToolTip(string MAC, string x, string y)
+        private ToolTip New_Device_ToolTip(string MAC, string x, string y,string SSID="")
         {
             StackPanel TextContainer = new StackPanel();
             TextBlock.SetForeground(TextContainer, Brushes.White);
@@ -77,6 +78,7 @@ namespace Ui.Controls.DevicesMap
                 Text = MAC,
                 Foreground = Brushes.White
             });
+            TextContainer.Children.Add(MacContainer);
 
             StackPanel CoordinatesContainer = new StackPanel();
             CoordinatesContainer.Orientation = Orientation.Horizontal;
@@ -103,9 +105,27 @@ namespace Ui.Controls.DevicesMap
                 Text = y,
                 Foreground = Brushes.White
             });
-
-            TextContainer.Children.Add(MacContainer);
             TextContainer.Children.Add(CoordinatesContainer);
+
+            if (SSID != "")
+            {
+                StackPanel SSIDContainer = new StackPanel();
+                SSIDContainer.Orientation = Orientation.Horizontal;
+                SSIDContainer.Children.Add(new TextBlock
+                {
+                    Background = Brushes.Transparent,
+                    Text = "SSID:",
+                    Margin = new Thickness(0, 0, 5, 0),
+                    Foreground = Brushes.White
+                });
+                SSIDContainer.Children.Add(new TextBlock
+                {
+                    Background = Brushes.Transparent,
+                    Text = SSID,
+                    Foreground = Brushes.White
+                });
+                TextContainer.Children.Add(SSIDContainer);
+            }
 
             return new ToolTip
             {
@@ -134,10 +154,10 @@ namespace Ui.Controls.DevicesMap
             set { SetValue(ESPsProperty, value); }
         }
 
-        public ObservableCollection<Device> Devices
+        public ObservableCollection<Probe> Probes
         {
-            get { return (ObservableCollection<Device>)GetValue(DevicesProperty); }
-            set { SetValue(DevicesProperty, value); }
+            get { return (ObservableCollection<Probe>)GetValue(ProbesProperty); }
+            set { SetValue(ProbesProperty, value); }
         }
 
         public double MapHeight
@@ -168,8 +188,8 @@ namespace Ui.Controls.DevicesMap
         #region Dependency Properties
         public static readonly DependencyProperty ESPsProperty =
             DependencyProperty.Register("ESPs", typeof(ObservableCollection<ESP32_Device>), typeof(DevicesMap), new FrameworkPropertyMetadata(null, OnMapChanged));
-        public static readonly DependencyProperty DevicesProperty =
-            DependencyProperty.Register("Devices", typeof(ObservableCollection<Device>), typeof(DevicesMap), new FrameworkPropertyMetadata(null, OnMapChanged));
+        public static readonly DependencyProperty ProbesProperty =
+            DependencyProperty.Register("Probes", typeof(ObservableCollection<Probe>), typeof(DevicesMap), new FrameworkPropertyMetadata(null, OnMapChanged));
         public static readonly DependencyProperty MapHeightProperty =
             DependencyProperty.Register("MapHeight", typeof(double), typeof(DevicesMap), new PropertyMetadata((double)200));
         public static readonly DependencyProperty MapWidthProperty =
@@ -190,9 +210,9 @@ namespace Ui.Controls.DevicesMap
             if (e.NewValue is ObservableCollection<ESP32_Device> new_ESPs)
                 new_ESPs.CollectionChanged += map.OnESPsCollectionChanged;
 
-            if (e.OldValue is ObservableCollection<Device> old_)
+            if (e.OldValue is ObservableCollection<Probe> old_)
                 old_.CollectionChanged -= map.OnDevicesCollectionChanged;
-            if (e.NewValue is ObservableCollection<Device> new_)
+            if (e.NewValue is ObservableCollection<Probe> new_)
                 new_.CollectionChanged += map.OnDevicesCollectionChanged;
 
             map.ESPCollection.Clear();
@@ -209,13 +229,13 @@ namespace Ui.Controls.DevicesMap
                 }
             }
             map.DevicesCollection.Clear();
-            if (map.Devices != null)
+            if (map.Probes != null)
             {
-                foreach (Device d in map.Devices)
+                foreach (Probe p in map.Probes)
                 {
-                    UIElement ESP = map.New_Device(d);
-                    Canvas.SetLeft(ESP, d.X_Position);
-                    Canvas.SetBottom(ESP, d.Y_Position);
+                    UIElement ESP = map.New_Device(p);
+                    Canvas.SetLeft(ESP, p.Sender.X_Position);
+                    Canvas.SetBottom(ESP, p.Sender.Y_Position);
                     map.DevicesCollection.Add(ESP);
                 }
             }
@@ -246,11 +266,11 @@ namespace Ui.Controls.DevicesMap
             DevicesCollection.Clear();
             if (e.NewItems != null)
             {
-                foreach (Device d in Devices)
+                foreach (Probe p in Probes)
                 {
-                    UIElement ESP = New_Device(d);
-                    Canvas.SetLeft(ESP, d.X_Position);
-                    Canvas.SetBottom(ESP, d.Y_Position);
+                    UIElement ESP = New_Device(p);
+                    Canvas.SetLeft(ESP, p.Sender.X_Position);
+                    Canvas.SetBottom(ESP, p.Sender.Y_Position);
                     DevicesCollection.Add(ESP);
                 }
             }
