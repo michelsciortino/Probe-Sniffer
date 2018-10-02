@@ -23,11 +23,13 @@ namespace Server
         private SplashScreen splash = null;
         private DataVisualizer visualizer = null;
         private ToastMenu toast = null;
+        private Logger log = null;
         #endregion
 
         public void Main()
         {
             visualizer = new DataVisualizer();
+            log = new Logger();
 
             //Showing Splash Screen
             splash = new SplashScreen();
@@ -79,6 +81,7 @@ namespace Server
             toast.Deactivated += MenuFlyout_Deactivated;
             toast.ExitCLicked += Exit;
             toast.ShowGraphClicked += Toast_ShowGraphClicked;
+            toast.ShowLogClicked += Toast_ShowLogClicked;
 
             //starting data collection
 
@@ -87,6 +90,11 @@ namespace Server
             
             //Opening visualizer
             splash.Close();
+        }
+
+        private void Toast_ShowLogClicked(object sender, RoutedEventArgs e)
+        {
+            log.Show();
         }
 
         private void ShowErrorMessage(string message)
@@ -105,6 +113,7 @@ namespace Server
         {
             toast.Close();
             visualizer.Close();
+            log.Close();
             broadcasterTokenS.Cancel();
             notifyIcon.Visible = false;
             try { Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown; } catch { }

@@ -11,6 +11,7 @@ namespace Server.Windows
     public partial class ToastMenu : Window
     {
         public event RoutedEventHandler ExitCLicked = (sender, e) => { };
+        public event RoutedEventHandler ShowLogClicked = (sender, e) => { };        
         public event RoutedEventHandler ShowGraphClicked = (sender, e) => { };
 
         #region Private Members
@@ -46,6 +47,11 @@ namespace Server.Windows
         private void ShowGraph_button_click(object sender, RoutedEventArgs e)
         {
             ShowGraphClicked(this, null);
+        }
+
+        private void ShowLog_button_click(object sender, RoutedEventArgs e)
+        {
+            ShowLogClicked(this, null);
         }
 
     }

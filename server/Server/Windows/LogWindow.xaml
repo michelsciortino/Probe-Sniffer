@@ -1,0 +1,93 @@
+﻿<Window x:Class="Server.Windows.LogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Server.Windows"
+        xmlns:vm="clr-namespace:Server.ViewModels"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        Foreground="White"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundColorBrush}"
+        BorderThickness="1"
+        BorderBrush="{x:Static SystemParameters.WindowGlassBrush}"
+        Title="Log" Height="450" Width="800"
+        MinHeight="320"
+        MinWidth="480">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" UseAeroCaptionButtons="False" GlassFrameThickness="1" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Template>
+        <ControlTemplate TargetType="{x:Type Window}">
+            <Border Background="{StaticResource BackgroundColorBrush}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title Bar -->
+                    <Grid Grid.Row="0" MouseDown="TitleBar_MouseDown"
+                          Background="{StaticResource BackgroundLighterColorBrush}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       Margin="8,0"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Text="&#xEC05;"
+                                       FontSize="20"/>
+                            <TextBlock Text="{TemplateBinding Title}"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"
+                                       FontSize="14"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                                    FlowDirection="RightToLeft"
+                                    TextElement.FontSize="10" TextElement.FontFamily="Segoe MDL2 Assets">
+                            <Button x:Name="ExitBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource ExitControlButton}"
+                                    Visibility="Visible"
+                                    Content="&#xE8BB;"
+                                    Click="Exit"/>
+                            <Button x:Name="MaximizeBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource MaximizeControlButton}"
+                                    Content="&#xE922;"
+                                    Click="Maximize"/>
+                            <Button x:Name="MinimizeBtn"
+                                    Width="30" Height="30"
+                                    Foreground="White"
+                                    Style="{StaticResource MinimizeControlButton}"
+                                    Content="&#xE921;"
+                                    Click="Minimize"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Window Content -->
+                    <ContentPresenter Grid.Row="1"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </Window.Template>
+    
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" HorizontalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch">
+            <TextBlock Text="{Binding LogText,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
+                       Margin="10"
+                       MaxWidth="400" MinWidth="300"
+                       TextWrapping="Wrap"/>
+        </ScrollViewer>
+    </Grid>
+</Window>

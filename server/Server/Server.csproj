@@ -65,9 +65,11 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="DataVisualizer.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="ProcessHost.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SplashScreen.cs" />
+    <Compile Include="ViewModels\Logger\LogViewModel.cs" />
     <Compile Include="ViewModels\SplashScreen\SplashViewModel.cs" />
     <Compile Include="Views\SplashScreen\ConfigurationLoadingView.xaml.cs">
       <DependentUpon>ConfigurationLoadingView.xaml</DependentUpon>
@@ -78,6 +80,7 @@
     <Compile Include="Views\SplashScreen\DevicesAwaitingView.xaml.cs">
       <DependentUpon>DevicesAwaitingView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\LogWindow.xaml.cs" />
     <Compile Include="Windows\SplashScreenWindow.xaml.cs">
       <DependentUpon>SplashScreenWindow.xaml</DependentUpon>
     </Compile>
@@ -138,6 +141,10 @@
     <Page Include="Views\SplashScreen\DevicesAwaitingView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\LogWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\SplashScreenWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

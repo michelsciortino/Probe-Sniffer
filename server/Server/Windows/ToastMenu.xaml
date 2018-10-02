@@ -89,8 +89,17 @@
                     </StackPanel>
                 </Grid>
             </Button>
-            <Button Style="{StaticResource ToastButton}" IsEnabled="False" Margin="0,0,5,0"/>
-            <Button Style="{StaticResource ToastButton}" Margin="0" Click="Exit_button_Click">
+            <Button Style="{StaticResource ToastButton}" Click="ShowLog_button_click"
+                    Margin="0,0,5,0">
+                <Grid>
+                    <TextBlock Text="&#xF000;" FontFamily="Segoe MDL2 Assets" FontSize="16" FontWeight="Light" Margin="0,1"/>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
+                        <TextBlock Text="Show"/>
+                        <TextBlock Text="Log"/>
+                    </StackPanel>
+                </Grid>
+            </Button>
+    <Button Style="{StaticResource ToastButton}" Margin="0" Click="Exit_button_Click">
                 <Grid>
                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
                         <TextBlock Text="Exit"/>
