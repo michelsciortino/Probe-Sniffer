@@ -322,8 +322,8 @@ namespace Core.DeviceCommunication
         {
             messagesQueueMutex.WaitOne();
             messagesQueue.Enqueue(message);
-            messagesQueueMutex.ReleaseMutex();
             NewMessageEvent.Set();
+            messagesQueueMutex.ReleaseMutex();
         }
 
         private void SyncronizeClients(object state)

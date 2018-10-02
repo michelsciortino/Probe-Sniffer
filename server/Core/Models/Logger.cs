@@ -44,7 +44,6 @@ namespace Core.Models
             try
             {
                 while (log.Count > 0) ret.Enqueue(log.Dequeue());
-
             }
             catch
             {
