@@ -3,12 +3,79 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+      xmlns:cntrl="clr-namespace:Ui.Controls.PointsGraph"
       xmlns:local="clr-namespace:Ui.Views.DataVisualizer"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="StatisticsView">
 
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition MinWidth="100" MaxWidth="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Margin="0 0 0 10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="0 5">
+                        <TextBlock Width="30" TextAlignment="Left" Text="Start" Margin="10 2" FontWeight="Bold" Foreground="White"/>
+                        <xctk:TimePicker Width="120" Format="Custom" BorderThickness="0" DisplayDefaultValueOnEmptyText="True" Kind="Utc" FormatString="dd/MM/yyyy hh:00tt" Value="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ShowButtonSpinner="True" ShowDropDownButton="False"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 5">
+                        <TextBlock Width="30" TextAlignment="Left" Text="End" Margin="10 2" FontWeight="Bold" Foreground="White"/>
+                        <xctk:TimePicker Width="120" Format="Custom" BorderThickness="0" DisplayDefaultValueOnEmptyText="True" Kind="Utc" FormatString="dd/MM/yyyy hh:00tt" Value="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ShowButtonSpinner="True" ShowDropDownButton="False"/>
+                    </StackPanel>
+                </StackPanel>
+                <Button Grid.Column="1" Margin="15">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Search" Margin="5 0 5 0" VerticalAlignment="Center"/>
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" VerticalAlignment="Center" Margin="0 2 5 0"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+            <ListBox x:Name="DeviceList"
+                     Foreground="White"
+                     Grid.Row="1"     
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                     BorderThickness="0"
+                     HorizontalContentAlignment="Stretch"
+                     Padding="0"
+                     ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource BackgroundLighterColorBrush}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border HorizontalAlignment="Stretch"
+                                Margin="0"
+                                BorderThickness="1">
+                            <StackPanel>
+                            <StackPanel HorizontalAlignment="Stretch"
+                                        MinWidth="135">
+                                <TextBlock Padding="5,0" Text="{Binding MAC}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Padding="5,0" Text="probes:"/>
+                                    <TextBlock Padding="5,0" Text="{Binding Tot_Probes}"/>
+                                </StackPanel>
+                            </StackPanel>
+                                <CheckBox IsChecked="{Binding Active}" Margin="10"/>
+                                <Ellipse Width="5" Height="5" Fill="{Binding LineColor}" Margin="10"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <cntrl:MultiPointsGraph Grid.Column="1" Margin="10"/>
     </Grid>
 </Page>
