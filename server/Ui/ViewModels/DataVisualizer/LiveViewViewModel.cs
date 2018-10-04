@@ -42,25 +42,6 @@ namespace Ui.ViewModels.DataVisualizer
             Points = new ObservableCollection<KeyValuePair<int,string>>();
         }
 
-        /*private async Task InitializeAsync()
-        {
-            *List<ProbesInterval> first_intervals = await dbConnection.GetLastNIntervals(20);
-            first_intervals.Sort((a, b) => a.Timestamp < b.Timestamp ? 1 : 0);
-
-            List<Probe> i_last = null;
-            foreach (var interval in first_intervals)
-            {
-                i_last = GetLastPositions(interval);
-                last_interval_timestamp = interval.Timestamp;
-                Points.Add(new KeyValuePair<int, string>(i_last.Count, interval.Timestamp.Hour.ToString() + ":" + interval.Timestamp.Minute.ToString()));
-            }
-            Devices.Clear();
-            foreach (Probe p in i_last)
-                Devices.Add(p.Sender);
-            ESPDevices.Clear();
-            foreach (ESP32_Device esp in first_intervals[first_intervals.Count-1].ActiveEsps)
-                ESPDevices.Add(esp);
-        }*/
         #endregion
 
         #region Public Properties
@@ -111,6 +92,11 @@ namespace Ui.ViewModels.DataVisualizer
             Dispatcher disp = dispatcher as Dispatcher;
             if(disp is null)
                 return;
+            if (dbConnection.TestConnection() == false)
+            {
+                MessageBox.Show("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
             List<ProbesInterval> new_intervals = await dbConnection.GetLastIntervalsAfter(last_interval_timestamp);
             if (new_intervals.Count == 0)
