@@ -10,6 +10,7 @@
                 <ResourceDictionary Source="pack://application:,,,/Core;component/Styles/Colors.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Core;component/Styles/ComboBoxes.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Core;component/Styles/ListBoxes.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Core;component/Styles/ScrollBars.xaml"/>
                 <ResourceDictionary Source="/Styles/Fonts.xaml"/>
                 <ResourceDictionary Source="/Controls/SpinningRing.xaml"/>
             </ResourceDictionary.MergedDictionaries>
