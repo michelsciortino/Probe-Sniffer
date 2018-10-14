@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:Ui.Controls.PointsGraph"
              mc:Ignorable="d" 
              x:Name="PointsGraphContainer"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800" Margin="10">
     <Grid Margin="12,0,0,15">
         <Canvas x:Name="XAxis">
             <Canvas.LayoutTransform>

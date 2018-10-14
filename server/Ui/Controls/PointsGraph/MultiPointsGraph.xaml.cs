@@ -14,18 +14,6 @@ namespace Ui.Controls.PointsGraph
     /// </summary>
     public partial class MultiPointsGraph : UserControl
     {
-        /*public class DeviceDetection
-        {
-            public int[] values = null;
-            public string MAC { get; set; }
-            public bool Active { get; set; }
-            public Polyline Line { get; set; }
-            public DeviceDetection(int n)
-            {
-                values = new int[n];
-            }
-        }*/
-
         #region Private Members
         private Polyline xAxisLine = null;
         private Polyline yAxisLine = null;
@@ -38,213 +26,9 @@ namespace Ui.Controls.PointsGraph
         {
             InitializeComponent();
         }
-        #endregion
-        
-        public void Refresh()
-        {
-            if(Check() is false) return;
-            FindYAxisBounds();
-            UpdateGraph();
-        }
-        private bool Check()
-        {
-            if (LinesValues is null) return false;
-            if (HorizontalLables is null) return false;
-            if (HorizontalLables.Count == 0) return false;
-            int n = HorizontalSteps;
-            foreach(var line in LinesValues)
-            {
-                if (line.Length != n) return false;
-            }
-            return true;
-        }
-
-        private void UpdateGraph()
-        {
-            SetupYAxis();
-            Graph.Children.Clear();
-            XAxis.Children.Clear();
-            XLabels.Children.Clear();
-            double hlineW = HorizontalStepsWidth * (HorizontalSteps - 1) + AxisThickness + GraphContentPadding + AxisOutlineLenght;
-
-            //Adding the horizontal axis line
-            xAxisLine = new Polyline();
-            xAxisLine.Points.Add(new Point(AxisThickness / 2, AxisThickness));
-            xAxisLine.Points.Add(new Point(hlineW, AxisThickness));
-            xAxisLine.Stroke = AxisColor;
-            xAxisLine.StrokeThickness = 0.5;
-
-            lines = new Polyline[LinesValues.Count];
-            foreach(var line in lines)
-                line.Stroke = Styles.Colors.Next;
-
-
-            //Setting the horizontal offset for the axis units and lines points
-            Double offset = AxisThickness + GraphContentPadding;
-            //for each horizontal unit:
-            for (int i = 0; i < HorizontalSteps; i++)
-            {
-                //Adding the horizontal axis units lines
-                Polyline line = new Polyline();
-                line.Points.Add(new Point(offset, AxisThickness / 2));
-                line.Points.Add(new Point(offset, AxisThickness));
-                line.Stroke = AxisColor;
-                line.Visibility = Visibility.Hidden;
-                line.StrokeThickness = 0.5;
-                XAxis.Children.Add(line);
+        #endregion       
                 
-                //Adding the horizontal axis units labels
-                TextBlock stepLabel = new TextBlock
-                {
-                    Text = HorizontalLables[i],
-                    FontSize = 10,
-                    Foreground = LabelsColor
-                };
-                Canvas.SetBottom(stepLabel, -2 * stepLabel.FontSize);
-                Canvas.SetLeft(stepLabel, offset - ((stepLabel.Text.Length * stepLabel.FontSize) / 4));
-                XLabels.Children.Add(stepLabel);
-
-                //foreach line
-                for(int j=0;j<LinesValues.Count;j++)
-                {
-                    //adding the point to the polyline in the corrisponding horizontal unit
-                    lines[j].Points.Add(new Point(offset, ((double)((double)((double)(LinesValues[j][i] - minY)) / (maxY - minY))) * (GraphHeight) + AxisThickness + GraphContentPadding));
-                    //adding the ellipse and tooltip to the point
-                    Ellipse e = new Ellipse
-                    {
-                        Width = PointSize,
-                        Height = PointSize,
-                        Fill = lines[j].Stroke,
-                        ToolTip = PointToolTip(LinesValues[j][i].ToString())
-                    };
-                    Canvas.SetLeft(e, offset - PointSize / 2);
-                    Canvas.SetTop(e, ((double)((double)((double)(LinesValues[j][i] - minY)) / (maxY - minY))) * (GraphHeight) + AxisThickness + GraphContentPadding - PointSize / 2);
-                    Graph.Children.Add(e);
-                    offset += HorizontalStepsWidth;
-                }
-                offset += HorizontalStepsWidth;
-            }
-
-            //Adding the X axis name label
-            Double XPosition = hlineW + 5;
-            Double YPosition = AxisThickness / 2;
-            Decorator label = CanvasLabel(XAxisName, XPosition, YPosition, LabelsColor, 10);
-            label.Width = 50;
-            label.Height = 15;
-            XLabels.Children.Add(label);
-
-            //Creating the arrow for the end of the axis line
-            Polyline arrow = HorizontalArrow(new Point(hlineW, AxisThickness), 5);
-            arrow.Stroke = AxisColor;
-            arrow.StrokeThickness = 1;
-
-            //Adding the X axis line and his arrow
-            XAxis.Children.Add(xAxisLine);
-            XAxis.Children.Add(arrow);
-
-            //Adding the polylines to the graph
-            foreach (var line in lines)
-                Graph.Children.Add(line);
-            Graph.Width = hlineW + label.Width + 10;
-        }
-
-        
-        private void SetupYAxis()
-        {
-            YAxis.Children.Clear();
-            YLabels.Children.Clear();
-
-            //Adding the vertical axis line
-            yAxisLine = new Polyline();
-            double lineH = GraphHeight + AxisThickness + GraphContentPadding + AxisOutlineLenght;
-            yAxisLine.Points.Add(new Point(AxisThickness, AxisThickness / 2));
-            yAxisLine.Points.Add(new Point(AxisThickness, lineH));
-            yAxisLine.Stroke = AxisColor;
-            yAxisLine.StrokeThickness = 0.5;
-
-            //Adding the labels and the unit lines
-
-            //Calculatin the steps height
-            Double offset = 0;
-            int n_division = 0;
-            double stepHeight = GraphHeight;
-            while (stepHeight > 10)
-            {
-                n_division++;
-                stepHeight = stepHeight / 10;
-            }
-            //if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
-            stepHeight = Math.Round(stepHeight, MidpointRounding.AwayFromZero);
-            for (int i = 0; i < n_division; i++)
-                stepHeight = stepHeight * 10;
-            stepHeight = stepHeight / (VerticalSteps - 1);
-
-            //Adding the lines
-            for (int i = 0; i < VerticalSteps; i++)
-            {
-                double verticalPosition = AxisThickness + GraphContentPadding + offset;
-                Polyline line = new Polyline();
-                line.Points.Add(new Point(AxisThickness / 2, verticalPosition));
-                line.Points.Add(new Point(AxisThickness, verticalPosition));
-                line.Stroke = AxisColor;
-                line.StrokeThickness = 0.5;
-                YAxis.Children.Add(line);
-
-                //Adding the labels
-
-                TextBlock stepLabel = new TextBlock
-                {
-                    Text = Math.Round((i*stepHeight)*(maxY-minY)/GraphHeight + minY).ToString(),
-                    FontSize = 8,
-                    Foreground = LabelsColor
-                };
-                Canvas.SetBottom(stepLabel, verticalPosition - stepLabel.FontSize / 2);
-                    Canvas.SetLeft(stepLabel, -((stepLabel.Text.Length * stepLabel.FontSize) / 2));
-                    YLabels.Children.Add(stepLabel);
-
-                offset += stepHeight;
-                //Avoiding lines over the vertical axis arrow
-                if ((verticalPosition + stepHeight) > lineH - AxisOutlineLenght)
-                    break;
-            }
-
-            //Adding the Y axis name label
-            Decorator label = CanvasLabel(YAxisName, -AxisThickness, lineH+5, LabelsColor, 10);
-            label.Width = 50;
-            label.Height = 15;
-            YLabels.Children.Add(label);
-
-            //Adding the arrow on top of the axis line
-            Polyline arrow = VerticalArrow(new Point(AxisThickness,lineH), AxisThickness / 2);
-            arrow.Stroke = AxisColor;
-            arrow.StrokeThickness = 1;
-            YAxis.Children.Add(yAxisLine);
-            YAxis.Children.Add(arrow);
-            Graph.Height = lineH + label.Height + 10;
-        }
-
-        private void FindYAxisBounds()
-        {
-            minY = int.MaxValue;
-            maxY = int.MinValue;
-            if (LinesValues != null && LinesValues.Count > 0)
-            {
-                foreach (int[] line_values in LinesValues)
-                {
-                    foreach (int v in line_values)
-                    {
-                        if (v < (minY + 20)) minY = v - 20;
-                        if (v > maxY) maxY = v;
-                    }
-                }                
-            }
-            if (maxY < 10) maxY = 10;
-            if (minY < 0 || minY > maxY) minY = 0;
-
-        }
-        
-        #region Common Controls Creators
-        
+        #region Common Controls Creators        
         /// <summary>
         /// Label generator for Canvas containers
         /// </summary>
@@ -262,8 +46,10 @@ namespace Ui.Controls.PointsGraph
                 FontSize = fontSize,
                 Foreground = foreground
             };
-            Decorator container = new Viewbox();
-            container.Child = label;
+            Decorator container = new Viewbox
+            {
+                Child = label
+            };
 
             Canvas.SetBottom(container, y);
             Canvas.SetLeft(container, x);
@@ -339,16 +125,22 @@ namespace Ui.Controls.PointsGraph
 
         #region Public Propeties
         /// <summary>
-        /// The labels undet the horizontal axis line
-        /// </summary>
-        public List<string> HorizontalLables { get; set; }
-        /// <summary>
         /// The values of each polyline
         /// </summary>
-        public List<int[]> LinesValues { get; set; }
-
-
-
+        public ObservableRangeCollection<KeyValuePair<int[],SolidColorBrush>> LinesValues
+        {
+            get { return (ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>>)GetValue(LinesValuesProperty); }
+            set { SetValue(LinesValuesProperty, value); }
+        }
+        /// <summary>
+        /// The labels undet the horizontal axis line
+        /// </summary>
+        public ObservableRangeCollection<string> HorizontalLables
+        {
+            get { return (ObservableRangeCollection<string>)GetValue(HorizontalLablesProperty); }
+            set { SetValue(HorizontalLablesProperty, value); }
+        }
+        
         /// <summary>
         /// The number of steps in the horizontal axis
         /// </summary>
@@ -453,8 +245,12 @@ namespace Ui.Controls.PointsGraph
             set { SetValue(GraphHeightProperty, value); }
         }
         #endregion
-        
+
         #region Dependency Properties
+        public static readonly DependencyProperty LinesValuesProperty =
+            DependencyProperty.Register("LinesValues", typeof(ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>>), typeof(MultiPointsGraph), new FrameworkPropertyMetadata(null, OnValuesChanged));
+        public static readonly DependencyProperty HorizontalLablesProperty =
+            DependencyProperty.Register("HorizontalLables", typeof(ObservableRangeCollection<string>), typeof(MultiPointsGraph), new FrameworkPropertyMetadata(null, OnLabelsChanged));
         public static readonly DependencyProperty LabelsColorProperty =
             DependencyProperty.Register("LabelsColor", typeof(SolidColorBrush), typeof(MultiPointsGraph), new PropertyMetadata(Brushes.Black));
         public static readonly DependencyProperty GraphContentPaddingProperty =
@@ -477,6 +273,251 @@ namespace Ui.Controls.PointsGraph
             DependencyProperty.Register("HorizontalStepsWidth", typeof(int), typeof(MultiPointsGraph), new PropertyMetadata(80));
         public static readonly DependencyProperty GraphHeightProperty =
             DependencyProperty.Register("GraphHeight", typeof(double), typeof(MultiPointsGraph), new PropertyMetadata((double)300));
+        #endregion
+
+        #region Private Methods
+        private static void OnValuesChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            MultiPointsGraph graph = sender as MultiPointsGraph;
+            if (e.OldValue is ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>> old_ && old_ != null)
+                old_.CollectionChanged -= graph.UpdateGraph;
+            if (e.NewValue is ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>> new_ && new_ != null)
+                new_.CollectionChanged += graph.UpdateGraph;
+        }
+        private static void OnLabelsChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            MultiPointsGraph graph = sender as MultiPointsGraph;
+
+            if (e.OldValue is ObservableRangeCollection<string> old_ && old_ != null)
+                old_.CollectionChanged -= graph.SetupXaxis;
+            if (e.NewValue is ObservableRangeCollection<string> new_ && new_ != null)
+                new_.CollectionChanged += graph.SetupXaxis;
+        }
+
+        public void Refresh(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (Check() is false) return;
+            FindYAxisBounds();
+            SetupYAxis();
+            SetupXaxis(null,null);
+            UpdateGraph(null,null);
+        }
+        private bool Check()
+        {
+            if (LinesValues is null) return false;
+            if (HorizontalLables is null) return false;
+            if (HorizontalLables.Count == 0) return false;
+            int n = HorizontalSteps;
+            foreach (var line in LinesValues)
+            {
+                if (line.Key.Length != n) return false;
+            }
+            return true;
+        }
+
+        private void UpdateGraph(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (Check() is false) return;
+            FindYAxisBounds();
+            SetupYAxis();
+            Graph.Children.Clear();
+            List<Ellipse> points = new List<Ellipse>();
+            lines = new Polyline[LinesValues.Count];
+            for (int i = 0; i < lines.Length; i++)
+            {
+                lines[i] = new Polyline
+                {
+                    Stroke = LinesValues[i].Value
+                };
+            }
+
+            //Setting the horizontal offset for the axis units and lines points
+            Double offset = AxisThickness + GraphContentPadding;
+            //for each horizontal unit:
+            for (int i = 0; i < HorizontalSteps; i++)
+            {
+                //foreach line
+                for (int j = 0; j < LinesValues.Count; j++)
+                {
+                    //adding the point to the polyline in the corrisponding horizontal unit
+                    lines[j].Points.Add(new Point(offset, ((double)((double)((double)(LinesValues[j].Key[i] - minY)) / (maxY - minY))) * (GraphHeight) + AxisThickness + GraphContentPadding));
+                    //adding the ellipse and tooltip to the point
+                    Ellipse ec = new Ellipse
+                    {
+                        Width = PointSize,
+                        Height = PointSize,
+                        Fill = lines[j].Stroke,
+                        ToolTip = PointToolTip(LinesValues[j].Key[i].ToString())
+                    };
+                    Canvas.SetLeft(ec, offset - PointSize / 2);
+                    Canvas.SetTop(ec, ((double)((double)((double)(LinesValues[j].Key[i] - minY)) / (maxY - minY))) * (GraphHeight) + AxisThickness + GraphContentPadding - PointSize / 2);
+                    points.Add(ec);
+                }
+                offset += HorizontalStepsWidth;
+            }
+            //Adding the polylines to the graph
+            foreach (var line in lines)
+                Graph.Children.Add(line);
+            foreach (var ec in points)
+                Graph.Children.Add(ec);
+            
+        }
+
+        private void SetupXaxis(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            XAxis.Children.Clear();
+            XLabels.Children.Clear();
+
+            double hlineW = HorizontalStepsWidth * (HorizontalSteps - 1) + AxisThickness + GraphContentPadding + AxisOutlineLenght;
+
+            //Adding the horizontal axis line
+            xAxisLine = new Polyline();
+            xAxisLine.Points.Add(new Point(AxisThickness / 2, AxisThickness));
+            xAxisLine.Points.Add(new Point(hlineW, AxisThickness));
+            xAxisLine.Stroke = AxisColor;
+            xAxisLine.StrokeThickness = 0.5;
+
+            //Setting the horizontal offset for the axis units and lines points
+            Double offset = AxisThickness + GraphContentPadding;
+            //for each horizontal unit:
+            for (int i = 0; i < HorizontalSteps; i++)
+            {
+                //Adding the horizontal axis units lines
+                Polyline line = new Polyline();
+                line.Points.Add(new Point(offset, AxisThickness / 2));
+                line.Points.Add(new Point(offset, AxisThickness));
+                line.Stroke = AxisColor;
+                line.Visibility = Visibility.Visible;
+                line.StrokeThickness = 0.5;
+                XAxis.Children.Add(line);
+
+                //Adding the horizontal axis units labels
+                TextBlock stepLabel = new TextBlock
+                {
+                    Text = HorizontalLables[i],
+                    FontSize = 10,
+                    Foreground = LabelsColor
+                };
+                Canvas.SetBottom(stepLabel, -2 * stepLabel.FontSize);
+                Canvas.SetLeft(stepLabel, offset);
+                XLabels.Children.Add(stepLabel);
+                offset += HorizontalStepsWidth;
+            }
+
+
+            //Adding the X axis name label
+            Double XPosition = hlineW + 5;
+            Double YPosition = AxisThickness / 2;
+            Decorator label = CanvasLabel(XAxisName, XPosition, YPosition, LabelsColor, 10);
+            label.Width = 50;
+            label.Height = 15;
+            XLabels.Children.Add(label);
+
+            //Creating the arrow for the end of the axis line
+            Polyline arrow = HorizontalArrow(new Point(hlineW, AxisThickness), 5);
+            arrow.Stroke = AxisColor;
+            arrow.StrokeThickness = 1;
+
+            //Adding the X axis line and his arrow
+            XAxis.Children.Add(xAxisLine);
+            XAxis.Children.Add(arrow);
+            Graph.Width = hlineW + label.Width + 10;
+        }
+
+
+        private void SetupYAxis()
+        {
+            YAxis.Children.Clear();
+            YLabels.Children.Clear();
+
+            //Adding the vertical axis line
+            yAxisLine = new Polyline();
+            double lineH = GraphHeight + AxisThickness + GraphContentPadding + AxisOutlineLenght;
+            yAxisLine.Points.Add(new Point(AxisThickness, AxisThickness / 2));
+            yAxisLine.Points.Add(new Point(AxisThickness, lineH));
+            yAxisLine.Stroke = AxisColor;
+            yAxisLine.StrokeThickness = 0.5;
+
+            //Adding the labels and the unit lines
+
+            //Calculatin the steps height
+            Double offset = 0;
+            int n_division = 0;
+            double stepHeight = GraphHeight;
+            while (stepHeight > 10)
+            {
+                n_division++;
+                stepHeight = stepHeight / 10;
+            }
+            //if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
+            stepHeight = Math.Round(stepHeight, MidpointRounding.AwayFromZero);
+            for (int i = 0; i < n_division; i++)
+                stepHeight = stepHeight * 10;
+            stepHeight = stepHeight / (VerticalSteps - 1);
+
+            //Adding the lines
+            for (int i = 0; i < VerticalSteps; i++)
+            {
+                double verticalPosition = AxisThickness + GraphContentPadding + offset;
+                Polyline line = new Polyline();
+                line.Points.Add(new Point(AxisThickness / 2, verticalPosition));
+                line.Points.Add(new Point(AxisThickness, verticalPosition));
+                line.Stroke = AxisColor;
+                line.StrokeThickness = 0.5;
+                YAxis.Children.Add(line);
+
+                //Adding the labels
+
+                TextBlock stepLabel = new TextBlock
+                {
+                    Text = Math.Round((i * stepHeight) * (maxY - minY) / GraphHeight + minY).ToString(),
+                    FontSize = 8,
+                    Foreground = LabelsColor
+                };
+                Canvas.SetBottom(stepLabel, verticalPosition - stepLabel.FontSize / 2);
+                Canvas.SetLeft(stepLabel, -((stepLabel.Text.Length * stepLabel.FontSize) / 2));
+                YLabels.Children.Add(stepLabel);
+
+                offset += stepHeight;
+                //Avoiding lines over the vertical axis arrow
+                if ((verticalPosition + stepHeight) > lineH - AxisOutlineLenght)
+                    break;
+            }
+
+            //Adding the Y axis name label
+            Decorator label = CanvasLabel(YAxisName, -AxisThickness, lineH + 5, LabelsColor, 10);
+            label.Width = 50;
+            label.Height = 15;
+            YLabels.Children.Add(label);
+
+            //Adding the arrow on top of the axis line
+            Polyline arrow = VerticalArrow(new Point(AxisThickness, lineH), AxisThickness / 2);
+            arrow.Stroke = AxisColor;
+            arrow.StrokeThickness = 1;
+            YAxis.Children.Add(yAxisLine);
+            YAxis.Children.Add(arrow);
+            Graph.Height = lineH + label.Height + 10;
+        }
+
+        private void FindYAxisBounds()
+        {
+            minY = int.MaxValue;
+            maxY = int.MinValue;
+            if (LinesValues != null && LinesValues.Count > 0)
+            {
+                foreach (var line_values in LinesValues)
+                {
+                    foreach (int v in line_values.Key)
+                    {
+                        if (v < (minY + 20)) minY = v - 20;
+                        if (v > maxY) maxY = v;
+                    }
+                }
+            }
+            if (maxY < 10) maxY = 10;
+            if (minY < 0 || minY > maxY) minY = 0;
+
+        }
         #endregion
     }
 }

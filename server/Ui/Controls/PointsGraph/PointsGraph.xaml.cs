@@ -34,9 +34,11 @@ namespace Ui.Controls.PointsGraph
             Graph.Children.Clear();
             if (graphPolyline is null)
             {
-                graphPolyline = new Polyline();
-                graphPolyline.Stroke = PolylineColor;
-                graphPolyline.StrokeThickness = 1;
+                graphPolyline = new Polyline
+                {
+                    Stroke = PolylineColor,
+                    StrokeThickness = 1
+                };
             }
             else graphPolyline.Points.Clear();
             Graph.Children.Add(graphPolyline);
@@ -253,8 +255,10 @@ namespace Ui.Controls.PointsGraph
                 FontSize = fontSize,
                 Foreground = foreground
             };
-            Decorator container = new Viewbox();
-            container.Child = label;
+            Decorator container = new Viewbox
+            {
+                Child = label
+            };
 
             Canvas.SetBottom(container, y);
             Canvas.SetLeft(container, x);
