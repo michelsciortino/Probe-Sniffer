@@ -25,8 +25,6 @@ namespace Ui.ViewModels.DataVisualizer
 
         #region Private Properties
         private Page _currentPage = null;
-        private string _loggerText = "";
-        private Visibility _loggerVisibility = Visibility.Collapsed;
         #endregion
 
         #region Constructor
