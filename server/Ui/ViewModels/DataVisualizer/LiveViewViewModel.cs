@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Linq;
-using Core.DataCollection;
 using System.Windows;
-using Core.DeviceCommunication;
 using Core.Models.Database;
 
 namespace Ui.ViewModels.DataVisualizer
@@ -27,6 +25,7 @@ namespace Ui.ViewModels.DataVisualizer
         #region Private Properties
         private double _mapWidth=20;
         private double _mapHeight=20;
+        private bool _isLoading = true;
         #endregion
 
         #region Constructor
@@ -48,6 +47,18 @@ namespace Ui.ViewModels.DataVisualizer
         public ObservableCollection<Probe> Probes { get; set; }
         public ObservableCollection<ESP32_Device> ESPDevices { get; set; }
         public ObservableCollection<KeyValuePair<int, string>> Points { get; set; }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (value == _isLoading) return;
+                _isLoading = value;
+                OnPropertyChanged(nameof(IsLoading));
+            }
+        }
+
         public Double MapHeight
         {
             get => _mapHeight;
@@ -98,7 +109,7 @@ namespace Ui.ViewModels.DataVisualizer
                 return;
             }
 
-            List<ProbesInterval> new_intervals = await dbConnection.GetLastIntervalsAfter(last_interval_timestamp);
+            List<ProbesInterval> new_intervals = await dbConnection.GetLastNIntervals(20);
             if (new_intervals.Count == 0)
             {
                 RunUpdater();
@@ -138,6 +149,7 @@ namespace Ui.ViewModels.DataVisualizer
                 }
             });
             RunUpdater();
+            IsLoading = false;
         }
 
         public void RunUpdater() => timer.Change(UPDATING_RATE/3, UPDATING_RATE);
