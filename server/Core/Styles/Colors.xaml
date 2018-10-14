@@ -31,6 +31,8 @@
     <Color x:Key="BackgroundLighterLighterColor">#ff363636</Color>
     <SolidColorBrush x:Key="BackgroundLighterLighterColorBrush" Color="{StaticResource BackgroundLighterLighterColor}"/>
 
+    <Color x:Key="BackgroundLightestColor">#ff484848</Color>
+    <SolidColorBrush x:Key="BackgroundLightestColorBrush" Color="{StaticResource BackgroundLightestColor}"/>
     <!--
     <Color x:Key="BackgroundColor">#ff141828</Color>
     <SolidColorBrush x:Key="BackgroundColorBrush" Color="{StaticResource BackgroundColor}"/>
