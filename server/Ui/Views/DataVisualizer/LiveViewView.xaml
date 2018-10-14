@@ -5,40 +5,44 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Ui.Views.DataVisualizer"
       xmlns:vm="clr-namespace:Ui.ViewModels.DataVisualizer"
+      xmlns:util="clr-namespace:Core.Utilities;assembly=Core"      
       xmlns:graph="clr-namespace:Ui.Controls.PointsGraph"
       xmlns:map="clr-namespace:Ui.Controls.DevicesMap"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="800"
+      MinWidth="650"
       Title="LiveViewPage">
-    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Auto">
-        <Grid Margin="10">
+    <Page.Resources>
+        <ResourceDictionary>
+            <util:BooleanToVisibilityConverter
+                            x:Key="FalseToVisible" 
+                            True="Collapsed" 
+                            False="Visible" />
+            <util:BooleanToVisibilityConverter
+                            x:Key="TrueToVisible" 
+                            True="Visible" 
+                            False="Collapsed" />
+        </ResourceDictionary>
+    </Page.Resources>
+    <Grid>
+        <Grid Margin="15" Visibility="{Binding Path=IsLoading, Converter={StaticResource FalseToVisible}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>                
+                <RowDefinition Height="10"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" MaxWidth="50"/>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="*" MaxWidth="50"/>
-            </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="1" Grid.Row="0"
-                  HorizontalAlignment="Left" VerticalAlignment="Bottom">
-                <Grid.OpacityMask>
-                    <VisualBrush Visual="{Binding ElementName=GraphBorder}" />
-                </Grid.OpacityMask>
-                <Border x:Name="GraphBorder" BorderThickness="0" BorderBrush="Transparent" Opacity="1"
-                        Background="{StaticResource BackgroundLightColorBrush}"
-                        CornerRadius="7" Width="{Binding ElementName=Graph,Path=Width,Mode=OneWay}"
-                        Height="{Binding ElementName=Graph,Path=Height,Mode=OneWay}"/>
-                <Border x:Name="Graph"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        Padding="10,10,0,10"
-                        ClipToBounds="True">
+            <Border Grid.Row="0"
+                    ClipToBounds="False"
+                    BorderThickness="0"
+                    CornerRadius="7"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top"
+                    Background="{StaticResource BackgroundLightColorBrush}">
+                <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                     <graph:PointsGraph Points="{Binding Points}"
+                                       Margin="10 10 0 10"
                                        PolylineColor="{StaticResource AzureColorBrush}"
                                        AxisColor="{StaticResource GreenColorBrush}"
                                        VerticalSteps="5"
@@ -51,13 +55,15 @@
                                        HorizontalStepsWidth="55"
                                        VerticalAlignment="Bottom"
                                        GraphHeight="200"/>
-                </Border>
-            </Grid>
-            
-            <Border Grid.Column="1" Grid.Row="1" Tag="Separator" BorderBrush="Transparent" BorderThickness="0" Height="20"/>
-            <Grid Grid.Column="1" Grid.Row="2" HorizontalAlignment="Left">
-                <StackPanel Orientation="Horizontal">
-                    <Border BorderBrush="Transparent"
+                </ScrollViewer>
+            </Border>
+
+            <Grid  Grid.Row="2" HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border BorderBrush="Transparent"
                             BorderThickness="0"
                             CornerRadius="7"
                             HorizontalAlignment="Center"
@@ -65,46 +71,51 @@
                             Padding="10"
                             Background="{StaticResource BackgroundLightColorBrush}">
 
-                        <ScrollViewer HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Hidden"
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
                                   HorizontalContentAlignment="Left"
                                   VerticalContentAlignment="Top">
-                            <map:DevicesMap DevicesColor="{StaticResource VioletColorBrush}"
+                        <map:DevicesMap DevicesColor="{StaticResource VioletColorBrush}"
                                             MapWidth="{Binding MapWidth}"
                                             MapHeight="{Binding MapHeight}"
                                             ESPsColor="{StaticResource AzureColorBrush}"
                                             ESPs="{Binding ESPDevices}"
                                             Probes="{Binding Probes}"/>
 
-                        </ScrollViewer>
-                    </Border>
-                    <Border BorderBrush="Transparent"
+                    </ScrollViewer>
+                </Border>
+                <Border Grid.Column="1" BorderBrush="Transparent"
                             BorderThickness="0" CornerRadius="7"
                             Background="{StaticResource BackgroundLightColorBrush}"
                             Padding="10" Margin="25,0,0,0"
                             VerticalAlignment="Top">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="auto"/>
-                                <RowDefinition Height="auto"/>
-                                <RowDefinition Height="auto"/>
-                                <RowDefinition Height="auto"/>
-                            </Grid.RowDefinitions>
-                            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="&#xE704;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource AzureColorBrush}" Margin="0,0,10,0"/>
-                                <TextBlock Text="ESP32" FontSize="16" Foreground="White"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Grid.Row="1">
-                                <Grid>
-                                    <Border Background="{StaticResource BackgroundColorBrush}" Margin="5,.75,15,.75"/>
-                                    <TextBlock Text="&#xE8EA;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource VioletColorBrush}" Margin="0,0,10,0"/>
-                                </Grid>
-                                <TextBlock Text="Device" FontSize="16" Foreground="White"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="&#xE704;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource AzureColorBrush}" Margin="0,0,10,0"/>
+                            <TextBlock Text="ESP32" FontSize="16" Foreground="White"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1">
+                            <Grid>
+                                <Border Background="{StaticResource BackgroundColorBrush}" Margin="5,.75,15,.75"/>
+                                <TextBlock Text="&#xE8EA;" FontSize="21" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource VioletColorBrush}" Margin="0,0,10,0"/>
+                            </Grid>
+                            <TextBlock Text="Device" FontSize="16" Foreground="White"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
-        </Grid>        
-    </ScrollViewer>
+        </Grid>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding Path=IsLoading, Converter={StaticResource TrueToVisible}}">
+            <StackPanel>
+                <TextBlock HorizontalAlignment="Center"  Text="Loading data..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
+                <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
 </Page>
