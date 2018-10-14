@@ -104,6 +104,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Utilities\BooleanConverter.cs" />
+    <Compile Include="Utilities\ObservableRangeCollection.cs" />
     <Compile Include="Utilities\Util.cs" />
     <Compile Include="ViewModelBase\BaseViewModel.cs" />
     <Compile Include="ViewModelBase\RelayCommand.cs" />
@@ -130,6 +132,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Styles\ListBoxes.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\ScrollBars.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
