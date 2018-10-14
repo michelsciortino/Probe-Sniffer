@@ -118,6 +118,19 @@ namespace Core.DBConnection
             return (await GetIntervalsCollection().FindAsync(FilterDefinition<ProbesInterval>.Empty, options)).FirstOrDefault();
         }
 
+        public async Task<List<ProbesInterval>> GetIntervalsBetween(DateTime start,DateTime end)
+        {
+            var options = new FindOptions<ProbesInterval>
+            {
+                Sort = Builders<ProbesInterval>.Sort.Ascending(p => p.Timestamp),
+            };
+            try
+            {
+                return (await GetIntervalsCollection().FindAsync((i) => i.Timestamp >= start && end > i.Timestamp, options)).ToList();
+            }
+            catch { return null; }
+        }
+
         public async Task<List<ProbesInterval>> GetLastNIntervals(int n)
         {
             var options = new FindOptions<ProbesInterval>
@@ -125,7 +138,11 @@ namespace Core.DBConnection
                 Limit = n,
                 Sort = Builders<ProbesInterval>.Sort.Descending(i => i.Timestamp),
             };
-            return (await GetIntervalsCollection().FindAsync(FilterDefinition<ProbesInterval>.Empty, options)).ToList();
+            try
+            {
+                return (await GetIntervalsCollection().FindAsync(FilterDefinition<ProbesInterval>.Empty, options)).ToList();
+            }
+            catch { return null; }
         }
 
         public async Task<List<ProbesInterval>> GetLastIntervalsAfter(DateTime last_interval_timestamp)
