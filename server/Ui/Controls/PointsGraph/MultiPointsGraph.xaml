@@ -8,19 +8,19 @@
              x:Name="PointsGraphContainer"
              d:DesignHeight="450" d:DesignWidth="800" Margin="10">
     <Grid Margin="12,0,0,15">
-        <Canvas x:Name="XAxis">
+        <Canvas x:Name="XAxis" HorizontalAlignment="Left" VerticalAlignment="Bottom">
             <Canvas.LayoutTransform>
                 <ScaleTransform ScaleX="1" ScaleY="-1" />
             </Canvas.LayoutTransform>
         </Canvas>
-        <Canvas x:Name="YAxis">
+        <Canvas x:Name="YAxis" HorizontalAlignment="Left" VerticalAlignment="Bottom">
             <Canvas.LayoutTransform>
                 <ScaleTransform ScaleX="1" ScaleY="-1" />
             </Canvas.LayoutTransform>
         </Canvas>
         <Canvas x:Name="XLabels"/>
         <Canvas x:Name="YLabels"/>
-        <Canvas  x:Name="Graph" Background="Transparent" ClipToBounds="True">
+        <Canvas  x:Name="Graph" Background="Transparent" ClipToBounds="True" HorizontalAlignment="Left">
             <Canvas.LayoutTransform>
                 <ScaleTransform ScaleX="1" ScaleY="-1" />
             </Canvas.LayoutTransform>
