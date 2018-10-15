@@ -7,7 +7,9 @@
       xmlns:cntrl="clr-namespace:Ui.Controls.PointsGraph"
       xmlns:command="http://www.galasoft.ch/mvvmlight"        
       xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
-      xmlns:util="clr-namespace:Core.Utilities;assembly=Core"      
+      xmlns:util="clr-namespace:Core.Utilities;assembly=Core"
+      xmlns:System="clr-namespace:System;assembly=mscorlib"
+      xmlns:precision="clr-namespace:Ui.Models"
       xmlns:local="clr-namespace:Ui.Views.DataVisualizer"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
@@ -23,6 +25,12 @@
                             x:Key="TrueToVisible" 
                             True="Visible" 
                             False="Collapsed" />
+            <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues"
+                            ObjectType="{x:Type System:Enum}">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="precision:Precision"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -41,13 +49,14 @@
                     <TextBlock TextAlignment="Left" Text="Start" Margin="5" Foreground="White" VerticalAlignment="Center"/>
                     <Border CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" VerticalAlignment="Center" Padding="3">
                         <xctk:TimePicker Foreground="White"
+                                         Watermark="Select start date"
                                          VerticalAlignment="Center"
                                          HorizontalAlignment="Center"
                                          TextAlignment="Center"
                                          Background="{StaticResource BackgroundLighterLighterColorBrush}"
                                          Width="110" Format="Custom" BorderThickness="0"
-                                         DisplayDefaultValueOnEmptyText="True" Kind="Utc"
-                                         FormatString="dd/MM/yyyy hh:00tt"
+                                         FormatString="dd/MM/yyyy HH:mm"                                         
+                                         Minimum="01/01/2001 00:00" Kind="Utc"
                                          Value="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          ShowButtonSpinner="False" ShowDropDownButton="False"/>
                     </Border>
@@ -61,8 +70,8 @@
                                          HorizontalAlignment="Center"
                                          Background="{StaticResource BackgroundLighterLighterColorBrush}"
                                          Width="110" Format="Custom" BorderThickness="0"
-                                         DisplayDefaultValueOnEmptyText="True" Kind="Utc"
-                                         FormatString="dd/MM/yyyy hh:00tt"
+                                         Minimum="01/01/2001 00:00" Kind="Utc"
+                                         FormatString="dd/MM/yyyy HH:mm"
                                          Value="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          ShowButtonSpinner="False" ShowDropDownButton="False"/>
                     </Border>
@@ -71,10 +80,10 @@
             <StackPanel Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
                 <TextBlock TextAlignment="Left" VerticalAlignment="Center" Text="Precision" Margin="10 2" Foreground="White"/>
                 <Border VerticalAlignment="Center" CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="2">
-                    <ComboBox HorizontalAlignment="Center" VerticalContentAlignment="Top" Width="80" Style="{StaticResource ComboBoxStyle}" VerticalAlignment="Center">
-                        <ComboBoxItem Content="Hour" IsSelected="True"/>
-                        <ComboBoxItem Content="Day"/>
-                    </ComboBox>
+                    <ComboBox HorizontalAlignment="Center" VerticalContentAlignment="Top" Width="80" Style="{StaticResource ComboBoxStyle}" VerticalAlignment="Center"
+                              SelectedItem="{Binding Precision}"
+                              ItemsSource="{Binding Source={StaticResource dataFromEnum}}"
+                              IsSynchronizedWithCurrentItem="True"/>
                 </Border>
             </StackPanel>
             <Button BorderThickness="2" Grid.Column="1" Margin="20 0 10 0" Padding="3" Style="{StaticResource RoundedButton}" VerticalAlignment="Center">
@@ -110,7 +119,22 @@
             </Grid.ColumnDefinitions>
             
             <!--Found devices-->
-            <Border BorderBrush="Transparent"
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid>
+                    <TextBlock Text="Devices:" Foreground="White" HorizontalAlignment="Left"/>
+                    <Button HorizontalAlignment="Right" Content="Uncheck all" Style="{StaticResource RoundedButton}" Padding="3 1" Margin="0 0 0 5">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <command:EventToCommand Command="{Binding UncheckAllCommand}" PassEventArgsToCommand="False" />
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </Button>
+                </Grid>
+            <Border Grid.Row="1" BorderBrush="Transparent"
                             BorderThickness="0" Margin="0 0 0 0"
                             CornerRadius="7"
                             HorizontalAlignment="Stretch"
@@ -151,8 +175,8 @@
                                             <TextBlock Padding="5,0" Text="{Binding Tot_Probes}"/>
                                         </StackPanel>
                                     </StackPanel>
-                                    <CheckBox Grid.Column="1" IsChecked="{Binding Active}" Margin="5,10"/>
-                                    <Rectangle Grid.Column="2"
+                                        <CheckBox Grid.Column="1" IsChecked="{Binding Active}" Margin="5,10"/>
+                                        <Rectangle Grid.Column="2"
                                                VerticalAlignment="Center"
                                            HorizontalAlignment="Right"
                                            Width="5" Height="25" Fill="{Binding LineColor}" Margin="10,5,0,5"/>
@@ -162,6 +186,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Border>
+            </Grid>
             <Border BorderBrush="Transparent"
                     Grid.Column="1" Margin="10 0 0 0"
                     ClipToBounds="False"
@@ -174,7 +199,7 @@
                 <cntrl:MultiPointsGraph LinesValues="{Binding Values}"
                                         GraphHeight="600"
                                         HorizontalLables="{Binding Labels}"
-                                        YAxisName="n° of devices"
+                                        YAxisName="n° of detections"
                                         XAxisName="Interval"
                                         VerticalSteps="8"
                                         GraphContentPadding="10"
