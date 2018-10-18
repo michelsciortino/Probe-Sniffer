@@ -12,15 +12,19 @@ namespace Ui.Models
         Hour,
         Day
     }
-    public class DeviceStatistics:INotifyPropertyChanged
+    public class DeviceStatistic:INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string MAC { get; set; }
         public int Tot_Probes { get; set; }
         private bool _active=true;
-        public SolidColorBrush LineColor { get; set; }
+        public SolidColorBrush Color { get; set; }
         public int[] Probes { get; set; }
+        public string SSID { get; set; }
+        public double X_Position { get; set; }
+        public double Y_Position { get; set; }
+
 
         public void SetPropertyChanged(string propertyName)
         {
@@ -37,11 +41,11 @@ namespace Ui.Models
             }
         }
 
-        public static List<DeviceStatistics> DoStatistics(List<ProbesInterval> intervals, DateTime start, DateTime end, Precision precision)
+        public static List<DeviceStatistic> DoStatistics(List<ProbesInterval> intervals, DateTime start, DateTime end, Precision precision)
         {
             int TotalDays = (int)(end - start).TotalDays;
             int TotalHours = (int)(end - start).TotalHours;
-            Dictionary<string, DeviceStatistics> devicesStatistics = new Dictionary<string, DeviceStatistics>();
+            Dictionary<string, DeviceStatistic> devicesStatistics = new Dictionary<string, DeviceStatistic>();
             intervals = intervals.OrderBy(a => a.Timestamp).ToList();
             foreach (var interval in intervals)
             {
@@ -49,10 +53,10 @@ namespace Ui.Models
                 {
                     if (!devicesStatistics.ContainsKey(p.Sender.MAC))
                     {
-                        DeviceStatistics d = new DeviceStatistics
+                        DeviceStatistic d = new DeviceStatistic
                         {
                             MAC = p.Sender.MAC,
-                            LineColor = Styles.Colors.Next,
+                            Color = Styles.Colors.Next,
                             Active = true,
                             Tot_Probes = 0
                         };
