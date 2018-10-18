@@ -5,10 +5,281 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:Ui.Views.DataVisualizer"
       mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800"
+      d:DesignHeight="660" d:DesignWidth="300"
+      xmlns:cntrl="clr-namespace:Ui.Controls.DevicesMap"
+      xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+      xmlns:System="clr-namespace:System;assembly=mscorlib"
+      xmlns:command="http://www.galasoft.ch/mvvmlight"        
+      xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+      xmlns:precision="clr-namespace:Ui.Models"
+      xmlns:util="clr-namespace:Core.Utilities;assembly=Core"
+      MinWidth="612"
       Title="SliderViewView">
-
+    <Page.Resources>
+        <ResourceDictionary>
+            <util:BooleanToVisibilityConverter
+                            x:Key="FalseToVisible" 
+                            True="Collapsed" 
+                            False="Visible" />
+            <util:BooleanToVisibilityConverter
+                            x:Key="TrueToVisible" 
+                            True="Visible" 
+                            False="Collapsed" />
+            <ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues"
+                            ObjectType="{x:Type System:Enum}">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="precision:Precision"/>
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid>
-        
+        <Grid Margin="20 10 0 20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <!-- Toolbar-->
+                <RowDefinition Height="*"/>
+                <!-- Devices List & Graph -->
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" HorizontalAlignment="Center" Margin="0 0 20 10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto"/>
+                </Grid.ColumnDefinitions>
+                <WrapPanel Orientation="Horizontal" Margin="0 10 0 0">
+                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+                        <TextBlock TextAlignment="Right" Text="Date" Margin="0 0 5 0" Width="28" Foreground="White" VerticalAlignment="Center"/>
+                        <Border CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" VerticalAlignment="Center" Padding="3">
+                            <xctk:TimePicker Foreground="White"
+                                         Watermark="Select Date"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Center"
+                                         TextAlignment="Center"
+                                         Background="{StaticResource BackgroundLighterLighterColorBrush}"
+                                         Width="110" Format="Custom" BorderThickness="0"
+                                         FormatString="dd/MM/yyyy"
+                                         Minimum="01/01/2001 00:00" Kind="Utc"
+                                         Value="{Binding Date, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         ShowButtonSpinner="False" ShowDropDownButton="False"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+                        <TextBlock TextAlignment="Right" Text="from" Margin="0 0 5 0" Width="28" Foreground="White" VerticalAlignment="Center"/>
+                        <Border CornerRadius="7" VerticalAlignment="Center" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="3">
+                            <xctk:TimePicker Foreground="White"
+                                         TextAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Center"
+                                         Background="{StaticResource BackgroundLighterLighterColorBrush}"
+                                         Width="40" Format="Custom" BorderThickness="0"
+                                         Minimum="01/01/2001 00:00" Kind="Utc"
+                                         FormatString="HH:mm"
+                                         Value="{Binding Start, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         ShowButtonSpinner="False" ShowDropDownButton="False"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+                        <TextBlock TextAlignment="Right" Text="to" Margin="0 0 5 0"  Foreground="White" VerticalAlignment="Center"/>
+                        <Border CornerRadius="7" VerticalAlignment="Center" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="3">
+                            <xctk:TimePicker Foreground="White"
+                                         TextAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Center"
+                                         Background="{StaticResource BackgroundLighterLighterColorBrush}"
+                                         Width="40" Format="Custom" BorderThickness="0"
+                                         Minimum="01/01/2001 00:00" Kind="Utc"
+                                         FormatString="HH:mm"
+                                         Value="{Binding End, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         ShowButtonSpinner="False" ShowDropDownButton="False"/>
+                        </Border>
+                    </StackPanel>
+                    <!--<StackPanel Orientation="Horizontal" Margin="0 0 0 10" VerticalAlignment="Center">
+                        <TextBlock TextAlignment="Left" VerticalAlignment="Center" Text="Precision" Margin="0 2 5 2" Foreground="White"/>
+                        <Border VerticalAlignment="Center" CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="2">
+                            <ComboBox HorizontalAlignment="Center" VerticalContentAlignment="Top" Width="80" Style="{StaticResource ComboBoxStyle}" VerticalAlignment="Center"
+                              SelectedItem="{Binding Precision}"
+                              ItemsSource="{Binding Source={StaticResource dataFromEnum}}"
+                              IsSynchronizedWithCurrentItem="True"/>
+                        </Border>
+                    </StackPanel>-->
+                </WrapPanel>
+
+                <Button BorderThickness="2" Grid.Column="1" Margin="20 0 10 0" Padding="3" Style="{StaticResource RoundedButton}" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Search" Margin="5 0 5 0" VerticalAlignment="Center"/>
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE721;" VerticalAlignment="Center" Margin="0 2 5 0"/>
+                    </StackPanel>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <command:EventToCommand Command="{Binding LoadDataCommand}" PassEventArgsToCommand="False" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+            </Grid>
+
+            
+
+            <!--Data Container-->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250"/>
+                    <ColumnDefinition Width="*" MinWidth="200"/>
+                </Grid.ColumnDefinitions>
+
+                <!--Found devices list-->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock Text="Devices:" Foreground="White" HorizontalAlignment="Left"/>
+                        <StackPanel Orientation="Horizontal" Margin="0 0 0 5" HorizontalAlignment="Right">
+                            <Button HorizontalAlignment="Right" Content="Check all" Style="{StaticResource RoundedButton}" Padding="3 1" Margin="0 0 5 0" >
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="Click">
+                                        <command:EventToCommand Command="{Binding CheckAllCommand}" PassEventArgsToCommand="False" />
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
+                            </Button>
+                            <Button HorizontalAlignment="Right" Content="Uncheck all" Style="{StaticResource RoundedButton}" Padding="3 1">
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="Click">
+                                    <command:EventToCommand Command="{Binding UncheckAllCommand}" PassEventArgsToCommand="False" />
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
+                        </Button>
+                        </StackPanel>
+                    </Grid>
+                    <Border Grid.Row="1" BorderBrush="Transparent"
+                        BorderThickness="0" Margin="0 0 0 0"
+                        CornerRadius="7"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Padding="0 10 0 10"
+                        Background="{StaticResource BackgroundLightColorBrush}">
+                        <ListBox x:Name="DeviceList"
+                             Foreground="White"
+                             Height="auto"
+                             Background="Transparent"
+                             Grid.Column="0"
+                             SelectionMode="Single"
+                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             BorderThickness="0"
+                             HorizontalContentAlignment="Stretch"
+                             VerticalContentAlignment="Top"
+                             Padding="0"
+                             ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border HorizontalAlignment="Stretch"
+                                Margin="0"
+                                BorderThickness="0">
+                                        <Grid HorizontalAlignment="Stretch">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="auto"/>
+                                                <ColumnDefinition Width="auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0"
+                                                VerticalAlignment="Center"
+                                            HorizontalAlignment="Stretch"
+                                            MinWidth="135">
+                                                <TextBlock Padding="5,0" FontFamily="Consolas" Text="{Binding MAC}"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Padding="5,0" Text="n° of probes:"/>
+                                                    <TextBlock Padding="5,0" Text="{Binding Tot_Probes}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <CheckBox Grid.Column="1" IsChecked="{Binding Active}" Margin="5,10"/>
+                                            <Rectangle Grid.Column="2"
+                                               VerticalAlignment="Center"
+                                           HorizontalAlignment="Right"
+                                           Width="5" Height="25" Fill="{Binding Color}" Margin="10,5,0,5"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Grid>
+
+                <!--Map-->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10 0 0 0" >
+                    <Grid HorizontalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <Border BorderBrush="Transparent"
+                        MinWidth="500"
+                        MinHeight="500"
+                        Grid.Row="0"
+                        ClipToBounds="False"
+                        BorderThickness="0"
+                        CornerRadius="7"
+                        Padding="0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource BackgroundLightColorBrush}">
+                            <cntrl:DevicesMap DevicesColor="{StaticResource VioletColorBrush}"
+                                                  Margin="20"
+                                            ESPsColor="{StaticResource AzureColorBrush}"
+                                            ESPs="{Binding ESPDevices}"
+                                            Devices="{Binding ShownDevices}"/>
+
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="0 10 0 0" HorizontalAlignment="Stretch">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Interval time:" Margin="0 0 5 0" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding SelectedIntervalTime,Mode=OneWay}" HorizontalAlignment="Center" Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Grid  Grid.Row="1" Margin="50 20 50 0" Visibility="{Binding Path=SliderVisibility, Converter={StaticResource TrueToVisible}}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="{Binding Path=Start,Mode=OneWay, StringFormat=HH:mm}" Foreground="White"/>
+                                    <TextBlock Text="{Binding Path=End2,Mode=OneWay, StringFormat=HH:mm}" Foreground="White" HorizontalAlignment="Right"/>
+
+                                    <Slider Grid.Row="1" Minimum="0" Maximum="{Binding IntervalsN}" Value="{Binding SelectedIntervalN}"
+                                IsSnapToTickEnabled="True" Margin="5 2 5 10"
+                                ToolTipService.ToolTip="{Binding SelectedIntervalTime,Mode=OneWay}"/>
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+            
+            <!--Info-->
+            <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=HasData, Converter={StaticResource FalseToVisible}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock HorizontalAlignment="Center" Text="Select a date and a time interval." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
+                    <TextBlock HorizontalAlignment="Center" Text="Press Search to get data." FontSize="{StaticResource SplashFontSize}" Foreground="White"/>
+                </StackPanel>
+            </Grid>
+            <!--No data found message-->
+            <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=NotFound, Converter={StaticResource TrueToVisible}}">
+                <TextBlock Text="No data found in this time interval." Grid.Row="1"
+                   Foreground="White"
+                   FontSize="{StaticResource SplashFontSize}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+        <!--Loading wheel-->
+        <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=IsLoading, Converter={StaticResource TrueToVisible}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock HorizontalAlignment="Center" Text="Loading data ..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
+                <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

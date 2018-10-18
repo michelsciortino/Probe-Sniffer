@@ -110,7 +110,7 @@
       <DependentUpon>MultiPointsGraph.xaml</DependentUpon>
     </Compile>
     <Compile Include="DataVisualizationWindow.cs" />
-    <Compile Include="Models\DeviceStatistics.cs" />
+    <Compile Include="Models\DeviceStatistic.cs" />
     <Compile Include="Styles\Colors.cs" />
     <Compile Include="ViewModels\DataVisualizer\DataVisualizationWindowViewModel.cs" />
     <Compile Include="ViewModels\DataVisualizer\HiddenDevicesViewModel.cs" />
