@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using Core.Models.Database;
+using Ui.Models;
 
 namespace Ui.ViewModels.DataVisualizer
 {
@@ -36,7 +37,7 @@ namespace Ui.ViewModels.DataVisualizer
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
             dbConnection.TestConnection();
-            Probes = new ObservableCollection<Probe>();
+            Devices = new ObservableRangeCollection<DeviceStatistic>();
             ESPDevices = new ObservableCollection<ESP32_Device>();
             Points = new ObservableCollection<KeyValuePair<int,string>>();
         }
@@ -44,7 +45,7 @@ namespace Ui.ViewModels.DataVisualizer
         #endregion
 
         #region Public Properties
-        public ObservableCollection<Probe> Probes { get; set; }
+        public ObservableRangeCollection<DeviceStatistic> Devices { get; set; }
         public ObservableCollection<ESP32_Device> ESPDevices { get; set; }
         public ObservableCollection<KeyValuePair<int, string>> Points { get; set; }
 
@@ -137,9 +138,8 @@ namespace Ui.ViewModels.DataVisualizer
                         Points.RemoveAt(0);
                     Points.Add(p);
                 }
-                Probes.Clear();
-                foreach (Probe p in i_last)
-                    Probes.Add(p);
+                Devices.Clear();
+                Devices.AddRange(i_last.Select((p) => new DeviceStatistic { MAC=p.Sender.MAC,SSID=p.SSID,X_Position=p.Sender.X_Position,Y_Position=p.Sender.Y_Position,Color=null }).ToList());
                 ESPDevices.Clear();
                 foreach (ESP32_Device esp in new_intervals[new_intervals.Count - 1].ActiveEsps)
                 {

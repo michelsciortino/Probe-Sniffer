@@ -76,11 +76,10 @@
                                   HorizontalContentAlignment="Left"
                                   VerticalContentAlignment="Top">
                         <map:DevicesMap DevicesColor="{StaticResource VioletColorBrush}"
-                                            MapWidth="{Binding MapWidth}"
-                                            MapHeight="{Binding MapHeight}"
                                             ESPsColor="{StaticResource AzureColorBrush}"
                                             ESPs="{Binding ESPDevices}"
-                                            Probes="{Binding Probes}"/>
+                                            Devices="{Binding Devices}"
+                                            Margin="20"/>
 
                     </ScrollViewer>
                 </Border>

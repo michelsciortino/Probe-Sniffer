@@ -104,7 +104,7 @@
             <TextBlock HorizontalAlignment="Center" Text="Loading data ..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
             <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
         </StackPanel>
-        
+
         <!--No data found message-->
         <TextBlock Text="No data found in the time interval." Grid.Row="1"
                    Foreground="White"
@@ -117,7 +117,7 @@
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
+
             <!--Found devices-->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
@@ -134,14 +134,14 @@
                         </i:Interaction.Triggers>
                     </Button>
                 </Grid>
-            <Border Grid.Row="1" BorderBrush="Transparent"
+                <Border Grid.Row="1" BorderBrush="Transparent"
                             BorderThickness="0" Margin="0 0 0 0"
                             CornerRadius="7"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Top"
                             Padding="0 10 0 10"
                             Background="{StaticResource BackgroundLightColorBrush}">
-                <ListBox x:Name="DeviceList"
+                    <ListBox x:Name="DeviceList"
                      Foreground="White"
                      Height="auto"
                      Background="Transparent"
@@ -154,38 +154,38 @@
                      VerticalContentAlignment="Top"
                      Padding="0"
                      ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border HorizontalAlignment="Stretch"
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border HorizontalAlignment="Stretch"
                                 Margin="0"
                                 BorderThickness="0">
-                                <Grid HorizontalAlignment="Stretch">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="auto"/>
-                                        <ColumnDefinition Width="auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0"
+                                    <Grid HorizontalAlignment="Stretch">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0"
                                                 VerticalAlignment="Center"
                                             HorizontalAlignment="Stretch"
                                             MinWidth="135">
-                                        <TextBlock Padding="5,0" FontFamily="Consolas" Text="{Binding MAC}"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Padding="5,0" Text="probes:"/>
-                                            <TextBlock Padding="5,0" Text="{Binding Tot_Probes}"/>
+                                            <TextBlock Padding="5,0" FontFamily="Consolas" Text="{Binding MAC}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Padding="5,0" Text="probes:"/>
+                                                <TextBlock Padding="5,0" Text="{Binding Tot_Probes}"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </StackPanel>
                                         <CheckBox Grid.Column="1" IsChecked="{Binding Active}" Margin="5,10"/>
                                         <Rectangle Grid.Column="2"
                                                VerticalAlignment="Center"
                                            HorizontalAlignment="Right"
                                            Width="5" Height="25" Fill="{Binding LineColor}" Margin="10,5,0,5"/>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
             </Grid>
             <Border BorderBrush="Transparent"
                     Grid.Column="1" Margin="10 0 0 0"
@@ -196,7 +196,7 @@
                     VerticalAlignment="Top"
                     Background="{StaticResource BackgroundLightColorBrush}">
                 <ScrollViewer HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <cntrl:MultiPointsGraph LinesValues="{Binding Values}"
+                    <cntrl:MultiPointsGraph LinesValues="{Binding Values}"
                                         GraphHeight="600"
                                         HorizontalLables="{Binding Labels}"
                                         YAxisName="n° of detections"

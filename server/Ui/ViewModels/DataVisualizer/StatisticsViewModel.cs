@@ -22,7 +22,7 @@ namespace Ui.ViewModels.DataVisualizer
         #endregion
 
         #region Private Properties
-        private ObservableCollection<DeviceStatistics> _devices = null;
+        private ObservableCollection<DeviceStatistic> _devices = null;
         private DateTime _startDate= DateTime.UtcNow, _endDate= DateTime.UtcNow.AddMinutes(1);
         private Precision _precision;
         private bool _isLoading = false, _hasData = false, _notFound = false;
@@ -33,7 +33,7 @@ namespace Ui.ViewModels.DataVisualizer
         {
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
-            _devices = new ObservableCollection<DeviceStatistics>();
+            _devices = new ObservableCollection<DeviceStatistic>();
             Values = new ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>>();
             Labels = new ObservableRangeCollection<string>();
             _loadStatisticsCommand = new RelayCommand<object>((x) => LoadStatistics());
@@ -47,7 +47,7 @@ namespace Ui.ViewModels.DataVisualizer
         public ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>> Values { get; set; }
         public ObservableRangeCollection<string> Labels { get; set; }
 
-        public ObservableCollection<DeviceStatistics> Devices
+        public ObservableCollection<DeviceStatistic> Devices
         {
             get => _devices;
             set
@@ -178,7 +178,7 @@ namespace Ui.ViewModels.DataVisualizer
                 MessageBox.Show("No data found.", "", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            List<DeviceStatistics> statistics = DeviceStatistics.DoStatistics(intervals, start, end, precision);
+            List<DeviceStatistic> statistics = DeviceStatistic.DoStatistics(intervals, start, end, precision);
             if (statistics.Count == 0)
             {
                 IsLoading = false;
@@ -219,7 +219,7 @@ namespace Ui.ViewModels.DataVisualizer
             }
 
             Labels.AddRange(new_lables);
-            Values.AddRange(_devices.Where((d) => d.Active is true).Select((d) => new KeyValuePair<int[], SolidColorBrush>(d.Probes, d.LineColor)));
+            Values.AddRange(_devices.Where((d) => d.Active is true).Select((d) => new KeyValuePair<int[], SolidColorBrush>(d.Probes, d.Color)));
             HasData = true;
             IsLoading = false;
             NotFound = false;
@@ -228,7 +228,7 @@ namespace Ui.ViewModels.DataVisualizer
         private void checkedChange(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             Values.Clear();
-            Values.AddRange(_devices.Where((d) => d.Active is true).Select((d) => new KeyValuePair<int[], SolidColorBrush>(d.Probes, d.LineColor)));
+            Values.AddRange(_devices.Where((d) => d.Active is true).Select((d) => new KeyValuePair<int[], SolidColorBrush>(d.Probes, d.Color)));
         }
     }
 
