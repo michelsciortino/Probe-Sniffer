@@ -7,8 +7,7 @@
              mc:Ignorable="d"
              x:Name="Map">
     <Canvas x:Name="DevicesContainer"
-            Width="{Binding ElementName=Map, Path=MapWidth}"
-            Height="{Binding ElementName=Map, Path=MapHeight}">
+            >
         <Canvas.LayoutTransform>
             <ScaleTransform ScaleX="1" ScaleY="1" />
         </Canvas.LayoutTransform>
