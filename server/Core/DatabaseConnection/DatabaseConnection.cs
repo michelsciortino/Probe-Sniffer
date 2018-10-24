@@ -167,7 +167,10 @@ namespace Core.DBConnection
             {
                 ret=a.FirstOrDefault().Timestamp;
             }
-            catch(Exception ex) { return default; }
+            catch(Exception ex) {
+                Thread.Sleep(10000);
+                return default;
+            }
             return ret;
         }
     }

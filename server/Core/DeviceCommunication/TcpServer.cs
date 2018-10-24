@@ -182,12 +182,12 @@ namespace Core.DeviceCommunication
                                 if (esp.Active == false)
                                 {
                                     ESPManager.SetDeviceStatus(esp.MAC, true);
-                                    Logger.Log("New ESP32 connection\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                    Logger.Log("New ESP32 connection\t\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
                                 }
                                 else
                                 {
-                                    Logger.Log("An ESP32 disconnected\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
-                                    Logger.Log("An ESP32 reconnected\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                    Logger.Log("An ESP32 disconnected\t\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
+                                    Logger.Log("An ESP32 reconnected\t\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
                                 }
                             }
                             if (CanReceiveData is true)
@@ -257,12 +257,18 @@ namespace Core.DeviceCommunication
                         if (result is null)
                             return null;
 
+                        if (BitConverter.IsLittleEndian)
+                        {
+                            byte t = result[0];
+                            result[0] = result[1];
+                            result[1] = t;
+                        }
                         jsonLenght = BitConverter.ToUInt16(result, 0);
                         
                         result = await ReceiveAsync(socket, jsonLenght);
                         if (result is null)
                             return null;
-
+                        
                         ret = new Data_Message
                         {
                             Header = Data_Message.DATA_HEADER,

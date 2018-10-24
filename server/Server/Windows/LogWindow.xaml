@@ -83,11 +83,11 @@
     </Window.Template>
     
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" HorizontalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" HorizontalScrollBarVisibility="Hidden">
             <TextBlock Text="{Binding LogText,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}"
-                       Margin="10"
+                       Margin="10" FontFamily="Consolas"
                        MaxWidth="400" MinWidth="300"
-                       TextWrapping="Wrap"/>
+                       TextWrapping="Wrap" HorizontalAlignment="Left"/>
         </ScrollViewer>
     </Grid>
 </Window>
