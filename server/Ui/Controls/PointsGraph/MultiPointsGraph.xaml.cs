@@ -310,7 +310,8 @@ namespace Ui.Controls.PointsGraph
             int n = HorizontalSteps;
             foreach (var line in LinesValues)
             {
-                if (line.Key.Length != n) return false;
+                if (line.Key.Length != n)
+                    return false;
             }
             return true;
         }

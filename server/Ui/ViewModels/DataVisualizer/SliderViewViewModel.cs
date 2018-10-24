@@ -246,8 +246,8 @@ namespace Ui.ViewModels.DataVisualizer
                 return;
             }
 
-            devices = new DeviceStatistic[(int)(end_date - start_date).TotalMinutes][];
-            esps = new ESP32_Device[(int)(end_date - start_date).TotalMinutes][];
+            devices = new DeviceStatistic[(int)(end_date - start_date).TotalMinutes -1][];
+            esps = new ESP32_Device[(int)(end_date - start_date).TotalMinutes -1][];
             found_devices = new Dictionary<string, DeviceStatistic>();
             foreach (var i in intervals)
             {
@@ -302,6 +302,13 @@ namespace Ui.ViewModels.DataVisualizer
                 }
                 dict.Clear();
             }
+
+            for(int i=0;i<esps.Length;i++)
+            {
+                if (devices[i] == null) devices[i] = new DeviceStatistic[0];
+                if (esps[i] == null) esps[i] = new ESP32_Device[0];
+            }
+
 
             IntervalsN = devices.Length;
             found_devices.OrderBy((d) => d.Key);

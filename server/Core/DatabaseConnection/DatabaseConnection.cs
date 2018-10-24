@@ -126,7 +126,7 @@ namespace Core.DBConnection
             };
             try
             {
-                return (await GetIntervalsCollection().FindAsync((i) => i.Timestamp >= start && end > i.Timestamp, options)).ToList();
+                return (await GetIntervalsCollection().FindAsync((i) => i.Timestamp >= start && i.Timestamp <= end.AddMinutes(-1), options)).ToList();
             }
             catch { return null; }
         }

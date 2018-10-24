@@ -76,7 +76,14 @@ namespace Ui.Models
                     if (precision == Precision.Day)
                         devicesStatistics[p.Sender.MAC].Probes[(int)(p.Timestamp - start).TotalDays] += 1;
                     else if (precision == Precision.Hour)
-                        devicesStatistics[p.Sender.MAC].Probes[(int)(p.Timestamp - start).TotalHours] += 1;
+                        try
+                        {
+                            devicesStatistics[p.Sender.MAC].Probes[(int)((p.Timestamp - start)).TotalHours] += 1;
+                        }
+                        catch
+                        {
+
+                        }
 
                     devicesStatistics[p.Sender.MAC].Tot_Probes += 1;
                 }

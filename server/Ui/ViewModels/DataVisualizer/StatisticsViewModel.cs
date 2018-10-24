@@ -41,8 +41,7 @@ namespace Ui.ViewModels.DataVisualizer
 
         }
         #endregion
-
-
+        
         #region Public Properties
         public ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>> Values { get; set; }
         public ObservableRangeCollection<string> Labels { get; set; }
@@ -127,8 +126,7 @@ namespace Ui.ViewModels.DataVisualizer
             }
         }
         #endregion
-
-
+        
         #region Private Commands
         private ICommand _loadStatisticsCommand = null;
         private ICommand _uncheckAllCommand = null;
@@ -138,6 +136,7 @@ namespace Ui.ViewModels.DataVisualizer
         public ICommand LoadStatisticsCommand => _loadStatisticsCommand;
         public ICommand UncheckAllCommand => _uncheckAllCommand;
         #endregion
+
         #region Private Methods
 
         private void UncheckAll()
@@ -231,11 +230,6 @@ namespace Ui.ViewModels.DataVisualizer
             Values.AddRange(_devices.Where((d) => d.Active is true).Select((d) => new KeyValuePair<int[], SolidColorBrush>(d.Probes, d.Color)));
         }
     }
-
-    #endregion
-
-
-    #region Private Methods
 
     #endregion
 }
