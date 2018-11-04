@@ -2,6 +2,8 @@
 #include "sniffer.h"
 #include "utilities.h"
 
+#define MAX_APS 20
+
 extern struct status st;
 int srv_socket = 0;
 
@@ -139,6 +141,7 @@ void acquire_server_ip()
  char buf[BUFLEN];
  unsigned int sockaddrlen;
 
+ printf("Waiting server IP");
  s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
  if(s<0)
@@ -155,6 +158,7 @@ void acquire_server_ip()
  result=bind(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
  if(result==-1)
  {
+  st.status_value=ST_ERR;
   close(s);
   return;
  }
@@ -180,14 +184,17 @@ void acquire_server_ip()
 //handle wifi connection related events
 esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
 {
+ //return ESP_OK;
  switch (event->event_id) {
   case SYSTEM_EVENT_STA_START:
    //ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+   //printf("IN HANDLER: STA_START\n");
    ESP_ERROR_CHECK(esp_wifi_connect());
    break;
   case SYSTEM_EVENT_STA_GOT_IP:
    //ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
    //ESP_LOGI(TAG, "Got IP: %s\n",ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+   printf("IN HANDLER: GOR IP\n");
    st.status_value=ST_CONNECTED;
    break;
   case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -195,6 +202,21 @@ esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
    ESP_ERROR_CHECK(esp_wifi_connect());
    st.status_value=ST_DISCONNECTED;
    break;
+  case SYSTEM_EVENT_AP_STACONNECTED:
+   //ESP_LOGI(TAG, "station:"MACSTR" join, AID=%d", MAC2STR(event->event_info.sta_connected.mac), event->event_info.sta_connected.aid);
+   printf("station:"MACSTR" join, AID=%d\n", MAC2STR(event->event_info.sta_connected.mac), event->event_info.sta_connected.aid);
+   break;
+  case SYSTEM_EVENT_AP_STADISCONNECTED:
+   //ESP_LOGI(TAG, "station:"MACSTR"leave, AID=%d", MAC2STR(event->event_info.sta_disconnected.mac), event->event_info.sta_disconnected.aid);
+   printf("station:"MACSTR" leave, AID=%d\n", MAC2STR(event->event_info.sta_disconnected.mac), event->event_info.sta_disconnected.aid);
+   break;
+  /*
+   case SYSTEM_EVENT_SCAN_DONE:
+   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&AP_number));
+   printf("%d AP found\n", AP_number);
+   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&AP_number, AP_records));
+   break;
+  */
   default:
    break;
  }
@@ -202,22 +224,95 @@ esp_err_t event_handler_wifi(void *ctx, system_event_t *event)
 }
 
 //does what the name says
-void setup_and_connect_wifi(void)
+void scan(void)
 {
+ uint16_t AP_number = MAX_APS;
+ wifi_ap_record_t AP_records[MAX_APS];
+ int i;
  tcpip_adapter_init();
  ESP_ERROR_CHECK(esp_event_loop_init(event_handler_wifi, NULL));
 
  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+ ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+ ESP_ERROR_CHECK(esp_wifi_start());
+
+ //scan to find if another esp is already an AP
+ wifi_scan_config_t config =
+ {
+  .ssid = 0,
+  .bssid = 0,
+  .channel = 0,
+  .show_hidden = true,
+ };
+ ESP_ERROR_CHECK(esp_wifi_scan_start(&config, true));
+ ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&AP_number, AP_records));
+ ESP_ERROR_CHECK(esp_wifi_stop());
+ for(i=0; i<AP_number; i++)
+ {
+  if(strcmp((char *)AP_records[i].ssid, DEFAULT_SSID) == 0)  //an ESP has already an AP up
+  {
+   printf("AP found!\n");    //DEBUG
+   setup_and_connect_wifi();
+   return;
+  }
+ }
+ setup_AP();
+}
+
+void setup_and_connect_wifi(void)
+{
  wifi_config_t wifi_config = {
   .sta = {
    .ssid = DEFAULT_SSID,
    .password = DEFAULT_PWD,
   },
  };
- ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
  ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
  ESP_ERROR_CHECK(esp_wifi_start());
+ ESP_ERROR_CHECK(esp_wifi_connect());
+}
+
+//source https://github.com/espressif/esp-idf/blob/11b444b8f493165eb4d93f44111669ee46be0327/examples/wifi/getting_started/softAP/main/softap_example_main.c
+void setup_AP()
+{
+ wifi_config_t wifi_config = {
+  .ap = {
+   .ssid = DEFAULT_SSID,
+   .ssid_len = strlen(DEFAULT_SSID),
+   .password = DEFAULT_PWD,
+   .max_connection = 10,                      //TO CHANGE
+   .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+  },
+ };
+ //if password is not set, set authentication to open
+ if (strlen(DEFAULT_PWD) == 0) {
+  wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+ }
+
+ ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+ ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+ ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+void setup_and_connect_wifi_old(void)
+{
+ tcpip_adapter_init();
+ ESP_ERROR_CHECK(esp_event_loop_init(event_handler_wifi, NULL));
+
+ wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+ ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+ ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+ wifi_config_t wifi_config = {
+  .sta = {
+   .ssid = DEFAULT_SSID,
+   .password = DEFAULT_PWD,
+  },
+ };
+ ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+ ESP_ERROR_CHECK(esp_wifi_start());
+ ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+ //ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 //save time received from server and time on client when it arrives

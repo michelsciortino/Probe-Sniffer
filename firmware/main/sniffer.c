@@ -5,7 +5,131 @@
 
 #define TASK_STACK_SIZE 10000
 
+static void sniffer_task(void *parameters);
+static void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type);
+
 extern struct status st;
+static QueueHandle_t sniffer_work_queue = NULL; //queue where the packets are put waiting to be managed by the task
+
+//data struct that contains data passed by the callback function to the sniffer task
+typedef struct {
+ void *payload;
+ uint32_t rssi;
+ uint32_t len;
+}sniffer_packet_into_t;
+
+//function called by main program.
+//Sets up queue filled by promiscuous event handler callback and used by sniffer task
+esp_err_t sniffer_start()
+{
+ //setup queue
+ sniffer_work_queue = xQueueCreate(50, sizeof(sniffer_packet_into_t));
+ //setup sniffer task
+ xTaskCreate(sniffer_task, "sniffer", 3000, NULL, 10, NULL);
+ //set callback function
+ esp_wifi_set_promiscuous_rx_cb(wifi_sniffer_cb);
+ //set promiscuous mode
+ ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+ return ESP_OK;
+}
+
+//sniffer task that elaborates the packet coming from callback function
+static void sniffer_task(void *parameters)
+{
+ int i;
+ sniffer_packet_into_t packet_info;
+ BaseType_t ret = 0;
+ struct packet_node *new_node = NULL;
+ char new_time[TIME_LEN+1];
+ char hash_str[HASH_LEN];
+ char ssid[SSID_MAXLEN+1];
+
+ while(1)
+ {
+  ret = xQueueReceive(sniffer_work_queue, &packet_info, 100 / portTICK_PERIOD_MS);
+  if (ret != pdTRUE) {
+   continue;
+  }
+
+  //print the packet received
+  print_raw_data((unsigned char *)packet_info.payload, packet_info.len);
+  //save the packet in the list
+  new_node = (struct packet_node *)malloc(sizeof(*new_node));
+  if(new_node == NULL)
+  {
+   printf("ERROR IN MALLOC\n");
+   esp_restart();
+  }
+
+  //save mac address of sender device
+  for(i=0; i<6; i++)
+  {
+   sprintf(new_node->packet.mac+i*3, "%02x", ((char *)packet_info.payload)[MAC_POS+i]);
+   if(i != 5)
+    sprintf(new_node->packet.mac+2+i*3, ":");
+  }
+
+  //save timestamp
+  calculate_timestamp(new_time);
+  strcpy(new_node->packet.timestamp, new_time);
+
+  //save rssi
+  new_node->packet.strength = packet_info.rssi;
+
+  //calculate and save hash
+  hash((const BYTE *)packet_info.payload, packet_info.len, (BYTE *)hash_str);
+  for(i = 0; i < HASH_LEN; i++)
+   sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
+
+  get_ssid((char *)packet_info.payload, packet_info.len, ssid);
+  printf("SSID: %s\n", ssid);
+  sprintf(new_node->packet.ssid, ssid);
+
+  st.total_length += strlen(new_node->packet.ssid);
+  st.total_length += MAC_LEN + TIME_LEN + (HASH_LEN*2) + JSON_FIELD_LEN;
+
+  new_node->next = st.packet_list;
+  st.packet_list = new_node;
+ }
+}
+
+//promiscuous callback function, called each time a packet is sniffed
+static void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
+{
+ char c;
+ sniffer_packet_into_t packet_info;
+ wifi_promiscuous_pkt_t *sniffer = (wifi_promiscuous_pkt_t *)recv_buf;
+
+ if(type != WIFI_PKT_MGMT)
+  return;
+
+ //to prevent creating nodes during sending process
+ if(st.status_value != ST_SNIFFING)
+  return;
+
+ c = sniffer->payload[0] & 0xB0;
+ if(c != 0)
+  return;
+
+ //save signal strength and lenth of payload
+ packet_info.rssi=sniffer->rx_ctrl.rssi;
+ packet_info.len=sniffer->rx_ctrl.sig_len;
+ //save payload
+ wifi_promiscuous_pkt_t *backup = malloc(sniffer->rx_ctrl.sig_len);
+ memcpy(backup, sniffer->payload, sniffer->rx_ctrl.sig_len);
+ packet_info.payload = backup;
+ //push the packet in the queue, if not full
+ if (sniffer_work_queue) {
+  if (xQueueSend(sniffer_work_queue, &packet_info, 100 / portTICK_PERIOD_MS) != pdTRUE) {
+   printf("Sniffer work queue full!!\n");
+  }
+ }
+ else
+ {
+  printf("Out of memory for promiscuous packet!!\n");
+ }
+}
+
 
 void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
 {
@@ -27,7 +151,7 @@ void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
   return;
 
  //print raw packet received for debug purposes
- //print_raw_data((unsigned char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len);
+ print_raw_data((unsigned char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len);
 
  new_node = (struct packet_node *)malloc(sizeof(*new_node));
  if(new_node == NULL)

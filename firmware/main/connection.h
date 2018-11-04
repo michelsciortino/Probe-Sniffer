@@ -15,5 +15,8 @@ void save_timestamp(char *buf);
 void connect_to_server();
 int Send(const void *data, size_t datalen, int flags);
 void send_data();
+void setup_AP();
+void scan();
+void setup_and_connect_wifi_old(void);
 
 #endif

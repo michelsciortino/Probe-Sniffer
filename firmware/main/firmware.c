@@ -167,10 +167,12 @@ void app_main()
 
  //setup_and_listen_promiscuous();
 
- setup_and_connect_wifi();
- //setup_AP();
+ //setup_and_connect_wifi_old(); //connect to an extern AP
+ scan(); //create an AP if non already present, if present connects to AP
 
+ printf("Got here1\n");
  while(st.status_value==ST_DISCONNECTED);
+ printf("Got here2\n");
 
  acquire_server_ip();
  if(st.status_value==ST_GOT_IP)
@@ -207,11 +209,13 @@ void app_main()
  gpio_config(&io_conf);
  gpio_set_level(LED_BUILTIN, 1);
 
+/*
  //setup promiscuous mode
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(event_handler_promiscuous));
-
-
  ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
  sniffer();
+*/
+ //new promiscuous mode with queue
+ sniffer_start();
 }
 

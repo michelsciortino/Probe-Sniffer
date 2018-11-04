@@ -11,5 +11,6 @@ void timer_handle();
 void print_data();
 void calculate_timestamp(char *new_time);
 void hash(const BYTE *v, int length, BYTE *hash_str);
+esp_err_t sniffer_start();
 
 #endif
