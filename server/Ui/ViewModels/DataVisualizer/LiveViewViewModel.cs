@@ -33,6 +33,7 @@ namespace Ui.ViewModels.DataVisualizer
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning")]
         public LiveViewViewModel()
         {
+            last_interval_timestamp = DateTime.Now.AddMinutes(-3);
             timer = new Timer((dispatcher) => UpdateAsync(dispatcher),Dispatcher.CurrentDispatcher,Timeout.Infinite,UPDATING_RATE);
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
@@ -83,7 +84,7 @@ namespace Ui.ViewModels.DataVisualizer
         #region Private Methods
         private List<Probe> GetLastPositions(ProbesInterval interval)
         {
-            Dictionary<string, Probe> last = new Dictionary<string, Probe>();
+            Dictionary<string, Probe> last = new Dictionary<string, Probe>();            
             foreach(var p in interval.Probes)
             {
                 if (!last.ContainsKey(p.Sender.MAC)) last.Add(p.Sender.MAC, p);
@@ -110,44 +111,66 @@ namespace Ui.ViewModels.DataVisualizer
                 return;
             }
 
-            List<ProbesInterval> new_intervals = await dbConnection.GetLastNIntervals(20);
-            if (new_intervals.Count == 0)
-            {
-                RunUpdater();
-                return;
-            }
-
-            //Per ogni mac di device trovato, prendo l'ultimo probe che questo ha generato nell'intervallo
-            new_intervals.Sort((a, b) => DateTime.Compare(a.Timestamp,b.Timestamp));
-
+            List<ProbesInterval> stored_intervals = await dbConnection.GetIntervalsBetween(last_interval_timestamp.AddMinutes(-20), last_interval_timestamp);
+            stored_intervals.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
+            ProbesInterval[] new_intervals = new ProbesInterval[20];
+            KeyValuePair<int, string>[] new_points = new KeyValuePair<int, string>[20];
+            foreach (var interval in stored_intervals)
+                new_intervals[(interval.Timestamp - last_interval_timestamp.AddMinutes(-20)).Minutes] = interval;
             List<Probe> i_last = null;
-            var new_points = new List<KeyValuePair<int, string>>();            
-            foreach (var interval in new_intervals)
+
+            
+            for (int i = 0; i < 20; i++)
             {
-                i_last = GetLastPositions(interval);
-                last_interval_timestamp = interval.Timestamp;
-                new_points.Add(new KeyValuePair<int, string>(i_last.Count, interval.Timestamp.Hour.ToString() + ":"+
-                                                            (interval.Timestamp.Minute<10?"0":"") + interval.Timestamp.Minute.ToString()+"\n"+
-                                                             interval.Timestamp.Date.ToShortDateString()));
+                var ts = last_interval_timestamp.AddMinutes(-20 + i);
+                new_points[i] = new KeyValuePair<int, string>(0, ts.Hour.ToString() + ":" +
+                                                            (ts.Minute < 10 ? "0" : "") + ts.Minute.ToString() + "\n" +
+                                                             ts.Date.ToShortDateString());
             }
+            
+
+            for(int i=0;i<20;i++)
+            {
+                i_last = null;
+                if (new_intervals[i] == null) continue;
+                i_last = GetLastPositions(new_intervals[i]);                
+                new_points[i]=new KeyValuePair<int, string>(i_last.Count, new_intervals[i].Timestamp.Hour.ToString() + ":"+
+                                                            (new_intervals[i].Timestamp.Minute<10?"0":"") + new_intervals[i].Timestamp.Minute.ToString()+"\n"+
+                                                             new_intervals[i].Timestamp.Date.ToShortDateString());
+            }
+
             disp.Invoke(() =>
             {
+                Points.Clear();
                 foreach (var p in new_points)
                 {
-                    if (Points.Count >= 20)
-                        Points.RemoveAt(0);
                     Points.Add(p);
                 }
                 Devices.Clear();
-                Devices.AddRange(i_last.Select((p) => new DeviceStatistic { MAC=p.Sender.MAC,SSID=p.SSID,X_Position=p.Sender.X_Position,Y_Position=p.Sender.Y_Position,Color=null }).ToList());
                 ESPDevices.Clear();
-                foreach (ESP32_Device esp in new_intervals[new_intervals.Count - 1].ActiveEsps)
+                if (i_last != null)
                 {
-                    if (MapWidth < esp.X_Position) MapWidth = esp.X_Position;
-                    if (MapHeight < esp.Y_Position) MapHeight = esp.Y_Position;
-                    ESPDevices.Add(esp);
+                    Devices.AddRange(i_last.Select((p) =>
+                    {
+                        return new DeviceStatistic
+                        {
+                            MAC = p.Sender.MAC,
+                            SSID = p.SSID,
+                            X_Position = p.Sender.X_Position,
+                            Y_Position = p.Sender.Y_Position,
+                            Color = null
+                        };
+                    }).ToList());
+                    foreach (ESP32_Device esp in new_intervals.Last()?.ActiveEsps)
+                    {
+                        if (MapWidth < esp.X_Position) MapWidth = esp.X_Position;
+                        if (MapHeight < esp.Y_Position) MapHeight = esp.Y_Position;
+                        ESPDevices.Add(esp);
+                    }
                 }
             });
+            if ((DateTime.Now.AddMinutes(-3) - last_interval_timestamp).Minutes >= 1)
+                last_interval_timestamp = last_interval_timestamp.AddMinutes(1);
             RunUpdater();
             IsLoading = false;
         }

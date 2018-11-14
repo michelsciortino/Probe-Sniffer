@@ -12,7 +12,7 @@ using Core.Models.Database;
 
 namespace Core.DataCollection
 {
-    
+
     public class DataCollector
     {
         #region Private Members
@@ -24,7 +24,7 @@ namespace Core.DataCollection
         private Queue<Packet> toBeStored = null;
         private Queue<Packet> storeFails = null;
         #endregion
-        
+
         #region Private Properties
         private bool _initialized = false;
         private bool _runnig = false;
@@ -61,7 +61,7 @@ namespace Core.DataCollection
                 return _initialized;
             }
 
-            ESPManager.WaitForMinESPsToConnect();
+            //ESPManager.WaitForMinESPsToConnect();
             _initialized = true;
             return _initialized;
         }
@@ -90,7 +90,7 @@ namespace Core.DataCollection
         {
             server.CanReceiveData = false;
             try { dataCollectionTokenSource.Cancel(); }
-            catch { }                
+            catch { }
         }
 
         private async Task DataCollectionLoop(CancellationToken token)
@@ -116,6 +116,8 @@ namespace Core.DataCollection
                         if (message is null) continue;
                         DeviceData data = DeviceData.FromJson(message.Payload);
                         if (data is null) continue;
+                        var esp = ESPManager.GetESPDevice(data.Esp_Mac);
+                        Logger.Log("An ESP sent DEVICE_DATA\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
                         foreach (Packet p in data.Packets)
                         {
                             p.ESP_MAC = data.Esp_Mac;
@@ -173,7 +175,7 @@ namespace Core.DataCollection
                 ShowErrorMessage("Database connection error.\nData Collection has been stopped");
                 return;
             }
-            if(last_interval is null)
+            if (last_interval is null)
             {
                 while (true)
                 {
@@ -182,7 +184,7 @@ namespace Core.DataCollection
                         Timestamp = await dbConnection.GetFirstTimestamp(),
                         IntervalId = -1
                     };
-                    if(last_interval.Timestamp == default)
+                    if (last_interval.Timestamp == null)
                     {
                         Thread.Sleep(30000);
                         continue;
@@ -194,7 +196,7 @@ namespace Core.DataCollection
 
             while (token.IsCancellationRequested is false)
             {
-                if (DateTime.Compare(DateTime.UtcNow, last_interval.Timestamp.AddMinutes(5)) <0)
+                if (DateTime.Compare(DateTime.UtcNow, last_interval.Timestamp.AddMinutes(5)) < 0)
                 {
                     Thread.Sleep(30000);
                     continue;
@@ -207,9 +209,9 @@ namespace Core.DataCollection
                     Probes = new List<Probe>(),
                     ActiveEsps = new List<ESP32_Device>()
                 };
-                
 
-                List<Packet> toBeProcessed = await dbConnection.GetRawData(new_interval.Timestamp,new_interval.Timestamp.AddMinutes(1));
+
+                List<Packet> toBeProcessed = await dbConnection.GetRawData(new_interval.Timestamp, new_interval.Timestamp.AddMinutes(1));
 
                 //Per ogni pacchetto nell'intervallo ottengo un dizionario di <Hash pacchetto, Lista pacchetti con lo stesso hash> per avere tutte le rilevazioni
                 Dictionary<string, List<Packet>> DetectionForHash = new Dictionary<string, List<Packet>>();
@@ -225,9 +227,10 @@ namespace Core.DataCollection
                 toBeProcessed.Clear();
                 toBeProcessed = null;
 
-                //Elimino tutti i probe non detected da almeno 2 ESP
-                var toberemoved = DetectionForHash.Where(pair => pair.Value.Count < 2).Select(pair => pair.Key).ToList();
-                if (toberemoved != null)
+                //Elimino tutti i probe non detected da tutti gli ESP
+                //var toberemoved = DetectionForHash.Where(pair => pair.Value.Count < 2).Select(pair => pair.Key).ToList();
+                var toberemoved = DetectionForHash.Where(pair => pair.Value.Count <2 /*!= ESPManager.ESPs.Count*/).Select(pair => pair.Key).ToList();
+                if (toberemoved.Count!=0)
                 {
                     foreach (string hash in toberemoved)
                         DetectionForHash.Remove(hash);
@@ -269,25 +272,26 @@ namespace Core.DataCollection
                         });
                     }
                 }
-                new_interval.ActiveEsps.AddRange(esps.Select((mac)=>ESPManager.GetESPDevice(mac)).ToList());
+                new_interval.ActiveEsps.AddRange(esps.Select((mac) => ESPManager.GetESPDevice(mac)).ToList());
 
                 //Invio i dati al database
-                try
-                {
-                    bool result = await dbConnection.StoreProbesIntervalAsync(new_interval);
-                    if (result is false)
+                if (new_interval.ActiveEsps.Count != 0)
+                    try
                     {
+                        bool result = await dbConnection.StoreProbesIntervalAsync(new_interval);
+                        if (result is false)
+                        {
+                            dataCollectionTokenSource.Cancel();
+                            ShowErrorMessage("Database connection error.\nData Collection has been stopped");
+                            return;
+                        }
+                    }
+                    catch
+                    { //Se lo store del dato è fallito, segnalo e interrompo
                         dataCollectionTokenSource.Cancel();
                         ShowErrorMessage("Database connection error.\nData Collection has been stopped");
                         return;
                     }
-                }
-                catch
-                { //Se lo store del dato è fallito, segnalo e interrompo
-                    dataCollectionTokenSource.Cancel();
-                    ShowErrorMessage("Database connection error.\nData Collection has been stopped");
-                    return;
-                }
                 last_interval = new_interval;
             }
         }

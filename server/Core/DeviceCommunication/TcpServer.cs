@@ -200,7 +200,6 @@ namespace Core.DeviceCommunication
                 else if (message is Data_Message && mode == ServerMode.DATACOLLECTION_MODE)
                 {
                     EnqueueMessage(message);
-                    Logger.Log("An ESP sent DEVICE_DATA\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
                 }
             }
 

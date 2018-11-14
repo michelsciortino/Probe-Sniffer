@@ -159,7 +159,7 @@ namespace Core.DBConnection
             var options = new FindOptions<Packet>
             {
                 Limit = 1,
-                Sort = Builders<Packet>.Sort.Descending(p => p.Timestamp),
+                Sort = Builders<Packet>.Sort.Ascending(p => p.Timestamp),
             };
             var a = await GetPacketsCollection().FindAsync(FilterDefinition<Packet>.Empty, options);
             DateTime ret;

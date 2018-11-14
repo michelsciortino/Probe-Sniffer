@@ -26,8 +26,8 @@ namespace Ui.Controls.PointsGraph
         {
             InitializeComponent();
         }
-        #endregion       
-                
+        #endregion
+
         #region Common Controls Creators        
         /// <summary>
         /// Label generator for Canvas containers
@@ -56,7 +56,7 @@ namespace Ui.Controls.PointsGraph
 
             return container;
         }
-        
+
 
         /// <summary>
         /// Generates a vertical arrow polyline
@@ -127,7 +127,7 @@ namespace Ui.Controls.PointsGraph
         /// <summary>
         /// The values of each polyline
         /// </summary>
-        public ObservableRangeCollection<KeyValuePair<int[],SolidColorBrush>> LinesValues
+        public ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>> LinesValues
         {
             get { return (ObservableRangeCollection<KeyValuePair<int[], SolidColorBrush>>)GetValue(LinesValuesProperty); }
             set { SetValue(LinesValuesProperty, value); }
@@ -140,7 +140,7 @@ namespace Ui.Controls.PointsGraph
             get { return (ObservableRangeCollection<string>)GetValue(HorizontalLablesProperty); }
             set { SetValue(HorizontalLablesProperty, value); }
         }
-        
+
         /// <summary>
         /// The number of steps in the horizontal axis
         /// </summary>
@@ -268,7 +268,7 @@ namespace Ui.Controls.PointsGraph
         public static readonly DependencyProperty YAxisNameProperty =
             DependencyProperty.Register("YAxisName", typeof(string), typeof(MultiPointsGraph), new PropertyMetadata(""));
         public static readonly DependencyProperty XAxisNameProperty =
-            DependencyProperty.Register("XAxisName", typeof(string), typeof(MultiPointsGraph), new PropertyMetadata(""));        
+            DependencyProperty.Register("XAxisName", typeof(string), typeof(MultiPointsGraph), new PropertyMetadata(""));
         public static readonly DependencyProperty HorizontalStepsWidthProperty =
             DependencyProperty.Register("HorizontalStepsWidth", typeof(int), typeof(MultiPointsGraph), new PropertyMetadata(80));
         public static readonly DependencyProperty GraphHeightProperty =
@@ -299,8 +299,8 @@ namespace Ui.Controls.PointsGraph
             if (Check() is false) return;
             FindYAxisBounds();
             SetupYAxis();
-            SetupXaxis(null,null);
-            UpdateGraph(null,null);
+            SetupXaxis(null, null);
+            UpdateGraph(null, null);
         }
         private bool Check()
         {
@@ -361,7 +361,7 @@ namespace Ui.Controls.PointsGraph
                 Graph.Children.Add(line);
             foreach (var ec in points)
                 Graph.Children.Add(ec);
-            
+
         }
 
         private void SetupXaxis(object sender, NotifyCollectionChangedEventArgs e)
@@ -445,17 +445,21 @@ namespace Ui.Controls.PointsGraph
             Double offset = 0;
             int n_division = 0;
             double stepHeight = GraphHeight;
-            while (stepHeight > 10)
+            if (maxY <= (VerticalSteps - 1))
+                stepHeight = GraphHeight / (VerticalSteps - 1);
+            else
             {
-                n_division++;
-                stepHeight = stepHeight / 10;
+                while (stepHeight > (VerticalSteps - 1))
+                {
+                    n_division++;
+                    stepHeight = stepHeight / (VerticalSteps - 1);
+                }
+                //if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
+                stepHeight = Math.Round(stepHeight, MidpointRounding.AwayFromZero);
+                for (int i = 0; i < n_division; i++)
+                    stepHeight = stepHeight * (VerticalSteps - 1);
+                stepHeight = stepHeight / (VerticalSteps - 1);
             }
-            //if ((stepHeight - Math.Round(stepHeight)) < 0.5) stepHeight += 0.5;
-            stepHeight = Math.Round(stepHeight, MidpointRounding.AwayFromZero);
-            for (int i = 0; i < n_division; i++)
-                stepHeight = stepHeight * 10;
-            stepHeight = stepHeight / (VerticalSteps - 1);
-
             //Adding the lines
             for (int i = 0; i < VerticalSteps; i++)
             {
@@ -471,7 +475,7 @@ namespace Ui.Controls.PointsGraph
 
                 TextBlock stepLabel = new TextBlock
                 {
-                    Text = Math.Round((i * stepHeight) * (maxY - minY) / GraphHeight + minY).ToString(),
+                    Text = Math.Round((i * stepHeight) * (maxY - minY) / GraphHeight + minY, 1).ToString(),
                     FontSize = 8,
                     Foreground = LabelsColor
                 };
@@ -515,7 +519,7 @@ namespace Ui.Controls.PointsGraph
                     }
                 }
             }
-            if (maxY < 10) maxY = 10;
+            if (maxY < VerticalSteps - 1) maxY = (int)VerticalSteps - 1;
             if (minY < 0 || minY > maxY) minY = 0;
 
         }
