@@ -42,13 +42,9 @@
                 <!-- Devices List & Graph -->
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" HorizontalAlignment="Center" Margin="0 0 20 10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="auto"/>
-                </Grid.ColumnDefinitions>
-                <WrapPanel Orientation="Horizontal" Margin="0 10 0 0">
-                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 20">
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0">
                         <TextBlock TextAlignment="Right" Text="Date" Margin="0 0 5 0" Width="28" Foreground="White" VerticalAlignment="Center"/>
                         <Border CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" VerticalAlignment="Center" Padding="3">
                             <xctk:TimePicker Foreground="White"
@@ -64,7 +60,7 @@
                                          ShowButtonSpinner="False" ShowDropDownButton="False"/>
                         </Border>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
                         <TextBlock TextAlignment="Right" Text="from" Margin="0 0 5 0" Width="28" Foreground="White" VerticalAlignment="Center"/>
                         <Border CornerRadius="7" VerticalAlignment="Center" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="3">
                             <xctk:TimePicker Foreground="White"
@@ -79,7 +75,7 @@
                                          ShowButtonSpinner="False" ShowDropDownButton="False"/>
                         </Border>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0 0 10 10">
+                    <StackPanel Orientation="Horizontal" Margin="10 0 0 0">
                         <TextBlock TextAlignment="Right" Text="to" Margin="0 0 5 0"  Foreground="White" VerticalAlignment="Center"/>
                         <Border CornerRadius="7" VerticalAlignment="Center" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="3">
                             <xctk:TimePicker Foreground="White"
@@ -94,17 +90,7 @@
                                          ShowButtonSpinner="False" ShowDropDownButton="False"/>
                         </Border>
                     </StackPanel>
-                    <!--<StackPanel Orientation="Horizontal" Margin="0 0 0 10" VerticalAlignment="Center">
-                        <TextBlock TextAlignment="Left" VerticalAlignment="Center" Text="Precision" Margin="0 2 5 2" Foreground="White"/>
-                        <Border VerticalAlignment="Center" CornerRadius="7" ClipToBounds="True" Background="{StaticResource BackgroundLighterLighterColorBrush}" Padding="2">
-                            <ComboBox HorizontalAlignment="Center" VerticalContentAlignment="Top" Width="80" Style="{StaticResource ComboBoxStyle}" VerticalAlignment="Center"
-                              SelectedItem="{Binding Precision}"
-                              ItemsSource="{Binding Source={StaticResource dataFromEnum}}"
-                              IsSynchronizedWithCurrentItem="True"/>
-                        </Border>
-                    </StackPanel>-->
-                </WrapPanel>
-
+                </StackPanel>
                 <Button BorderThickness="2" Grid.Column="1" Margin="20 0 10 0" Padding="3" Style="{StaticResource RoundedButton}" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Search" Margin="5 0 5 0" VerticalAlignment="Center"/>
@@ -116,7 +102,7 @@
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
-            </Grid>
+            </StackPanel>
 
             
 

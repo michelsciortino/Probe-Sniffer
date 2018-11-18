@@ -38,7 +38,6 @@ namespace Ui.ViewModels.DataVisualizer
             Labels = new ObservableRangeCollection<string>();
             _loadStatisticsCommand = new RelayCommand<object>((x) => LoadStatistics());
             _uncheckAllCommand = new RelayCommand<object>((x) => UncheckAll());
-
         }
         #endregion
         
@@ -160,7 +159,8 @@ namespace Ui.ViewModels.DataVisualizer
             HasData = false;
             if (dbConnection == null || dbConnection.TestConnection() == false)
             {
-                MessageBox.Show("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Core.Controls.MessageBox message = new Core.Controls.MessageBox("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                message.Show();
                 return;
             }
             IsLoading = true;
@@ -174,7 +174,8 @@ namespace Ui.ViewModels.DataVisualizer
             if (intervals is null)
             {
                 IsLoading = false;
-                MessageBox.Show("No data found.", "", MessageBoxButton.OK, MessageBoxImage.Information);
+                Core.Controls.MessageBox message = new Core.Controls.MessageBox("No data found.", "", MessageBoxButton.OK, MessageBoxImage.Information);
+                message.Show();
                 return;
             }
             List<DeviceStatistic> statistics = DeviceStatistic.DoStatistics(intervals, start, end, precision);

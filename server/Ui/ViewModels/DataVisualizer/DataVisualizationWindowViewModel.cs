@@ -14,7 +14,7 @@ namespace Ui.ViewModels.DataVisualizer
     public class DataVisualizationWindowViewModel : BaseViewModel
     {
         #region Private Members
-        private const string AboutMessage = "Created by:\n\tMichel Sciortino\n\tAndrea Mora\n\tAntonio Monteanni\n\nDesigned by Michel Sciortino.";
+        private const string AboutMessage = "Created by:\n\t- Michel Sciortino\n\t- Andrea Mora";
         private const string AboutCaption = "Probe Sniffer";
         
         private LiveViewViewModel _liveViewVM = null;

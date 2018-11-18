@@ -107,7 +107,8 @@ namespace Ui.ViewModels.DataVisualizer
                 return;
             if (dbConnection.TestConnection() == false)
             {
-                MessageBox.Show("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Core.Controls.MessageBox message = new Core.Controls.MessageBox("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                message.Show();
                 return;
             }
 

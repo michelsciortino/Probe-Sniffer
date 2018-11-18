@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="DataVisualizationWindow.cs" />
     <Compile Include="Models\DeviceStatistic.cs" />
+    <Compile Include="Models\HiddenDevice.cs" />
     <Compile Include="Styles\Colors.cs" />
     <Compile Include="ViewModels\DataVisualizer\DataVisualizationWindowViewModel.cs" />
     <Compile Include="ViewModels\DataVisualizer\HiddenDevicesViewModel.cs" />
