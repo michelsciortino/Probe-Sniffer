@@ -69,6 +69,7 @@
                         HorizontalAlignment="Right"
                         Margin="8,5">
                 <Button Name="OkButton" Content="Ok"
+                        Style="{StaticResource RoundedButton}"
                         Visibility="Collapsed" Margin="3,5"
                         MinWidth="60" Height="20"
                         Click="OkButton_Click"
@@ -77,6 +78,7 @@
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Stretch"/>
                 <Button Name="YesButton" Content="Yes"
+                        Style="{StaticResource RoundedButton}"
                         Visibility="Collapsed" Margin="3,5"
                         MinWidth="60" Height="20"
                         Click="YesButton_Click"
@@ -85,6 +87,7 @@
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Stretch"/>
                 <Button Name="NoButton" Content="No"
+                        Style="{StaticResource RoundedButton}"
                         Visibility="Collapsed" Margin="3,5"
                         MinWidth="60" Height="20"
                         Click="NoButton_Click"
@@ -93,6 +96,7 @@
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Stretch"/>
                 <Button Name="CancelButton" Content="Cancel"
+                        Style="{StaticResource RoundedButton}"
                         Visibility="Collapsed" Margin="3,5"
                         MinWidth="60" Height="20"
                         Click="CancelButton_Click"
