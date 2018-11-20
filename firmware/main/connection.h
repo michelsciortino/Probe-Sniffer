@@ -15,8 +15,5 @@ void save_timestamp(char *buf);
 void connect_to_server();
 int Send(const void *data, size_t datalen, int flags);
 void send_data();
-void setup_AP();
-bool does_AP_already_exist();
-//void scan_and_setup_ap_or_wifi();
 
 #endif

@@ -2,11 +2,8 @@
 #include "sniffer.h"
 #include "utilities.h"
 
-#define MAX_APS 30
-
 extern struct status st;
 int srv_socket = 0;
-int flag_AP = 0;
 
 void disconnect()
 {
@@ -49,11 +46,11 @@ void recv_from_server()
             continue;
         }
         code = read_header(buf);
-        printf("received %d header\n",code);
         switch (code)
         {
             case CODE_OK:
                 st.status_value = ST_WAITING_TIME;
+                printf("Received OK message from Server.\n");
                 break;
             case CODE_TIME:
                 save_timestamp(buf);
@@ -62,11 +59,15 @@ void recv_from_server()
                     st.status_value = ST_READY;
                     return;
                 }
+                printf("Received TIMESTAMP message from Server.\n");
                 break;
             case CODE_RESET:
-            default:
+                printf("Received RESET message from Server.\n");
                 close(srv_socket);
                 esp_restart();
+                break;
+            default:
+                printf("Received UNKNOWN message from Server.\n");
                 break;
         }
     }
@@ -180,61 +181,6 @@ void acquire_server_ip()
 //handle wifi connection related events
 esp_err_t event_handler(void *ctx, system_event_t *event)
 {
-    /*switch (event->event_id)
-    {
-    case SYSTEM_EVENT_STA_START:
-        //ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
-        ESP_ERROR_CHECK(esp_wifi_connect());
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        //ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-        //ESP_LOGI(TAG, "Got IP: %s\n",ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-        st.status_value = ST_CONNECTED;
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        //ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-        ESP_ERROR_CHECK(esp_wifi_connect());
-        st.status_value = ST_DISCONNECTED;
-        break;
-    default:
-        break;
-    }
-    return ESP_OK;*/
-
-    if (event->event_id == SYSTEM_EVENT_SCAN_DONE)
-    {
-        //printf("Number of access points found: %d\n", event->event_info.scan_done.number);
-        uint16_t apCount = event->event_info.scan_done.number;
-        if (apCount == 0)
-        {
-            return ESP_OK;
-        }
-        wifi_ap_record_t list[MAX_APS];
-        //wifi_ap_record_t *list =(wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
-        ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, list));
-        int i;
-        for (i = 0; i < apCount; i++)
-        {
-            if (strcmp((char *)list[i].ssid, DEFAULT_SSID) == 0) //an ESP has already an AP
-            {
-                printf("%s found\n",DEFAULT_SSID); //DEBUG
-                flag_AP = 1;
-                break;
-            }
-        }
-        if (flag_AP == 0)
-            flag_AP = 2;
-        ESP_ERROR_CHECK(esp_wifi_stop());
-        // free(list);
-    }
-    if (event->event_id == SYSTEM_EVENT_AP_START)
-    {
-        st.status_value = ST_CONNECTED;
-    }
-    if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) //The first is SYSTEM_EVENT_STA_CONNECTED indicating that we have connected to the access point.
-    {
-        //st.status_value = ST_CONNECTED;
-    }
     if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) //The second event is SYSTEM_EVENT_STA_GOT_IP which indicates that we have been assigned an IP address by the DHCP server
     {
         st.status_value = ST_CONNECTED;
@@ -244,6 +190,10 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
 
 void setup_and_connect_wifi(void)
 {
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = DEFAULT_SSID,
@@ -253,57 +203,6 @@ void setup_and_connect_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_connect());
-}
-
-bool does_AP_already_exist()
-{
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    // Let us test a WiFi scan ...
-    wifi_scan_config_t scanConf =
-    {
-        .ssid = NULL,
-        .bssid = NULL,
-        .channel = 0,
-        .show_hidden = 1
-    };
-    ESP_ERROR_CHECK(esp_wifi_scan_start(&scanConf, 0));
-    while (flag_AP == 0);
-    if (flag_AP == 2)
-    {
-       return false;
-    }
-    else
-    {
-        return true;
-    }
-}
-
-void setup_AP()
-{
-    printf("Setting up AP...\n");
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = DEFAULT_SSID,
-            .ssid_len = strlen(DEFAULT_SSID),
-            .password = DEFAULT_PWD,
-            .max_connection = 10, //TO CHANGE
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
-        },
-    };
-    //if password is not set, set authentication to open
-    if (strlen(DEFAULT_PWD) == 0)
-    {
-        wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-    }
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
 //save time received from server and time on client when it arrives

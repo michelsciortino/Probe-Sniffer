@@ -35,12 +35,7 @@ void app_main()
 	initialize_sniffer();
 	initialize_led();
 
-	if(does_AP_already_exist()==false){
-		setup_AP();
-		printf("Access Point Created\n");
-	}
-	else
-		setup_and_connect_wifi();
+	setup_and_connect_wifi();
 	while (st.status_value != ST_CONNECTED);
 	printf("Connected to Access Point\n");
 

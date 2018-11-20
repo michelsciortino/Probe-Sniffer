@@ -68,11 +68,6 @@
 #define PROBE_BSSID_POS 16
 #define PROBE_SEQ_NUM_POS 22
 
-//AP status codes
-#define AP_NOT_KING 0
-#define AP_PRESENT 1
-#define AP_KING 2
-
 //Led
 #define BUILTIN_LED_PIN 2
 #define BUILTIN_LED_PIN_BIT_MASK (1ULL << BUILTIN_LED_PIN)
