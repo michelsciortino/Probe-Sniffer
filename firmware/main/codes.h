@@ -10,7 +10,7 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
-#include "esp_pthread.h"
+//#include "esp_pthread.h"
 #include "nvs_flash.h"
 #include "sys/socket.h"
 #include "sha256.h"
@@ -44,9 +44,14 @@
 #define ST_SNIFFING 5
 #define ST_WAITING_TIME 6
 #define ST_SENDING_DATA 7
+#define ST_READY 8
+
+#define MAX_QUEUE_LEN 800
 
 #define HEADER_LEN 1
 #define MAC_LEN 17
+#define BSSID_MAXLEN 17
+#define SEQ_NUM_LEN 2
 #define TIME_LEN 32
 #define SRV_TIME_LEN 19
 #define SSID_MAXLEN 32
@@ -56,14 +61,22 @@
 #define SSID_LEN_POS 37
 #define HASH_LEN 32
 #define JSON_FIELD_LEN 69
-#define JSON_HEAD_LEN 25+MAC_LEN
+#define JSON_HEAD_LEN 25 + MAC_LEN
 #define N_RECONNECT 5
 #define JSON_MAC_POS 15
-#define PAYLOAD_PROBE_POS 24 
+#define PROBE_PAYLOAD_POS 24
+#define PROBE_BSSID_POS 16
+#define PROBE_SEQ_NUM_POS 22
 
+//AP status codes
 #define AP_NOT_KING 0
 #define AP_PRESENT 1
 #define AP_KING 2
+
+//Led
+#define BUILTIN_LED_PIN 2
+#define BUILTIN_LED_PIN_BIT_MASK (1ULL << BUILTIN_LED_PIN)
+
 
 //codes received from server
 #define CODE_OK 200
@@ -75,30 +88,25 @@
 
 struct packet_info
 {
- char mac[MAC_LEN+1];
- char timestamp[TIME_LEN+13];
- char ssid[SSID_MAXLEN+1];
- char hash[(HASH_LEN*2)+1];
- int strength;
-};
-
-struct packet_node
-{
- struct packet_info packet;
- struct packet_node *next;
+    char mac[MAC_LEN + 1];
+    char timestamp[TIME_LEN + 13];
+    char ssid[SSID_MAXLEN + 1];
+    char hash[(HASH_LEN * 2) + 1];
+    int strength;
 };
 
 struct status
 {
- int status_value;
- char server_ip[IPLEN];
- int port;
- time_t srv_time;
- time_t client_time;
- struct packet_node *packet_list;
- uint16_t total_length;
- esp_timer_handle_t timer;
- bool king;
+    int status_value;
+    char server_ip[IPLEN];
+    uint port;
+    time_t srv_time;
+    time_t client_time;
+    struct packet_info packet_list[MAX_QUEUE_LEN];
+    uint count;
+    uint16_t total_length;
+    esp_timer_handle_t timer;
+    bool king;
 };
 
 #endif
