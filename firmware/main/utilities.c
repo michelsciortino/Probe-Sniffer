@@ -1,5 +1,6 @@
 #include "utilities.h"
 #include <string.h>
+#include <sys/time.h>
 #include "codes.h"
 
 void get_device_mac(char *mac_str)
@@ -98,7 +99,7 @@ void print_raw_data(unsigned char *buf, int len)
 
 void hash(char *source_mac, char *ssid, char *seq_num, char *timestamp, unsigned char *hash_str)
 {
-	unsigned char buff[MAC_LEN + SSID_MAXLEN + SEQ_NUM_LEN + TIME_LEN];
+	unsigned char buff[MAC_LEN + SSID_MAXLEN + SEQ_NUM_LEN + TIME_LEN-3];
 	int i=0;
 
 	memcpy(buff+i, source_mac, MAC_LEN);
@@ -110,7 +111,7 @@ void hash(char *source_mac, char *ssid, char *seq_num, char *timestamp, unsigned
 	memcpy(buff + i, seq_num, SEQ_NUM_LEN);
 	i += SEQ_NUM_LEN;
 
-	memcpy(buff +i, timestamp, TIME_LEN);
+	memcpy(buff +i, timestamp, TIME_LEN-3);
 	i += TIME_LEN;
 
 	SHA256_CTX ctx;
@@ -118,12 +119,32 @@ void hash(char *source_mac, char *ssid, char *seq_num, char *timestamp, unsigned
 	sha256_update(&ctx, buff, i);
 	sha256_final(&ctx, hash_str);
 }
-/*
-void hash_packet(const BYTE *v, int length, BYTE *hash_str)
-{
-	SHA256_CTX ctx;
 
-	sha256_init(&ctx);
-	sha256_update(&ctx, v, length);
-	sha256_final(&ctx, hash_str);
-}*/
+struct timeval timeval_sub(struct timeval *a, struct timeval *b) {
+	struct timeval result;
+	result.tv_sec = a->tv_sec - b->tv_sec;
+	result.tv_usec = a->tv_usec - b->tv_usec;
+	if (a->tv_usec < b->tv_usec) {
+		result.tv_sec -= 1;
+		result.tv_usec += 1000000;
+	}
+	return result;
+}
+
+struct timeval timeval_add(struct timeval *a, struct timeval *b) {
+	struct timeval result;
+	result.tv_sec = a->tv_sec + b->tv_sec;
+	result.tv_usec = a->tv_usec + b->tv_usec;
+	if (result.tv_usec >= 1000000) {
+		result.tv_sec += 1;
+		result.tv_usec -= 1000000;
+	}
+	return result;
+}
+
+struct timeval timeval_durationToNow(struct timeval *start) {
+	struct timeval b;
+	gettimeofday(&b, NULL);
+	struct timeval delta = timeval_sub(&b, start);
+	return delta;
+}

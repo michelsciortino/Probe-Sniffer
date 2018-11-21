@@ -16,12 +16,23 @@ static void clear_data()
 //add elapsed time to timestamp received from server
 static void calculate_timestamp(char *new_time)
 {
-    time_t sec_elapsed = time(NULL) - st.client_time;
-    time_t timestamp = st.srv_time + sec_elapsed;
-    struct tm *timestamp_str;
 
-    timestamp_str = localtime(&timestamp);
-    sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.000000+02:00", timestamp_str->tm_year + 1900, timestamp_str->tm_mon, timestamp_str->tm_mday, timestamp_str->tm_hour, timestamp_str->tm_min, timestamp_str->tm_sec);
+    struct timeval elapsed = timeval_durationToNow(&st.client_time);
+    struct timeval timestamp = timeval_add(&st.srv_time,&elapsed);
+    struct tm *timestamp_str;
+    timestamp_str = localtime(&timestamp.tv_sec);
+    sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.%06ld+02:00",
+        timestamp_str->tm_year + 1900,
+        timestamp_str->tm_mon,
+        timestamp_str->tm_mday,
+        timestamp_str->tm_hour,
+        timestamp_str->tm_min,
+        timestamp_str->tm_sec,
+        timestamp.tv_usec);
+    new_time[TIME_LEN-7]='0';
+    new_time[TIME_LEN-8]='0';
+    new_time[TIME_LEN-9]='0';
+
 }
 
 //promiscuous callback function, called each time a packet is sniffed

@@ -10,7 +10,6 @@
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
-//#include "esp_pthread.h"
 #include "nvs_flash.h"
 #include "sys/socket.h"
 #include "sha256.h"
@@ -53,9 +52,9 @@
 #define BSSID_MAXLEN 17
 #define SEQ_NUM_LEN 2
 #define TIME_LEN 32
-#define SRV_TIME_LEN 19
+#define SRV_TIME_LEN 23
 #define SSID_MAXLEN 32
-#define TIMER_USEC 60000000
+#define TIMER_USEC 20000000
 #define MAC_POS 10
 #define STACK_SIZE 2000
 #define SSID_LEN_POS 37
@@ -95,8 +94,8 @@ struct status
     int status_value;
     char server_ip[IPLEN];
     uint port;
-    time_t srv_time;
-    time_t client_time;
+    struct timeval srv_time;
+    struct timeval client_time;
     struct packet_info packet_list[MAX_QUEUE_LEN];
     uint count;
     uint16_t total_length;

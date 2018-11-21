@@ -200,6 +200,7 @@ void setup_and_connect_wifi(void)
             .password = DEFAULT_PWD,
         },
     };
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_connect());
@@ -210,12 +211,12 @@ void save_timestamp(char *buf)
 {
     struct tm timestamp;
     char srv_time[SRV_TIME_LEN + 1];
-    int y, mon, d, h, min, sec;
+    int y, mon, d, h, min, sec,usec;
 
     strncpy(srv_time, buf + HEADER_LEN, SRV_TIME_LEN);
     srv_time[SRV_TIME_LEN] = '\0';
     printf("SERVER_TIME: %s\n", srv_time);
-    sscanf(srv_time, "%d.%d.%d.%d.%d.%d", &y, &mon, &d, &h, &min, &sec);
+    sscanf(srv_time, "%d:%d:%d:%d:%d:%d:%d", &y, &mon, &d, &h, &min, &sec,&usec);
     timestamp.tm_year = y - 1900;
     timestamp.tm_mon = mon;
     timestamp.tm_mday = d;
@@ -223,8 +224,9 @@ void save_timestamp(char *buf)
     timestamp.tm_min = min;
     timestamp.tm_sec = sec;
 
-    st.srv_time = mktime(&timestamp);
-    st.client_time = time(NULL);
+    st.srv_time.tv_sec=mktime(&timestamp);
+    st.srv_time.tv_usec=usec;
+    gettimeofday(&st.client_time,NULL);
 }
 
 void send_data()
@@ -240,22 +242,31 @@ void send_data()
     sprintf(buf + 3, "{\"Esp_Mac\":\"");
     get_device_mac(buf + JSON_MAC_POS);
     sprintf(buf + JSON_MAC_POS + MAC_LEN, "\",\"Packets\":[");
-    Send((const void *)buf, JSON_HEAD_LEN + 3, 0);
+    printf("%s\n",buf );
+    //Send((const void *)buf, JSON_HEAD_LEN + 3, 0);
     buf[0] = '\0';
 	
     int i = 0;
     for (i = 0; i < st.count; i++)
     {
-        sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},",
+        /*sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},",
                 st.packet_list[i % MAX_QUEUE_LEN].mac,
                 st.packet_list[i % MAX_QUEUE_LEN].ssid,
                 st.packet_list[i % MAX_QUEUE_LEN].timestamp,
                 st.packet_list[i % MAX_QUEUE_LEN].hash,
                 st.packet_list[i % MAX_QUEUE_LEN].strength);
-        Send(buf, strlen(buf), 0);
+        Send(buf, strlen(buf), 0);*/
+
+        sprintf(buf, "{\"MAC\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SSID\":\"%s\"},",
+                st.packet_list[i % MAX_QUEUE_LEN].mac,
+                st.packet_list[i % MAX_QUEUE_LEN].timestamp,
+                st.packet_list[i % MAX_QUEUE_LEN].hash,
+                st.packet_list[i % MAX_QUEUE_LEN].ssid);
+        printf("\t%s\n",buf );
     }
     sprintf(buf, "]}");
-    Send(buf, strlen(buf), 0);
+    printf("%s\n",buf );
+    //Send(buf, strlen(buf), 0);
     printf("Data sent\n\tsent: %d packets\n",st.count);
 }
 
