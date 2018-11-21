@@ -20,7 +20,7 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 
         public new byte[] ToBytes()
         {
-            _payload = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss").Replace(':','.');
+            _payload = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss:ffffff");
             
             byte[] bytes = new Byte[_payload.Length + 1];
             bytes[0] = _header;

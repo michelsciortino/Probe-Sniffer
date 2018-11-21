@@ -3,6 +3,8 @@ using Ui.Models;
 using Core;
 using System.Collections.ObjectModel;
 using System;
+using System.Collections.Generic;
+using System.Windows.Input;
 
 namespace Ui.ViewModels.DataVisualizer
 {
@@ -97,6 +99,14 @@ namespace Ui.ViewModels.DataVisualizer
             }
         }
 
+        #endregion
+
+        #region Private Commands
+        private ICommand _loadDeviceListCommand = null;
+        #endregion
+
+        #region Public Commands
+        public ICommand LoadDeviceListCommand => _loadDeviceListCommand;
         #endregion
     }
 }

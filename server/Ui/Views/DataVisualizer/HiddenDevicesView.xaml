@@ -30,7 +30,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <!-- Toolbar-->
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
                 <!-- Devices List -->
             </Grid.RowDefinitions>
 
@@ -75,47 +75,48 @@
                     </StackPanel>
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="Click">
-                            <command:EventToCommand Command="{Binding LoadStatisticsCommand}" PassEventArgsToCommand="False" />
+                            <command:EventToCommand Command="{Binding LoadDeviceListCommand}" PassEventArgsToCommand="False" />
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </Button>
             </StackPanel>
 
-            <!--Data Container-->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="200"/>
-                </Grid.ColumnDefinitions>
-
-                <!--Found devices list-->
-                <Grid Grid.Column="0">
+            <!--Found devices list-->
+            <Border Grid.Row="1" Background="{StaticResource BackgroundLighterColorBrush}" CornerRadius="7" HorizontalAlignment="Left" MinWidth="300">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
-                    <Grid>
-                        <TextBlock Text="Devices:" Foreground="White" HorizontalAlignment="Left"/>
+                    <Grid HorizontalAlignment="Left" Margin="10 5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Device" Foreground="White" Grid.Column="0"/>
+                        <TextBlock Text="Associated MACs" Foreground="White" Grid.Column="1" Margin="50 0 0 0"/>
                     </Grid>
                     <Border Grid.Row="1" BorderBrush="Transparent"
-                        BorderThickness="0" Margin="0 0 0 0"
-                        CornerRadius="7"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"
-                        Padding="0 10 0 10"
-                        Background="{StaticResource BackgroundLightColorBrush}">
+                            BorderThickness="0" Margin="0 0 0 0"
+                            CornerRadius="7"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            Padding="0 10 0 10"
+                            Background="{StaticResource BackgroundLightColorBrush}">
                         <ListBox x:Name="DeviceList"
-                             Foreground="White"
-                             Height="auto"
-                             Background="Transparent"
-                             Grid.Column="0"
-                             SelectionMode="Single"
-                             ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             BorderThickness="0"
-                             HorizontalContentAlignment="Stretch"
-                             VerticalContentAlignment="Top"
-                             Padding="0"
-                             ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
+                                 Foreground="White"
+                                 Height="auto"
+                                 Background="Transparent"
+                                 Grid.Column="0"
+                                 SelectionMode="Single"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 HorizontalContentAlignment="Stretch"
+                                 VerticalContentAlignment="Top"
+                                 Padding="0"
+                                 Margin="0 0 0 -10"
+                                 ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Border HorizontalAlignment="Stretch"
@@ -125,30 +126,38 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="auto"/>
                                                 <RowDefinition Height="auto"/>
-                                                <RowDefinition Height="auto"/>
                                             </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="50"/>
+                                                <ColumnDefinition Width="auto"/>
+                                            </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Row="0"
                                                         VerticalAlignment="Top"
                                                         HorizontalAlignment="Left"
                                                         MinWidth="50"
+                                                        Margin="5 0 0 0"
                                                         Orientation="Horizontal">
-                                                <TextBlock FontSize="12" Padding="5,0" Text="#"/>
+                                                <TextBlock FontSize="12" Padding="0" Text="#"/>
                                                 <TextBlock FontSize="12" Padding="0" FontFamily="Consolas" Text="{Binding Id}"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="20 5 0 0" Text="Associated MAC:"/>
                                             <ListBox x:Name="macList"
+                                                     Grid.Row="1"
+                                                     Grid.Column="1"
+                                                     Margin="50 -5 0 10"
                                                      Foreground="White"
                                                      Height="auto"
                                                      Background="Transparent"
-                                                     IsEnabled="False"
+                                                     SelectionMode="Single"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Hidden"
                                                      BorderThickness="0"
-                                                     HorizontalContentAlignment="Left"
+                                                     HorizontalContentAlignment="Stretch"
                                                      VerticalContentAlignment="Top"
                                                      Padding="0"
                                                      ItemsSource="{Binding MacList}">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate>
-                                                        <TextBox Text="{Binding}"/>
+                                                        <TextBlock FontFamily="Consolas" Text="{Binding}" Foreground="White"/>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
@@ -159,29 +168,29 @@
                         </ListBox>
                     </Border>
                 </Grid>
+            </Border>
 
-                <!--Info-->
-                <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=HasData, Converter={StaticResource FalseToVisible}}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock HorizontalAlignment="Center" Text="Select a date and a time interval." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
-                        <TextBlock HorizontalAlignment="Center" Text="Press Search to get data." FontSize="{StaticResource SplashFontSize}" Foreground="White"/>
-                    </StackPanel>
-                </Grid>
-                <!--No data found message-->
-                <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=NotFound, Converter={StaticResource TrueToVisible}}">
-                    <TextBlock Text="No data found in this time interval." Grid.Row="1"
-                   Foreground="White"
-                   FontSize="{StaticResource SplashFontSize}"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Grid>
-            </Grid>
-            <!--Loading wheel-->
-            <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=IsLoading, Converter={StaticResource TrueToVisible}}">
+            <!--Info-->
+            <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=HasData, Converter={StaticResource FalseToVisible}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock HorizontalAlignment="Center" Text="Loading data ..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
-                    <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
+                    <TextBlock HorizontalAlignment="Center" Text="Select a date and a time interval." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
+                    <TextBlock HorizontalAlignment="Center" Text="Press Search to get data." FontSize="{StaticResource SplashFontSize}" Foreground="White"/>
                 </StackPanel>
             </Grid>
+            <!--No data found message-->
+            <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=NotFound, Converter={StaticResource TrueToVisible}}">
+                <TextBlock Text="No data found in this time interval." Grid.Row="1"
+                Foreground="White"
+                FontSize="{StaticResource SplashFontSize}"
+                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+            <!--Loading wheel-->
+        <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=IsLoading, Converter={StaticResource TrueToVisible}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock HorizontalAlignment="Center" Text="Loading data ..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
+                <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>
