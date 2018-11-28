@@ -31,18 +31,16 @@ void recv_from_server()
     int recv_len, code;
 
     recv_len = 1;
-    while (recv_len > 0)
+    while (recv_len >= 0)
     {
-        recv_len = recv(srv_socket, buf, BUFLEN, 0);
+        recv_len = read(srv_socket, buf, HEADER_LEN);
         if (recv_len <= 0)
         {
+            printf("Connection error... reconnecting\n");
             close(srv_socket);
             connect_to_server();
-            if (st.status_value != ST_ERR)
-            {
-                recv_len = 1;
-                send_ready();
-            }
+            send_ready();
+            recv_len=0;
             continue;
         }
         code = read_header(buf);
@@ -53,13 +51,15 @@ void recv_from_server()
                 printf("Received OK message from Server.\n");
                 break;
             case CODE_TIME:
+                recv_len = read(srv_socket, buf, SRV_TIME_LEN);
+                if(recv_len<=0) esp_restart();
+                printf("Received TIMESTAMP message from Server.\n");
                 save_timestamp(buf);
                 if (st.status_value != ST_SNIFFING)
                 {
                     st.status_value = ST_READY;
                     return;
                 }
-                printf("Received TIMESTAMP message from Server.\n");
                 break;
             case CODE_RESET:
                 printf("Received RESET message from Server.\n");
@@ -79,12 +79,15 @@ void connect_to_server()
     struct sockaddr_in str_sock_s;
     int result, i;
     struct in_addr in_addr;
-
+    struct timeval tv;
+    tv.tv_sec=READ_TIMEOUT;
+    tv.tv_usec=0;
     srv_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (srv_socket < 0)
     {
         st.status_value = ST_ERR;
-        return;
+        printf("Unable to create socket\n");
+        ESP_ERROR_CHECK(ESP_FAIL);
     }
     memset(&str_sock_s, 0, sizeof(str_sock_s));
     str_sock_s.sin_family = AF_INET;
@@ -92,11 +95,12 @@ void connect_to_server()
     if (inet_aton(st.server_ip, &in_addr) == 0)
     {
         close(srv_socket);
+        printf("Unable to convert server ip from string\n");
         st.status_value = ST_ERR;
-        return;
+        ESP_ERROR_CHECK(ESP_FAIL);
     }
     str_sock_s.sin_addr = in_addr;
-
+    setsockopt(srv_socket,SOL_SOCKET,SO_RCVTIMEO,(const char*)&tv,sizeof(tv));
     result = -1;
     for (i = 0; i < N_RECONNECT && result == -1; i++)
     {
@@ -107,9 +111,10 @@ void connect_to_server()
     if (result == -1)
     {
         close(srv_socket);
-        printf("ERR failed to connect to server\n");
-        esp_restart();
+        printf("Unable to connect to server\n");
+        ESP_ERROR_CHECK(ESP_FAIL);
     }
+    printf("Connected\n");
 }
 
 void send_ready()
@@ -120,7 +125,6 @@ void send_ready()
     char c = CODE_READY;
     sprintf(buf, "%c", c);
     get_device_mac(buf + HEADER_LEN);
-
     sent_len = Send((const void *)buf, HEADER_LEN + MAC_LEN, 0);
     if (sent_len < 0)
     {
@@ -128,7 +132,7 @@ void send_ready()
         st.status_value = ST_ERR;
         return;
     }
-    //recv_from_server(st.socket);
+    printf("Ready Message sent\n");
 }
 
 //receive the broadcast packet from server (UDP:45445) containing server ip address
@@ -143,6 +147,7 @@ void acquire_server_ip()
 
     if (s < 0)
     {
+        printf("Unable to create UDP listener socket\n");
         st.status_value = ST_ERR;
         return;
     }
@@ -155,6 +160,7 @@ void acquire_server_ip()
     result = bind(s, (struct sockaddr *)&str_sock_s, sizeof(str_sock_s));
     if (result == -1)
     {
+        printf("Unable to bind UDP socket\n");
         st.status_value = ST_ERR;
         close(s);
         return;
@@ -171,7 +177,6 @@ void acquire_server_ip()
                 st.server_ip[i] = buf[i + 1];
             st.server_ip[i] = '\0';
             st.status_value = ST_GOT_IP;
-            printf("Got server IP: %s\n", st.server_ip);
             close(s);
             break;
         }
@@ -183,7 +188,19 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) //The second event is SYSTEM_EVENT_STA_GOT_IP which indicates that we have been assigned an IP address by the DHCP server
     {
+        //printf("GOT_IP EVENT FIRED\n");
         st.status_value = ST_CONNECTED;
+    }
+    if(event->event_id == SYSTEM_EVENT_STA_START)
+    {
+        printf("STATION START EVENT FIRED\n");
+        ESP_ERROR_CHECK(esp_wifi_connect());
+    }
+    if(event->event_id == SYSTEM_EVENT_STA_DISCONNECTED){
+        printf("DISCONNECTED EVENT FIRED\n");
+        ESP_ERROR_CHECK(esp_wifi_disconnect());
+        st.status_value=ST_DISCONNECTED;
+        ESP_ERROR_CHECK(esp_wifi_connect());
     }
     return ESP_OK;
 }
@@ -203,7 +220,7 @@ void setup_and_connect_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    //ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 //save time received from server and time on client when it arrives
@@ -213,7 +230,7 @@ void save_timestamp(char *buf)
     char srv_time[SRV_TIME_LEN + 1];
     int y, mon, d, h, min, sec,usec;
 
-    strncpy(srv_time, buf + HEADER_LEN, SRV_TIME_LEN);
+    strncpy(srv_time, buf, SRV_TIME_LEN);
     srv_time[SRV_TIME_LEN] = '\0';
     printf("SERVER_TIME: %s\n", srv_time);
     sscanf(srv_time, "%d:%d:%d:%d:%d:%d:%d", &y, &mon, &d, &h, &min, &sec,&usec);
@@ -239,51 +256,61 @@ void send_data()
     st.total_length += JSON_HEAD_LEN+2;
     buf[1] = (char)(st.total_length >> 8);
     buf[2] = (char)(st.total_length & 0xff);
+
     sprintf(buf + 3, "{\"Esp_Mac\":\"");
     get_device_mac(buf + JSON_MAC_POS);
     sprintf(buf + JSON_MAC_POS + MAC_LEN, "\",\"Packets\":[");
-    printf("%s\n",buf );
-    //Send((const void *)buf, JSON_HEAD_LEN + 3, 0);
+    //printf("%s\n",buf );
+    Send((const void *)buf, JSON_HEAD_LEN + 3, 1);
     buf[0] = '\0';
 	
     int i = 0;
+	//printf("%d\n",st.count);
     for (i = 0; i < st.count; i++)
     {
-        /*sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},",
+        sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},",
                 st.packet_list[i % MAX_QUEUE_LEN].mac,
                 st.packet_list[i % MAX_QUEUE_LEN].ssid,
                 st.packet_list[i % MAX_QUEUE_LEN].timestamp,
                 st.packet_list[i % MAX_QUEUE_LEN].hash,
                 st.packet_list[i % MAX_QUEUE_LEN].strength);
-        Send(buf, strlen(buf), 0);*/
-
-        sprintf(buf, "{\"MAC\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SSID\":\"%s\"},",
+        Send(buf, strlen(buf), 1);
+        /*sprintf(buf, "{\"MAC\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SSID\":\"%s\"},",
                 st.packet_list[i % MAX_QUEUE_LEN].mac,
                 st.packet_list[i % MAX_QUEUE_LEN].timestamp,
                 st.packet_list[i % MAX_QUEUE_LEN].hash,
                 st.packet_list[i % MAX_QUEUE_LEN].ssid);
-        printf("\t%s\n",buf );
+        printf("\t%s\n",buf );*/
+		
+		//printf("%d\n",i);
     }
     sprintf(buf, "]}");
-    printf("%s\n",buf );
-    //Send(buf, strlen(buf), 0);
-    printf("Data sent\n\tsent: %d packets\n",st.count);
+    //printf("%s\n",buf );
+    Send(buf, strlen(buf), 0);
+    printf("\tsent: %d packets\n",st.count);
 }
 
 int Send(const void *data, size_t datalen, int flags)
 {
-    int ret = send(srv_socket, data, datalen, flags);
-    if (ret < 0)
-    {
-        printf("\tError sending data... retrying\n");
-        close(srv_socket);
-        connect_to_server();
-        ret = send(srv_socket, data, datalen, flags);
-    }
-
-    if(ret<0){
-        esp_restart();
-    }
-
-    return ret;
+	int sent=0,i;
+	for(i=0;i<3 && sent==0;i++)
+	{
+		int ret = send(srv_socket, data, datalen, flags);
+		if(ret==datalen)
+			sent=1;
+        if(ret==0){
+            printf("Error: the socket is closed.\n");
+        }
+		if(ret<0)
+		{
+			printf("\tError sending data... retrying\n");
+		}
+	}
+	
+	if(sent==0){
+	   printf("\tSend failed 3 times.. rebooting\n");
+	   close(srv_socket);
+	   esp_restart();
+	}
+    return datalen;
 }

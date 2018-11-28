@@ -29,32 +29,33 @@ void initialize_st()
 //main function
 void app_main()
 {
+	printf("Booted\n");
 	ESP_ERROR_CHECK(nvs_flash_erase());
 	ESP_ERROR_CHECK(nvs_flash_init());
-	esp_log_level_set("*", ESP_LOG_ERROR);
+	//esp_log_level_set("*", ESP_LOG_ERROR);
 
 	initialize_st();
 	initialize_sniffer();
 	initialize_led();
 
+	printf("Connecting to Access Point...\n");
 	setup_and_connect_wifi();
-	while (st.status_value != ST_CONNECTED);
-	printf("Connected to Access Point\n");
-
+	while (st.status_value != ST_CONNECTED)
+	{
+		vTaskDelay(10);
+	}
+	printf("Connected.\n");
+	printf("Waiting for server IP...\n");
 	acquire_server_ip();
 	if (st.status_value == ST_GOT_IP)
 	{
-		printf("Server IP Acquired: %s\n", st.server_ip);
+		printf("Server IP acquired: %s\n", st.server_ip);
 	}
 	else
 		esp_restart();
 
+	printf("Connecting to server...\n");
 	connect_to_server();
-	if (st.status_value == ST_ERR)
-	{
-		printf("Error connecting to server\n");
-		esp_restart();
-	}
 	send_ready();
 	recv_from_server();
 

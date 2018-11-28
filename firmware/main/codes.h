@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 #include "sys/socket.h"
 #include "sha256.h"
+#include <string.h>
 
 /*Set the SSID and Password via "make menuconfig"*/
 #define DEFAULT_SSID CONFIG_WIFI_SSID
@@ -34,6 +35,8 @@
 #define SPORT 48448
 #define LISTENQ 3
 #define IPLEN 17
+
+#define READ_TIMEOUT 60
 
 //ESP32 status codes
 #define ST_DISCONNECTED 0
@@ -61,7 +64,7 @@
 #define HASH_LEN 32
 #define JSON_FIELD_LEN 69
 #define JSON_HEAD_LEN 25 + MAC_LEN
-#define N_RECONNECT 5
+#define N_RECONNECT 3
 #define JSON_MAC_POS 15
 #define PROBE_PAYLOAD_POS 24
 #define PROBE_BSSID_POS 16

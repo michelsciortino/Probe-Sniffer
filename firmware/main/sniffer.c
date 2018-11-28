@@ -6,6 +6,10 @@
 
 extern struct status st;
 
+wifi_promiscuous_filter_t filter={
+        .filter_mask= WIFI_PROMIS_FILTER_MASK_MGMT
+};
+
 //Wipes old packets
 static void clear_data()
 {
@@ -21,6 +25,7 @@ static void calculate_timestamp(char *new_time)
     struct timeval timestamp = timeval_add(&st.srv_time,&elapsed);
     struct tm *timestamp_str;
     timestamp_str = localtime(&timestamp.tv_sec);
+
     sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.%06ld+02:00",
         timestamp_str->tm_year + 1900,
         timestamp_str->tm_mon,
@@ -32,7 +37,7 @@ static void calculate_timestamp(char *new_time)
     new_time[TIME_LEN-7]='0';
     new_time[TIME_LEN-8]='0';
     new_time[TIME_LEN-9]='0';
-
+    //printf("%s\n",new_time );
 }
 
 //promiscuous callback function, called each time a packet is sniffed
@@ -94,6 +99,28 @@ static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t t
     st.total_length += val;
 }
 
+void enable_promiscuous(){
+    
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
+    //Set callback function
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(promiscuous_rx_cb));
+    bool mode=false;
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    while(mode!=true){
+        ESP_ERROR_CHECK(esp_wifi_get_promiscuous(&mode));
+        if(mode==true) break;
+    }
+}
+
+void disable_promiscuous(){
+    bool mode=true;
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+    while(mode!=false){
+        esp_wifi_get_promiscuous(&mode);
+        if(mode==false) break;
+    }  
+}
+
 static void start_collector_timer()
 {
     ESP_ERROR_CHECK(esp_timer_start_once(st.timer, TIMER_USEC));
@@ -104,14 +131,16 @@ void start_sniffer()
     //Wiping old packets
     printf("\tWiping old packets\n");
     clear_data();
+
     //Starting collector timer
     printf("\tStarting collector timer: %ds\n",TIMER_USEC/1000);
-    start_collector_timer();
-    //Set callback function
-    esp_wifi_set_promiscuous_rx_cb(promiscuous_rx_cb);
-    printf("Turning ON promiscuos mode\n");
+    start_collector_timer();    
+    
     //turning on promiscuos mode
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    printf("\tTurning ON promiscuos mode\n");
+    printf("Sniffing\n");
+    enable_promiscuous();
+
     turn_led_on();
     st.status_value = ST_SNIFFING;
 }
@@ -121,7 +150,8 @@ static void collector_timer_handle()
 {
     //Turning off promiscuos mode
     printf("\tTurning OFF promiscuos mode\n");
-    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+    disable_promiscuous();
+
     turn_led_off();
     st.status_value = ST_SENDING_DATA;
     send_data();
@@ -138,5 +168,6 @@ void initialize_sniffer()
     create_args.name = "collector_timer\0";
     ESP_ERROR_CHECK(esp_timer_create(&create_args, &(st.timer)));
 }
+
 
 
