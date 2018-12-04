@@ -1,4 +1,5 @@
 ﻿using Core.Models;
+using Core.Models.Database;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Core.Utilities
 {
-    public static class FindHiddenDevice
+    public static class HiddenDevicesFinder
     {
         private const float THRESHOLD = 0.6f;
 
@@ -26,9 +27,9 @@ namespace Core.Utilities
         /// <summary>
         /// Find devices that hide their MAC
         /// </summary>
-        /// <param name="entries">List of Packets</param>
+        /// <param name="entries">List of Probes</param>
         /// <returns>Return a List of HiddenDeviceInfo that contains for each device a list of equal Mac </returns>
-        public static List<HiddenDeviceInfo> Find(List<Packet> entries)
+        public static List<HiddenDeviceInfo> Find(List<Probe> entries)
         {
             List<HiddenDeviceInfo> hiddenDeviceList = new List<HiddenDeviceInfo>();
             Dictionary<int, HiddenDeviceInfo> hiddenDeviceDictionary = new Dictionary<int, HiddenDeviceInfo>();
@@ -37,38 +38,36 @@ namespace Core.Utilities
             float[][] adj = null;
             int[] sol = null;
 
-            foreach (Packet p in entries) //trovo i mac local e li salvo a gruppi
+            foreach (Probe p in entries) //trovo i mac local e li salvo a gruppi
             {
-                byte[] bytes = Encoding.ASCII.GetBytes(p.MAC);
+                byte[] bytes = Encoding.ASCII.GetBytes(p.Sender.MAC);
                 var bits = new BitArray(bytes);
 
                 //DisplayBitArray(bits);
                 if (bits[1] is true)
                 {
-                    if (p.SSID == "dlinko" || p.SSID == "ESP32_AP")
+                    if (devicesInfoList.ContainsKey(p.Sender.MAC))
                     {
-                        if (devicesInfoList.ContainsKey(p.MAC))
-                        {
-                            devicesInfoList[p.MAC].SsidList.Add(p.SSID);
-                            if (devicesInfoList[p.MAC].Start > p.Timestamp)
-                                devicesInfoList[p.MAC].Start = p.Timestamp;
-                            if (devicesInfoList[p.MAC].End < p.Timestamp)
-                                devicesInfoList[p.MAC].End = p.Timestamp;
-                        }
-                        else
-                        {
-                            ProbeInterval probeInt = new ProbeInterval
-                            {
-                                Mac = p.MAC,
-                                Start = p.Timestamp,
-                                End = p.Timestamp
-                            };
-                            probeInt.SsidList.Add(p.SSID);
-                            devicesInfoList.Add(p.MAC, probeInt);
-                        }
-                        /*if (p.SSID == "dlinko")
-                        Console.WriteLine(p.MAC + " " + p.SSID + " " + p.Timestamp);*/
+                        devicesInfoList[p.Sender.MAC].SsidList.Add(p.SSID);
+                        if (devicesInfoList[p.Sender.MAC].Start > p.Timestamp)
+                            devicesInfoList[p.Sender.MAC].Start = p.Timestamp;
+                        if (devicesInfoList[p.Sender.MAC].End < p.Timestamp)
+                            devicesInfoList[p.Sender.MAC].End = p.Timestamp;
                     }
+                    else
+                    {
+                        ProbeInterval probeInt = new ProbeInterval
+                        {
+                            Mac = p.Sender.MAC,
+                            Start = p.Timestamp,
+                            End = p.Timestamp,
+                            SsidList=new List<string>()
+                        };
+                        probeInt.SsidList.Add(p.SSID);
+                        devicesInfoList.Add(p.Sender.MAC, probeInt);
+                    }
+                    /*if (p.SSID == "dlinko")
+                    Console.WriteLine(p.Sender.MAC + " " + p.SSID + " " + p.Timestamp);*/
 
                 }
             }
@@ -212,14 +211,14 @@ namespace Core.Utilities
         #region Old
         /* foreach (var device_ext in devicesInfoList)       
              {
-                 if (mac == p.MAC)
+                 if (mac == p.Sender.MAC)
                      {
                          equal[count] = p;
                          count++;
                      }
                      else
                      {
-                         mac = p.MAC;
+                         mac = p.Sender.MAC;
                          if (count > 1)
                          {
                              //controllo se ho match con quello che ho già salvato
