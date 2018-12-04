@@ -8,8 +8,7 @@ namespace Core.Models
 {
     public class HiddenDeviceInfo
     {
-        public int NumProbes { get; set; }
-        public List<String> SsidList { get; set; }
+        public int Id { get; set; }
         public List<String> MacList { get; set; }
     }
 }

@@ -11,6 +11,7 @@ namespace Core.Utilities
     public static class FindHiddenDevice
     {
         private const float THRESHOLD = 0.6f;
+
         #region Private Classes
         private class ProbeInterval
         {
@@ -30,6 +31,8 @@ namespace Core.Utilities
         public static List<HiddenDeviceInfo> Find(List<Packet> entries)
         {
             List<HiddenDeviceInfo> hiddenDeviceList = new List<HiddenDeviceInfo>();
+            Dictionary<int, HiddenDeviceInfo> hiddenDeviceDictionary = new Dictionary<int, HiddenDeviceInfo>();
+
             Dictionary<String, ProbeInterval> devicesInfoList = new Dictionary<string, ProbeInterval>();
             float[][] adj = null;
             int[] sol = null;
@@ -52,6 +55,17 @@ namespace Core.Utilities
                             if (devicesInfoList[p.MAC].End < p.Timestamp)
                                 devicesInfoList[p.MAC].End = p.Timestamp;
                         }
+                        else
+                        {
+                            ProbeInterval probeInt = new ProbeInterval
+                            {
+                                Mac = p.MAC,
+                                Start = p.Timestamp,
+                                End = p.Timestamp
+                            };
+                            probeInt.SsidList.Add(p.SSID);
+                            devicesInfoList.Add(p.MAC, probeInt);
+                        }
                         /*if (p.SSID == "dlinko")
                         Console.WriteLine(p.MAC + " " + p.SSID + " " + p.Timestamp);*/
                     }
@@ -60,6 +74,8 @@ namespace Core.Utilities
             }
             //ordino la lista in base al timestamp --> forse non serve
             //macLocal.Sort((pack1, pack2) => (pack1.Timestamp.CompareTo(pack2.Timestamp)));
+
+            Dictionary<int, String> MacId = new Dictionary<int, string>();  //ID - MAC
 
             sol = new int[devicesInfoList.Count];
             for (int i = 0; i < devicesInfoList.Count; i++)
@@ -76,46 +92,49 @@ namespace Core.Utilities
                 int c = 0;
                 foreach (var probe_int_c in devicesInfoList)
                 {
-                    if(r!=c)
+                    if (r != c)
                         adj[r][c] = GetDegreeOfSimilarity(probe_ext_r, probe_int_c);  //Match all probeInterval, return percentage of similarity
                     c++;
                 }
+                MacId.Add(r, probe_ext_r.Key);
                 r++;
             }
 
             int cc = 0;
             // finding connected components
-            for (int i=0;i< devicesInfoList.Count;i++)
+            for (int i = 0; i < devicesInfoList.Count; i++)
             {
                 if (sol[i] == -1)
                 {
-                    CCFind(i, adj,ref sol, cc);
+                    CCFind(i, adj, ref sol, cc);
                     cc++;
                 }
             }
-     
-            return hiddenDeviceList;
-        }
 
-        private static void CCFind(int root,float[][] adj,ref int[] sol,int cc)
-        {
-            int maxPeer = -1;
-            sol[root] = cc;
-            SortedList<float,int> descendentPeers = new SortedList<float,int>();
-            
-            for(int i = 0; i < sol.Length; i++)
-                if (adj[root][i] > THRESHOLD)
-                    descendentPeers.Add(adj[root][i], i);
-            
-            foreach(KeyValuePair<float,int> pair in descendentPeers.Reverse())
+            //Create Lists of equal mac
+            for (int i = 0; i < sol.Length; i++)
             {
-                int peer = pair.Value;
-                if (sol[peer]!=-1 && adj[peer][root] > THRESHOLD)
+                if (sol[i] != -1)
                 {
-                    CCFind(maxPeer,adj,ref sol, cc);
+                    if (hiddenDeviceDictionary.ContainsKey(sol[i]))
+                    {
+                        hiddenDeviceDictionary[sol[i]].MacList.Add(MacId[i]);
+                        sol[i] = -1;
+                    }
+                    else
+                    {
+                        HiddenDeviceInfo hd = new HiddenDeviceInfo();
+                        hd.Id = i;
+                        hd.MacList.Add(MacId[i]);
+                        hiddenDeviceDictionary.Add(sol[i], hd);
+                        sol[i] = -1;
+                    }
                 }
             }
+
+            return hiddenDeviceDictionary.Values.ToList();
         }
+
         #endregion
 
         #region Private Methods
@@ -146,6 +165,33 @@ namespace Core.Utilities
                     }
                 }
                 return mutui / (probe_ext.Value.SsidList.Count + probe_int.Value.SsidList.Count - mutui);
+            }
+        }
+
+        /// <summary>
+        /// Finding connected components 
+        /// </summary>
+        /// <param name="root">Root node</param>
+        /// <param name="adj">Adjacencies matrix</param>
+        /// <param name="sol">Vector of solutions</param>
+        /// <param name="cc">Connected component</param>
+        private static void CCFind(int root, float[][] adj, ref int[] sol, int cc)
+        {
+            int maxPeer = -1;
+            sol[root] = cc;
+            SortedList<float, int> descendentPeers = new SortedList<float, int>();
+
+            for (int i = 0; i < sol.Length; i++)
+                if (adj[root][i] > THRESHOLD)
+                    descendentPeers.Add(adj[root][i], i);
+
+            foreach (KeyValuePair<float, int> pair in descendentPeers.Reverse())
+            {
+                int peer = pair.Value;
+                if (sol[peer] != -1 && adj[peer][root] > THRESHOLD)
+                {
+                    CCFind(maxPeer, adj, ref sol, cc);
+                }
             }
         }
 
@@ -215,6 +261,6 @@ namespace Core.Utilities
                          }
                      }
                  }*/
-            #endregion
-        }
+        #endregion
     }
+}
