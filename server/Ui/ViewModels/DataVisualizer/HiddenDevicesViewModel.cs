@@ -5,11 +5,20 @@ using System.Collections.ObjectModel;
 using System;
 using System.Collections.Generic;
 using System.Windows.Input;
+using Core.Models.Database;
+using Core.DBConnection;
+using System.Windows;
+using System.Windows.Threading;
+using System.Linq;
+using Core.Models;
 
 namespace Ui.ViewModels.DataVisualizer
 {
     public class HiddenDevicesViewModel : BaseViewModel
     {
+        #region Private Members
+        private DatabaseConnection dbConnection = null;
+        #endregion
 
         #region Private Properties
 
@@ -23,7 +32,11 @@ namespace Ui.ViewModels.DataVisualizer
 
         public HiddenDevicesViewModel()
         {
+            dbConnection = new DatabaseConnection();
+            dbConnection.Connect();
+            dbConnection.TestConnection();
             _devices = new ObservableRangeCollection<HiddenDevice>();
+            _loadDeviceListCommand = new RelayCommand<object>(x => LoadDeviceListAsync());
         }
 
         #endregion
@@ -107,6 +120,55 @@ namespace Ui.ViewModels.DataVisualizer
 
         #region Public Commands
         public ICommand LoadDeviceListCommand => _loadDeviceListCommand;
+        #endregion
+
+        #region Private Methods
+        private async System.Threading.Tasks.Task LoadDeviceListAsync()
+        {
+            NotFound = false;
+            HasData = false;
+            if (dbConnection == null || dbConnection.TestConnection() == false)
+            {
+                Core.Controls.MessageBox message = new Core.Controls.MessageBox("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                message.Show();
+                return;
+            }
+            IsLoading = true;
+
+            DateTime start = _startDate;
+            DateTime end = _endDate;
+
+            List<ProbesInterval> intervals = await dbConnection.GetIntervalsBetween(start, end);
+
+            if (intervals is null)
+            {
+                IsLoading = false;
+                Core.Controls.MessageBox message = new Core.Controls.MessageBox("No data found.", "", MessageBoxButton.OK, MessageBoxImage.Information);
+                message.Show();
+                NotFound = true;
+                return;
+            }
+
+            if (intervals.Count == 0)
+            {
+                NotFound = true;
+                HasData = false;
+                IsLoading = false;
+                return;
+            }
+
+            List<Probe> probes = new List<Probe>();
+            foreach (var interval in intervals)
+                probes.AddRange(interval.Probes);
+
+            List<HiddenDeviceInfo> hiddenDeviceInfos = Core.Utilities.HiddenDevicesFinder.Find(probes);
+            Devices.Clear();
+            Devices.AddRange(hiddenDeviceInfos.Select(hdi => new HiddenDevice { Id = hdi.Id, MacList = hdi.MacList.ToList() }));
+            HasData = true;
+            NotFound = false;
+            IsLoading = false;
+
+        }
         #endregion
     }
 }
