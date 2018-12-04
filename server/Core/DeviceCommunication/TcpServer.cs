@@ -21,7 +21,7 @@ namespace Core.DeviceCommunication
 
     public class TcpServer
     {
-        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 30000;
+        public const int SERVER_PORT = 48448, SYNC_INTERVAL = 50000;
         
         #region Private Members
         private ServerMode mode;
@@ -167,7 +167,11 @@ namespace Core.DeviceCommunication
             while (StopServer.IsCancellationRequested is false && socket.Connected)
             {
                 message = await ReceiveMessageAsync(socket);
-                if (message is null) break;
+                if (message is null)
+                {
+                    Logger.Log("[DEBUG] ReceiveMessageAsync: received null from socket\r\n");
+                    break;
+                }
 
                 if (message is Ready_Message)
                 {
@@ -225,11 +229,14 @@ namespace Core.DeviceCommunication
             try { result = await ReceiveAsync(socket, 1); }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log("[DEBUG] "+ ex.Message +"\r\n");
                 return null;
             }
-            if (result is null) return null;
-
+            if (result is null)
+            {
+                Logger.Log("[DEBUG] ReceiveAsync: received null from socket\r\n");
+                return null;
+            }
             headerCode = result[0];
             try
             {
@@ -254,8 +261,10 @@ namespace Core.DeviceCommunication
                         int jsonLenght = -1;
                         result = await ReceiveAsync(socket, 2);
                         if (result is null)
+                        {
+                            Logger.Log("[DEBUG] ReceiveMessageAsync: received null reading DATA_HEADER\r\n");
                             return null;
-
+                        }
                         if (BitConverter.IsLittleEndian)
                         {
                             byte t = result[0];
@@ -266,8 +275,10 @@ namespace Core.DeviceCommunication
                         
                         result = await ReceiveAsync(socket, jsonLenght);
                         if (result is null)
+                        {
+                            Logger.Log("[DEBUG] ReceiveMessageAsync: received null reading DATA_BODY\r\n");
                             return null;
-                        
+                        }
                         ret = new Data_Message
                         {
                             Header = Data_Message.DATA_HEADER,
@@ -275,12 +286,13 @@ namespace Core.DeviceCommunication
                         };
                         break;
                     default:
+                        Logger.Log("[DEBUG] Received unknown message code\r\n");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                Logger.Log("[DEBUG] " + ex.Message + "\r\n");
                 return null;
             }
             return ret;
@@ -304,7 +316,10 @@ namespace Core.DeviceCommunication
                         return null;
                     leftBytes -= recvLen;
                 }
-                catch { return null; }                
+                catch (Exception ex) {
+                    Logger.Log("[DEBUG] " + ex.Message + "\r\n");
+                    return null;
+                }                
             }
             return buff;
         }

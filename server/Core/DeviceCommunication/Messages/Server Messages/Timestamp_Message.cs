@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Core.Models;
+using System;
 using System.Text;
 
 namespace Core.DeviceCommunication.Messages.Server_Messages
@@ -20,8 +21,8 @@ namespace Core.DeviceCommunication.Messages.Server_Messages
 
         public new byte[] ToBytes()
         {
-            _payload = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss:ffffff");
-            
+            _payload = DateTime.Now.ToString("yyyy:MM:dd:HH:mm:ss:ffffff").Replace('.',':');
+            Logger.Log("sent :" + _payload + "\r\n");
             byte[] bytes = new Byte[_payload.Length + 1];
             bytes[0] = _header;
             byte[] payloadBytes = Encoding.ASCII.GetBytes(_payload.ToCharArray(), 0, _payload.Length);

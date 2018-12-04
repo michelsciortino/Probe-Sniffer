@@ -115,12 +115,17 @@ namespace Core.DataCollection
                         Data_Message message = server.GetNextMessage() as Data_Message;
                         if (message is null) continue;
                         DeviceData data = DeviceData.FromJson(message.Payload);
-                        if (data is null) continue;
+                        if (data is null)
+                        {
+                            Logger.Log("An ESP sent a wrong DEVICE_DATA message" + "\r\n");
+                            continue;
+                        }
                         var esp = ESPManager.GetESPDevice(data.Esp_Mac);
                         Logger.Log("An ESP sent DEVICE_DATA\t\tx: " + esp?.X_Position + " y: " + esp?.Y_Position + "\r\n");
                         foreach (Packet p in data.Packets)
                         {
                             p.ESP_MAC = data.Esp_Mac;
+                            p.Timestamp = p.Timestamp.AddHours(2);
                             toBeStored.Enqueue(p);
                         }
                     }
@@ -196,7 +201,7 @@ namespace Core.DataCollection
 
             while (token.IsCancellationRequested is false)
             {
-                if (DateTime.Compare(DateTime.UtcNow, last_interval.Timestamp.AddMinutes(5)) < 0)
+                if (DateTime.Compare(DateTime.Now, last_interval.Timestamp.AddMinutes(5)) < 0)
                 {
                     Thread.Sleep(30000);
                     continue;
@@ -229,7 +234,7 @@ namespace Core.DataCollection
 
                 //Elimino tutti i probe non detected da tutti gli ESP
                 //var toberemoved = DetectionForHash.Where(pair => pair.Value.Count < 2).Select(pair => pair.Key).ToList();
-                var toberemoved = DetectionForHash.Where(pair => pair.Value.Count <2 /*!= ESPManager.ESPs.Count*/).Select(pair => pair.Key).ToList();
+                var toberemoved = DetectionForHash.Where(pair => pair.Value.Count != ESPManager.ESPs.Count).Select(pair => pair.Key).ToList();
                 if (toberemoved.Count!=0)
                 {
                     foreach (string hash in toberemoved)
@@ -246,7 +251,7 @@ namespace Core.DataCollection
 
                     try
                     {
-                        point = Interpolator.Interpolate(detections);
+                        point = Interpolator2.Interpolate(detections);
                     }
                     catch
                     {

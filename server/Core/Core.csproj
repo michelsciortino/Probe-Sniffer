@@ -112,6 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <Compile Include="DataCollection\Interpolator2.cs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

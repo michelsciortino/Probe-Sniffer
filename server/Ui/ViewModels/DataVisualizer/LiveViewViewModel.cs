@@ -17,7 +17,7 @@ namespace Ui.ViewModels.DataVisualizer
     public class LiveViewViewModel : BaseViewModel
     {
         #region Private Members
-        private const int UPDATING_RATE = 30000;
+        private const int UPDATING_RATE = 10000;
         private Timer timer = null;
         private DatabaseConnection dbConnection = null;
         private DateTime last_interval_timestamp= default;
@@ -33,7 +33,7 @@ namespace Ui.ViewModels.DataVisualizer
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Await.Warning", "CS4014:Await.Warning")]
         public LiveViewViewModel()
         {
-            last_interval_timestamp = DateTime.Now.AddMinutes(-3);
+            last_interval_timestamp = DateTime.SpecifyKind(DateTime.Now.AddMinutes(-3), DateTimeKind.Utc);
             timer = new Timer((dispatcher) => UpdateAsync(dispatcher),Dispatcher.CurrentDispatcher,Timeout.Infinite,UPDATING_RATE);
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
@@ -117,7 +117,7 @@ namespace Ui.ViewModels.DataVisualizer
             ProbesInterval[] new_intervals = new ProbesInterval[20];
             KeyValuePair<int, string>[] new_points = new KeyValuePair<int, string>[20];
             foreach (var interval in stored_intervals)
-                new_intervals[(interval.Timestamp - last_interval_timestamp.AddMinutes(-20)).Minutes] = interval;
+                new_intervals[interval.Timestamp.Minute - last_interval_timestamp.AddMinutes(-20).Minute] = interval;
             List<Probe> i_last = null;
 
             
@@ -176,7 +176,7 @@ namespace Ui.ViewModels.DataVisualizer
             IsLoading = false;
         }
 
-        public void RunUpdater() => timer.Change(UPDATING_RATE/3, UPDATING_RATE);
+        public void RunUpdater() => timer.Change(UPDATING_RATE/10, UPDATING_RATE);
         public void StopUpdater() => timer.Change(Timeout.Infinite, Timeout.Infinite);
         #endregion
     }
