@@ -55,7 +55,7 @@
 #define BSSID_MAXLEN 17
 #define SEQ_NUM_LEN 2
 #define TIME_LEN 32
-#define SRV_TIME_LEN 23
+#define SRV_TIME_LEN 26
 #define SSID_MAXLEN 32
 #define TIMER_USEC 20000000
 #define MAC_POS 10
@@ -97,6 +97,7 @@ struct status
     int status_value;
     char server_ip[IPLEN];
     uint port;
+    SemaphoreHandle_t xSemaphore;
     struct timeval srv_time;
     struct timeval client_time;
     struct packet_info packet_list[MAX_QUEUE_LEN];

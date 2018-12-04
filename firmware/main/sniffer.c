@@ -20,15 +20,33 @@ static void clear_data()
 //add elapsed time to timestamp received from server
 static void calculate_timestamp(char *new_time)
 {
-
     struct timeval elapsed = timeval_durationToNow(&st.client_time);
-    struct timeval timestamp = timeval_add(&st.srv_time,&elapsed);
     struct tm *timestamp_str;
+    struct timeval timestamp;
+     if (st.xSemaphore != NULL)
+    {
+        if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+        {
+            // We would expect this call to fail because we cannot give a semaphore without first "taking" it!
+        }
+        // Obtain the semaphore - don't block if the semaphore is not immediately available.
+        if (xSemaphoreTake(st.xSemaphore, (TickType_t)0))
+        {
+            // We now have the semaphore and can access the shared resource.
+            timestamp = timeval_add(&st.srv_time, &elapsed);
+            // We have finished accessing the shared resource so can free the semaphore.
+            if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+            {
+                // We would not expect this call to fail because we must have obtained the semaphore to get here.
+            }
+        }
+    }
+
     timestamp_str = localtime(&timestamp.tv_sec);
 
     sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.%06ld+02:00",
         timestamp_str->tm_year + 1900,
-        timestamp_str->tm_mon,
+        timestamp_str->tm_mon+1,
         timestamp_str->tm_mday,
         timestamp_str->tm_hour,
         timestamp_str->tm_min,

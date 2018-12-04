@@ -24,6 +24,33 @@ int read_header(char *buf)
     return (int)head_val;
 }
 
+int Send(const void *data, size_t datalen, int flags)
+{
+    int sent=0,i;
+    for(i=0;i<3 && sent==0;i++)
+    {
+        int ret = send(srv_socket, data, datalen, flags);
+        if(ret==datalen)
+            sent=1;
+        if(ret==0){
+            printf("Error: the socket is closed.\n");
+            return -1;
+        }
+        if(ret<0)
+        {
+            printf("\tError sending data... retrying\n");
+        }
+    }
+    
+    if(sent==0){
+       printf("\tSend failed 3 times.. rebooting\n");
+       close(srv_socket);
+       return -1;
+    }
+    return datalen;
+}
+
+
 //receive packets frome server and decides what to do
 void recv_from_server()
 {
@@ -36,13 +63,17 @@ void recv_from_server()
         recv_len = read(srv_socket, buf, HEADER_LEN);
         if (recv_len <= 0)
         {
-            printf("Connection error... reconnecting\n");
+            if (recv_len == 0)
+                printf("Connection error... The socket is closed. Reconnecting\n");
+            else
+                printf("Connection error... recvlen:%d. Reconnecting\n",recv_len);
             close(srv_socket);
             connect_to_server();
             send_ready();
             recv_len=0;
             continue;
         }
+        
         code = read_header(buf);
         switch (code)
         {
@@ -58,7 +89,7 @@ void recv_from_server()
                 if (st.status_value != ST_SNIFFING)
                 {
                     st.status_value = ST_READY;
-                    return;
+                  //  return;
                 }
                 break;
             case CODE_RESET:
@@ -193,11 +224,11 @@ esp_err_t event_handler(void *ctx, system_event_t *event)
     }
     if(event->event_id == SYSTEM_EVENT_STA_START)
     {
-        printf("STATION START EVENT FIRED\n");
+        //printf("STATION START EVENT FIRED\n");
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
     if(event->event_id == SYSTEM_EVENT_STA_DISCONNECTED){
-        printf("DISCONNECTED EVENT FIRED\n");
+        //printf("DISCONNECTED EVENT FIRED\n");
         ESP_ERROR_CHECK(esp_wifi_disconnect());
         st.status_value=ST_DISCONNECTED;
         ESP_ERROR_CHECK(esp_wifi_connect());
@@ -220,7 +251,6 @@ void setup_and_connect_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    //ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 //save time received from server and time on client when it arrives
@@ -228,30 +258,51 @@ void save_timestamp(char *buf)
 {
     struct tm timestamp;
     char srv_time[SRV_TIME_LEN + 1];
-    int y, mon, d, h, min, sec,usec;
+    int y, mon, d, h, min, sec;
+    long int usec;
+    if (st.xSemaphore != NULL)
+    {
+        if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+        {
+            printf("Give Semaphore....\n");
+            // We would expect this call to fail because we cannot give a semaphore without first "taking" it!
+        }
+        // Obtain the semaphore - don't block if the semaphore is not immediately available.
+        if (xSemaphoreTake(st.xSemaphore, (TickType_t)0))
+        {
+            // We now have the semaphore and can access the shared resource.
+            strncpy(srv_time, buf, SRV_TIME_LEN);
+            srv_time[SRV_TIME_LEN] = '\0';
+            printf("SERVER_TIME: %s\n", srv_time);
+            sscanf(srv_time, "%d:%d:%d:%d:%d:%d:%ld", &y, &mon, &d, &h, &min, &sec, &usec);
 
-    strncpy(srv_time, buf, SRV_TIME_LEN);
-    srv_time[SRV_TIME_LEN] = '\0';
-    printf("SERVER_TIME: %s\n", srv_time);
-    sscanf(srv_time, "%d:%d:%d:%d:%d:%d:%d", &y, &mon, &d, &h, &min, &sec,&usec);
-    timestamp.tm_year = y - 1900;
-    timestamp.tm_mon = mon;
-    timestamp.tm_mday = d;
-    timestamp.tm_hour = h;
-    timestamp.tm_min = min;
-    timestamp.tm_sec = sec;
+            timestamp.tm_year = y - 1900;
+            timestamp.tm_mon = mon - 1;
+            timestamp.tm_mday = d;
+            timestamp.tm_hour = h;
+            timestamp.tm_min = min;
+            timestamp.tm_sec = sec;
+            // printf("Setting time: %s", asctime(&timestamp));
 
-    st.srv_time.tv_sec=mktime(&timestamp);
-    st.srv_time.tv_usec=usec;
-    gettimeofday(&st.client_time,NULL);
+            st.srv_time.tv_sec = mktime(&timestamp);
+            st.srv_time.tv_usec = usec;
+            gettimeofday(&st.client_time, NULL);
+            // We have finished accessing the shared resource so can free the semaphore.
+            if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+            {
+                printf("ERROR Give.... \n");
+                // We would not expect this call to fail because we must have obtained the semaphore to get here.
+            }
+        }
+    }
 }
 
-void send_data()
+int try_send_data()
 {
     printf("Sending data\n");
     char buf[BUFLEN];
     char header = CODE_DATA;
-
+    int ret;
     buf[0] = header;
     st.total_length += JSON_HEAD_LEN+2;
     buf[1] = (char)(st.total_length >> 8);
@@ -260,12 +311,10 @@ void send_data()
     sprintf(buf + 3, "{\"Esp_Mac\":\"");
     get_device_mac(buf + JSON_MAC_POS);
     sprintf(buf + JSON_MAC_POS + MAC_LEN, "\",\"Packets\":[");
-    //printf("%s\n",buf );
-    Send((const void *)buf, JSON_HEAD_LEN + 3, 1);
+    ret=Send((const void *)buf, JSON_HEAD_LEN + 3, 1);
+    if(ret==-1) return -1;
     buf[0] = '\0';
-	
     int i = 0;
-	//printf("%d\n",st.count);
     for (i = 0; i < st.count; i++)
     {
         sprintf(buf, "{\"MAC\":\"%s\",\"SSID\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SignalStrength\":%04d,},",
@@ -274,43 +323,20 @@ void send_data()
                 st.packet_list[i % MAX_QUEUE_LEN].timestamp,
                 st.packet_list[i % MAX_QUEUE_LEN].hash,
                 st.packet_list[i % MAX_QUEUE_LEN].strength);
-        Send(buf, strlen(buf), 1);
-        /*sprintf(buf, "{\"MAC\":\"%s\",\"Timestamp\":\"%s\",\"Hash\":\"%s\",\"SSID\":\"%s\"},",
-                st.packet_list[i % MAX_QUEUE_LEN].mac,
-                st.packet_list[i % MAX_QUEUE_LEN].timestamp,
-                st.packet_list[i % MAX_QUEUE_LEN].hash,
-                st.packet_list[i % MAX_QUEUE_LEN].ssid);
-        printf("\t%s\n",buf );*/
-		
-		//printf("%d\n",i);
+        ret=Send(buf, strlen(buf), 1);
+        if(ret==-1) return -1;
     }
     sprintf(buf, "]}");
-    //printf("%s\n",buf );
-    Send(buf, strlen(buf), 0);
+    ret=Send(buf, strlen(buf), 0);
+    if(ret==-1) return -1;
     printf("\tsent: %d packets\n",st.count);
+    return 0;
 }
 
-int Send(const void *data, size_t datalen, int flags)
-{
-	int sent=0,i;
-	for(i=0;i<3 && sent==0;i++)
-	{
-		int ret = send(srv_socket, data, datalen, flags);
-		if(ret==datalen)
-			sent=1;
-        if(ret==0){
-            printf("Error: the socket is closed.\n");
-        }
-		if(ret<0)
-		{
-			printf("\tError sending data... retrying\n");
-		}
-	}
-	
-	if(sent==0){
-	   printf("\tSend failed 3 times.. rebooting\n");
-	   close(srv_socket);
-	   esp_restart();
-	}
-    return datalen;
+void send_data(){
+    while(try_send_data()<0){
+        close(srv_socket);
+        connect_to_server();
+    }
 }
+

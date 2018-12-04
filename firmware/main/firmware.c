@@ -13,6 +13,8 @@ struct status st;
 //initialize the main structure
 void initialize_st()
 {
+	// Create the semaphore to guard a shared resource.
+	vSemaphoreCreateBinary(st.xSemaphore);
 	st.status_value = ST_DISCONNECTED;
 	strcpy(st.server_ip, "\0");
 	st.port = -1;
@@ -29,6 +31,8 @@ void initialize_st()
 //main function
 void app_main()
 {
+	TaskHandle_t xHandle = NULL;
+	st.xSemaphore=NULL;
 	printf("Booted\n");
 	ESP_ERROR_CHECK(nvs_flash_erase());
 	ESP_ERROR_CHECK(nvs_flash_init());
@@ -57,11 +61,21 @@ void app_main()
 	printf("Connecting to server...\n");
 	connect_to_server();
 	send_ready();
-	recv_from_server();
-
-	if (st.status_value != ST_READY)
+	//recv_from_server();
+	xTaskCreate(recv_from_server, "TASK_listener", 10000, NULL, 2, &xHandle);
+	// Use the handle to delete the task.
+	if (xHandle == NULL)
+	{
+		vTaskDelete(xHandle);
 		esp_restart();
+	}
+
+	while (st.status_value != ST_READY){
+		vTaskDelay(100);
+	}
+	//esp_restart();
 
 	printf("Starting sniffing\n");
 	start_sniffer();
 }
+

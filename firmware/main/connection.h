@@ -13,7 +13,6 @@ esp_err_t event_handler(void *ctx, system_event_t *event);
 void setup_and_connect_wifi(void);
 void save_timestamp(char *buf);
 void connect_to_server();
-int Send(const void *data, size_t datalen, int flags);
 void send_data();
 
 #endif
