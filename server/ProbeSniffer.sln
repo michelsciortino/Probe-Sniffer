@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2002
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProbeSniffer", "ProbeSniffer\ProbeSniffer.csproj", "{2874AB62-9459-4583-9A76-5BEBB683858F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{CCB40519-3614-4212-9B68-3483526037FA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configurator", "Configurator\Configurator.csproj", "{CED4F0C1-3637-4558-8D54-637181AFC576}"
@@ -25,18 +23,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|x64.Build.0 = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Debug|x86.Build.0 = Debug|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|x64.ActiveCfg = Release|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|x64.Build.0 = Release|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|x86.ActiveCfg = Release|Any CPU
-		{2874AB62-9459-4583-9A76-5BEBB683858F}.Release|x86.Build.0 = Release|Any CPU
 		{CCB40519-3614-4212-9B68-3483526037FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CCB40519-3614-4212-9B68-3483526037FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCB40519-3614-4212-9B68-3483526037FA}.Debug|x64.ActiveCfg = Debug|Any CPU
