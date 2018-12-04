@@ -106,7 +106,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Utilities\BooleanConverter.cs" />
-    <Compile Include="Utilities\FindHiddenDevice.cs" />
+    <Compile Include="Utilities\HiddenDevicesFinder.cs" />
     <Compile Include="Utilities\ObservableRangeCollection.cs" />
     <Compile Include="Utilities\Util.cs" />
     <Compile Include="ViewModelBase\BaseViewModel.cs" />
