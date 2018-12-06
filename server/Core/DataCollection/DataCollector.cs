@@ -189,7 +189,7 @@ namespace Core.DataCollection
                         Timestamp = await dbConnection.GetFirstTimestamp(),
                         IntervalId = -1
                     };
-                    if (last_interval.Timestamp == null)
+                    if (last_interval.Timestamp == default)
                     {
                         Thread.Sleep(30000);
                         continue;

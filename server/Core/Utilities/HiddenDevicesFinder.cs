@@ -66,14 +66,9 @@ namespace Core.Utilities
                         probeInt.SsidList.Add(p.SSID);
                         devicesInfoList.Add(p.Sender.MAC, probeInt);
                     }
-                    /*if (p.SSID == "dlinko")
-                    Console.WriteLine(p.Sender.MAC + " " + p.SSID + " " + p.Timestamp);*/
 
                 }
             }
-            //ordino la lista in base al timestamp --> forse non serve
-            //macLocal.Sort((pack1, pack2) => (pack1.Timestamp.CompareTo(pack2.Timestamp)));
-
             Dictionary<int, String> MacId = new Dictionary<int, string>();  //ID - MAC
 
             sol = new int[devicesInfoList.Count];
@@ -117,17 +112,31 @@ namespace Core.Utilities
                 {
                     if (hiddenDeviceDictionary.ContainsKey(sol[i]))
                     {
-                        hiddenDeviceDictionary[sol[i]].MacList.Add(MacId[i]);
-                        sol[i] = -1;
+                        if(!hiddenDeviceDictionary[sol[i]].MacList.Contains(MacId[i]))
+                            hiddenDeviceDictionary[sol[i]].MacList.Add(MacId[i]);
+                        foreach(var ssid in devicesInfoList[MacId[i]].SsidList)
+                        {
+                            if (!hiddenDeviceDictionary[sol[i]].SsidList.Contains(ssid))
+                                hiddenDeviceDictionary[sol[i]].SsidList.Add(ssid);
+                        }
                     }
                     else
                     {
-                        HiddenDeviceInfo hd = new HiddenDeviceInfo();
-                        hd.Id = i;
+                        HiddenDeviceInfo hd = new HiddenDeviceInfo
+                        {
+                            Id = i,
+                            MacList = new HashSet<string>(),
+                            SsidList=new HashSet<string>()
+                        };
                         hd.MacList.Add(MacId[i]);
+                        foreach (var ssid in devicesInfoList[MacId[i]].SsidList)
+                        {
+                            if (!hd.SsidList.Contains(ssid))
+                                hd.SsidList.Add(ssid);
+                        }
                         hiddenDeviceDictionary.Add(sol[i], hd);
-                        sol[i] = -1;
                     }
+                    sol[i] = -1;
                 }
             }
 
@@ -163,7 +172,7 @@ namespace Core.Utilities
                         }
                     }
                 }
-                return mutui / (probe_ext.Value.SsidList.Count + probe_int.Value.SsidList.Count - mutui);
+                return (float)mutui / (float)(probe_ext.Value.SsidList.Count + probe_int.Value.SsidList.Count - mutui);
             }
         }
 
@@ -176,20 +185,19 @@ namespace Core.Utilities
         /// <param name="cc">Connected component</param>
         private static void CCFind(int root, float[][] adj, ref int[] sol, int cc)
         {
-            int maxPeer = -1;
             sol[root] = cc;
-            SortedList<float, int> descendentPeers = new SortedList<float, int>();
+            List<KeyValuePair<float, int>> descendentPeers = new List<KeyValuePair<float, int>>();
 
             for (int i = 0; i < sol.Length; i++)
-                if (adj[root][i] > THRESHOLD)
-                    descendentPeers.Add(adj[root][i], i);
-
-            foreach (KeyValuePair<float, int> pair in descendentPeers.Reverse())
+                if (adj[root][i] >= THRESHOLD)
+                    descendentPeers.Add(new KeyValuePair<float,int>(adj[root][i], i));
+            descendentPeers.Sort((a, b) => (a.Key < b.Key)?1:0);
+            foreach (KeyValuePair<float, int> pair in descendentPeers)
             {
                 int peer = pair.Value;
-                if (sol[peer] != -1 && adj[peer][root] > THRESHOLD)
+                if (sol[peer] == -1 && adj[peer][root] >= THRESHOLD)
                 {
-                    CCFind(maxPeer, adj, ref sol, cc);
+                    CCFind(peer, adj, ref sol, cc);
                 }
             }
         }
@@ -206,60 +214,6 @@ namespace Core.Utilities
             }
             Console.WriteLine();
         }
-        #endregion
-
-        #region Old
-        /* foreach (var device_ext in devicesInfoList)       
-             {
-                 if (mac == p.Sender.MAC)
-                     {
-                         equal[count] = p;
-                         count++;
-                     }
-                     else
-                     {
-                         mac = p.Sender.MAC;
-                         if (count > 1)
-                         {
-                             //controllo se ho match con quello che ho già salvato
-                             int tempNumProbes = count;
-                             string tempMac = equal[0].MAC;
-                             List<String> tempSsids = new List<string>();
-                             //List<int> tempSeqNum = new List<int>();
-                             for (int i = 0; i < count; i++)
-                             {
-                                 tempSsids.Add(equal[i].SSID);
-                                 //tempSeqNum.Add();    //inviare seqNumber
-                             }
-                             //check su ogni deviceHidden già salvato
-                             foreach (HiddenDeviceInfo h in hiddenDeviceList)
-                             {
-                                 float ret = MatchDevice();      //check that return 0=false,1=true, 0-1=percentual of match
-                                 if (ret == 1)
-                                 {
-                                     h.MacList.Add(tempMac);
-                                 }
-
-                             }
-                         }
-                         else
-                         {
-                             if (equal[0] != null)
-                             {
-                                 if (equal[0].MAC != mac)
-                                 {
-                                     for (int i = 0; i < count; i++)
-                                     {
-                                         equal[i] = null;
-                                     }
-                                     count = 1;
-                                 }
-                             }
-                             equal[0] = p;
-                             count = 1;
-                         }
-                     }
-                 }*/
         #endregion
     }
 }

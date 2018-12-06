@@ -46,7 +46,8 @@ namespace Ui.ViewModels.DataVisualizer
         public ObservableRangeCollection<HiddenDevice> Devices
         {
             get => _devices;
-            set{
+            set
+            {
                 _devices = value;
                 OnPropertyChanged(nameof(Devices));
             }
@@ -163,7 +164,8 @@ namespace Ui.ViewModels.DataVisualizer
 
             List<HiddenDeviceInfo> hiddenDeviceInfos = Core.Utilities.HiddenDevicesFinder.Find(probes);
             Devices.Clear();
-            Devices.AddRange(hiddenDeviceInfos.Select(hdi => new HiddenDevice { Id = hdi.Id, MacList = hdi.MacList.ToList() }));
+            foreach (var hdi in hiddenDeviceInfos)
+                Devices.Add(new HiddenDevice { Id = hdi.Id, MacList = hdi.MacList.ToList(), SsidList=hdi.SsidList.Select(ssid =>{ ssid = "\"" + ssid + "\""; return ssid; }).ToList() });
             HasData = true;
             NotFound = false;
             IsLoading = false;

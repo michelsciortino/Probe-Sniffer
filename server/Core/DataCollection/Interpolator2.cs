@@ -18,15 +18,16 @@ namespace Core.DataCollection
         {
             if (packetDetections.Count < 2)
                 throw new ArgumentException("At least two detection needed; packetDetection contains " + packetDetections.Count + " detections");
-			int den = 0;
+			double den = 0;
 
             Point p = new Point { X = 0, Y = 0 };
 			
 			foreach(var pair in packetDetections)
             {
-                p.X += pair.Key.X_Position * (100 - Math.Abs(pair.Value));
-                p.Y += pair.Key.Y_Position * (100 - Math.Abs(pair.Value));
-                den += 100 - Math.Abs(pair.Value);
+                double d = Math.Pow(10.0, ((-60 - pair.Value) / (float)(10 * 2.5)));
+                p.X += pair.Key.X_Position * 1/d;
+                p.Y += pair.Key.Y_Position * 1/d;
+                den += 1/d;
             }
             p.X /= den;
             p.Y /= den;

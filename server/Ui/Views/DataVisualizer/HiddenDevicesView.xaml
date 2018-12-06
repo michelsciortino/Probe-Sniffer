@@ -26,11 +26,13 @@
         </ResourceDictionary>
     </Page.Resources>
     <Grid>
+
         <Grid Margin="20 10 0 20">
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <!-- Toolbar-->
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
                 <!-- Devices List -->
             </Grid.RowDefinitions>
 
@@ -82,72 +84,76 @@
             </StackPanel>
 
             <!--Found devices list-->
-            <Border Grid.Row="1" Background="{StaticResource BackgroundLighterColorBrush}" CornerRadius="7" HorizontalAlignment="Left" MinWidth="300">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid HorizontalAlignment="Left" Margin="10 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="50"/>
-                            <ColumnDefinition Width="auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Device" Foreground="White" Grid.Column="0"/>
-                        <TextBlock Text="Associated MACs" Foreground="White" Grid.Column="1" Margin="50 0 0 0"/>
-                    </Grid>
-                    <Border Grid.Row="1" BorderBrush="Transparent"
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="auto">
+                <Border Background="{StaticResource BackgroundLighterColorBrush}"
+                        BorderBrush="{StaticResource BackgroundLighterColorBrush}" BorderThickness="2"
+                        CornerRadius="7" HorizontalAlignment="Center" MinWidth="300" VerticalAlignment="Stretch">
+                    <Grid VerticalAlignment="Stretch">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid HorizontalAlignment="Left" Margin="10 5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="auto" MinWidth="200"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Device" Foreground="White" Grid.Column="0"/>
+                            <TextBlock Text="Associated MACs" Foreground="White" Grid.Column="1" Margin="50 0 0 0"/>
+                            <TextBlock Text="Probed SSIDs" Foreground="White" Grid.Column="2" Margin="50 0 0 0"/>
+                        </Grid>
+                        <Border Grid.Row="1" BorderBrush="Transparent"
                             BorderThickness="0" Margin="0 0 0 0"
                             CornerRadius="7"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Top"
-                            Padding="0 10 0 10"
+                            Padding="0 0 0 0"
                             Background="{StaticResource BackgroundLightColorBrush}">
-                        <ListBox x:Name="DeviceList"
+                            <ItemsControl x:Name="DeviceList"
                                  Foreground="White"
                                  Height="auto"
                                  Background="Transparent"
                                  Grid.Column="0"
-                                 SelectionMode="Single"
                                  ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  BorderThickness="0"
                                  HorizontalContentAlignment="Stretch"
                                  VerticalContentAlignment="Top"
+                                 IsManipulationEnabled="False"
+                                 Focusable="False"
                                  Padding="0"
-                                 Margin="0 0 0 -10"
+                                 Margin="0 0 0 5"
                                  ItemsSource="{Binding Devices,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border HorizontalAlignment="Stretch"
-                                            Margin="0"
-                                            BorderThickness="0">
-                                        <Grid HorizontalAlignment="Stretch">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="auto"/>
-                                                <RowDefinition Height="auto"/>
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="50"/>
-                                                <ColumnDefinition Width="auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Row="0"
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border HorizontalAlignment="Stretch"
+                                                BorderBrush="{StaticResource BackgroundLighterLighterColorBrush}"
+                                            Margin="5 5 5 0"
+                                                CornerRadius="7"
+                                            BorderThickness="1">
+                                            <Grid HorizontalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="50"/>
+                                                    <ColumnDefinition Width="200"/>
+                                                    <ColumnDefinition Width="auto" MinWidth="200"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Row="0"
                                                         VerticalAlignment="Top"
                                                         HorizontalAlignment="Left"
                                                         MinWidth="50"
                                                         Margin="5 0 0 0"
                                                         Orientation="Horizontal">
-                                                <TextBlock FontSize="12" Padding="0" Text="#"/>
-                                                <TextBlock FontSize="12" Padding="0" FontFamily="Consolas" Text="{Binding Id}"/>
-                                            </StackPanel>
-                                            <ListBox x:Name="macList"
+                                                    <TextBlock FontSize="12" Padding="0" Text="#"/>
+                                                    <TextBlock FontSize="12" Padding="0" FontFamily="Consolas" Text="{Binding Id}"/>
+                                                </StackPanel>
+                                                <ItemsControl x:Name="macList"
                                                      Grid.Row="1"
                                                      Grid.Column="1"
-                                                     Margin="50 -5 0 10"
+                                                     Margin="50 0 0 10"
                                                      Foreground="White"
                                                      Height="auto"
                                                      Background="Transparent"
-                                                     SelectionMode="Single"
                                                      ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                                                      ScrollViewer.VerticalScrollBarVisibility="Hidden"
                                                      BorderThickness="0"
@@ -155,20 +161,42 @@
                                                      VerticalContentAlignment="Top"
                                                      Padding="0"
                                                      ItemsSource="{Binding MacList}">
-                                                <ListBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock FontFamily="Consolas" Text="{Binding}" Foreground="White"/>
-                                                    </DataTemplate>
-                                                </ListBox.ItemTemplate>
-                                            </ListBox>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Border>
-                </Grid>
-            </Border>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock FontFamily="Consolas" Text="{Binding}" Foreground="White"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <ItemsControl x:Name="ssidList"
+                                                     Grid.Row="1"
+                                                     Grid.Column="2"
+                                                     Margin="50 0 0 10"
+                                                     Foreground="White"
+                                                     Height="auto"
+                                                     Background="Transparent"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                                     ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                                                     BorderThickness="0"
+                                                     HorizontalContentAlignment="Stretch"
+                                                     VerticalContentAlignment="Top"
+                                                     Padding="0"
+                                                     ItemsSource="{Binding SsidList}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock FontFamily="Consolas" Text="{Binding}" Foreground="White" Margin="0,2,0,2"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </Grid>
+
+                </Border>
+            </ScrollViewer>
 
             <!--Info-->
             <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=HasData, Converter={StaticResource FalseToVisible}}">
@@ -184,13 +212,15 @@
                 FontSize="{StaticResource SplashFontSize}"
                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
+
         </Grid>
-            <!--Loading wheel-->
+        <!--Loading wheel-->
         <Grid Grid.Row="1" Background="{StaticResource BackgroundColorBrush}" Visibility="{Binding Path=IsLoading, Converter={StaticResource TrueToVisible}}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock HorizontalAlignment="Center" Text="Loading data ..." FontSize="{StaticResource SplashFontSize}" Foreground="White" Margin="0 0 0 20"/>
                 <Control Style="{StaticResource BusyAnimationStyle}" Width="50" Height="50"/>
             </StackPanel>
         </Grid>
+
     </Grid>
 </Page>
