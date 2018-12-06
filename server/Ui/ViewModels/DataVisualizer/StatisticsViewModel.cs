@@ -154,7 +154,6 @@ namespace Ui.ViewModels.DataVisualizer
 
         public async Task LoadStatistics()
         {
-            var disp = Dispatcher.CurrentDispatcher;
             NotFound = false;
             HasData = false;
             if (dbConnection == null || dbConnection.TestConnection() == false)

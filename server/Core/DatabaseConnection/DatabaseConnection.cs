@@ -165,7 +165,12 @@ namespace Core.DBConnection
             DateTime ret;
             try
             {
-                ret=a.FirstOrDefault().Timestamp;
+                /*if(a.Current==null)
+                {
+                    Thread.Sleep(10000);
+                    return default;
+                }*/
+                ret =a.FirstOrDefault().Timestamp;
             }
             catch(Exception ex) {
                 Thread.Sleep(10000);
