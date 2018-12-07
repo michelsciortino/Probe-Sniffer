@@ -246,7 +246,8 @@ void setup_and_connect_wifi(void)
         .sta = {
             .ssid = DEFAULT_SSID,
             .password = DEFAULT_PWD,
-        },
+            //.ssid_hidden = true,
+            },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));

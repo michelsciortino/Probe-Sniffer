@@ -66,6 +66,7 @@ static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t t
     char new_time[TIME_LEN + 1];
     char hash_str[HASH_LEN];
     char ssid[SSID_MAXLEN + 1];
+    char seq_num[SEQ_NUM_LEN + 1];
     if (type != WIFI_PKT_MGMT)
         return;
 
@@ -104,16 +105,19 @@ static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t t
     memset(&new_node->ssid, 0, SSID_MAXLEN);
     get_ssid((char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, ssid);
     sprintf(new_node->ssid, ssid);
-	
-	//calculate and save hash
-    char seq_num[SEQ_NUM_LEN + 1];
+
+    //setting seq_num
     get_seq_num((char *)((wifi_promiscuous_pkt_t *)buf)->payload, seq_num);
-    //hash((const BYTE *)packet_info.payload, packet_info.len, (BYTE *)hash_str);
-    hash(new_node->mac, new_node->ssid, seq_num, new_node->timestamp, (BYTE *)hash_str);
-    for (i = 0; i < HASH_LEN; i++){
-        sprintf((new_node->hash) + (i * 2), "%02x", hash_str[i]);
-    }
-	int val=MAC_LEN + strlen(new_node->ssid) + TIME_LEN + HASH_LEN*2 + JSON_FIELD_LEN;
+    sprintf(new_node->seq_num, seq_num);
+
+    //calculate and save hash
+    //hash(new_node->mac, new_node->ssid, seq_num, new_node->timestamp, (BYTE *)hash_str);
+    //for (i = 0; i < HASH_LEN; i++){
+    //   sprintf((new_node->hash) + (i * 2), "%02x", hash_str[i]);
+    //}
+	//int val=MAC_LEN + strlen(new_node->ssid) + TIME_LEN + HASH_LEN*2 + JSON_FIELD_LEN;
+
+    int val = MAC_LEN + strlen(new_node->ssid) + TIME_LEN + SEQ_NUM_LEN + JSON_FIELD_LEN;
     st.total_length += val;
 }
 

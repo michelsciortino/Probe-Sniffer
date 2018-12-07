@@ -74,7 +74,6 @@
 #define BUILTIN_LED_PIN 2
 #define BUILTIN_LED_PIN_BIT_MASK (1ULL << BUILTIN_LED_PIN)
 
-
 //codes received from server
 #define CODE_OK 200
 #define CODE_TIME 202
@@ -88,7 +87,8 @@ struct packet_info
     char mac[MAC_LEN + 1];
     char timestamp[TIME_LEN + 13];
     char ssid[SSID_MAXLEN + 1];
-    char hash[(HASH_LEN * 2) + 1];
+    char seq_num[SEQ_NUM_LEN + 1];
+    //char hash[(HASH_LEN * 2) + 1];
     int strength;
 };
 
