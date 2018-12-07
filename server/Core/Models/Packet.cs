@@ -12,5 +12,6 @@ namespace Core.Models
         public string Hash { get; set; }
         public int SignalStrength { get; set; }
         public string ESP_MAC { get; set; }
+        public string Seq_Num { get; set; }
     }
 }

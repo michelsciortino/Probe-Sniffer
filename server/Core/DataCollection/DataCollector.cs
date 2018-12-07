@@ -126,6 +126,7 @@ namespace Core.DataCollection
                         {
                             p.ESP_MAC = data.Esp_Mac;
                             p.Timestamp = p.Timestamp.AddHours(2);
+                            p.Hash = Utilities.Hash.SHA1(p.ESP_MAC + p.SSID + p.Seq_Num + p.Timestamp);
                             toBeStored.Enqueue(p);
                         }
                     }
