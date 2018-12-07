@@ -3,6 +3,7 @@ using Core.Models.Database;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,7 +62,7 @@ namespace Core.Utilities
                             Mac = p.Sender.MAC,
                             Start = p.Timestamp,
                             End = p.Timestamp,
-                            SsidList=new List<string>()
+                            SsidList = new List<string>()
                         };
                         probeInt.SsidList.Add(p.SSID);
                         devicesInfoList.Add(p.Sender.MAC, probeInt);
@@ -87,7 +88,10 @@ namespace Core.Utilities
                 foreach (var probe_int_c in devicesInfoList)
                 {
                     if (r != c)
-                        adj[r][c] = GetDegreeOfSimilarity(probe_ext_r, probe_int_c);  //Match all probeInterval, return percentage of similarity
+                        if (r < c)
+                            adj[r][c] = GetDegreeOfSimilarity(probe_ext_r, probe_int_c);  //Match all probeInterval, return percentage of similarity
+                        else
+                            adj[r][c] = GetDegreeOfSimilarity(probe_int_c, probe_ext_r);
                     c++;
                 }
                 MacId.Add(r, probe_ext_r.Key);
@@ -112,9 +116,9 @@ namespace Core.Utilities
                 {
                     if (hiddenDeviceDictionary.ContainsKey(sol[i]))
                     {
-                        if(!hiddenDeviceDictionary[sol[i]].MacList.Contains(MacId[i]))
+                        if (!hiddenDeviceDictionary[sol[i]].MacList.Contains(MacId[i]))
                             hiddenDeviceDictionary[sol[i]].MacList.Add(MacId[i]);
-                        foreach(var ssid in devicesInfoList[MacId[i]].SsidList)
+                        foreach (var ssid in devicesInfoList[MacId[i]].SsidList)
                         {
                             if (!hiddenDeviceDictionary[sol[i]].SsidList.Contains(ssid))
                                 hiddenDeviceDictionary[sol[i]].SsidList.Add(ssid);
@@ -126,7 +130,7 @@ namespace Core.Utilities
                         {
                             Id = i,
                             MacList = new HashSet<string>(),
-                            SsidList=new HashSet<string>()
+                            SsidList = new HashSet<string>()
                         };
                         hd.MacList.Add(MacId[i]);
                         foreach (var ssid in devicesInfoList[MacId[i]].SsidList)
@@ -162,12 +166,12 @@ namespace Core.Utilities
                 for (i = 0; i < probe_int.Value.SsidList.Count && j < probe_ext.Value.SsidList.Count; i++)
                 {
                     int h;
-                    for (h = j + 1; h < probe_ext.Value.SsidList.Count; h++)
+                    for (h = j; h < probe_ext.Value.SsidList.Count; h++)
                     {
                         if (probe_ext.Value.SsidList[h] == probe_int.Value.SsidList[i])
                         {
                             mutui++;
-                            j = h;
+                            j = h + 1;
                             break;
                         }
                     }
@@ -190,8 +194,8 @@ namespace Core.Utilities
 
             for (int i = 0; i < sol.Length; i++)
                 if (adj[root][i] >= THRESHOLD)
-                    descendentPeers.Add(new KeyValuePair<float,int>(adj[root][i], i));
-            descendentPeers.Sort((a, b) => (a.Key < b.Key)?1:0);
+                    descendentPeers.Add(new KeyValuePair<float, int>(adj[root][i], i));
+            descendentPeers.Sort((a, b) => (a.Key < b.Key) ? 1 : 0);
             foreach (KeyValuePair<float, int> pair in descendentPeers)
             {
                 int peer = pair.Value;
