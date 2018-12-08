@@ -6,9 +6,8 @@
 
 extern struct status st;
 
-wifi_promiscuous_filter_t filter={
-        .filter_mask= WIFI_PROMIS_FILTER_MASK_MGMT
-};
+wifi_promiscuous_filter_t filter = {
+    .filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT};
 
 //Wipes old packets
 static void clear_data()
@@ -23,7 +22,7 @@ static void calculate_timestamp(char *new_time)
     struct timeval elapsed = timeval_durationToNow(&st.client_time);
     struct tm *timestamp_str;
     struct timeval timestamp;
-     if (st.xSemaphore != NULL)
+    if (st.xSemaphore != NULL)
     {
         if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
         {
@@ -45,16 +44,16 @@ static void calculate_timestamp(char *new_time)
     timestamp_str = localtime(&timestamp.tv_sec);
 
     sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.%06ld+02:00",
-        timestamp_str->tm_year + 1900,
-        timestamp_str->tm_mon+1,
-        timestamp_str->tm_mday,
-        timestamp_str->tm_hour,
-        timestamp_str->tm_min,
-        timestamp_str->tm_sec,
-        timestamp.tv_usec);
-    new_time[TIME_LEN-7]='0';
-    new_time[TIME_LEN-8]='0';
-    new_time[TIME_LEN-9]='0';
+            timestamp_str->tm_year + 1900,
+            timestamp_str->tm_mon + 1,
+            timestamp_str->tm_mday,
+            timestamp_str->tm_hour,
+            timestamp_str->tm_min,
+            timestamp_str->tm_sec,
+            timestamp.tv_usec);
+    new_time[TIME_LEN - 7] = '0';
+    new_time[TIME_LEN - 8] = '0';
+    new_time[TIME_LEN - 9] = '0';
     //printf("%s\n",new_time );
 }
 
@@ -64,7 +63,7 @@ static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t t
     char c;
     int i;
     char new_time[TIME_LEN + 1];
-    char hash_str[HASH_LEN];
+    //char hash_str[HASH_LEN];
     char ssid[SSID_MAXLEN + 1];
     char seq_num[SEQ_NUM_LEN + 1];
     if (type != WIFI_PKT_MGMT)
@@ -97,50 +96,59 @@ static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t t
     //save timestamp
     calculate_timestamp(new_time);
     strcpy(new_node->timestamp, new_time);
-    
+
     //save rssi
     new_node->strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
-	
-	//setting mac string
+
+    //setting mac string
     memset(&new_node->ssid, 0, SSID_MAXLEN);
     get_ssid((char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, ssid);
     sprintf(new_node->ssid, ssid);
 
     //setting seq_num
+    new_node->seq_num=0;
     get_seq_num((char *)((wifi_promiscuous_pkt_t *)buf)->payload, seq_num);
-    sprintf(new_node->seq_num, seq_num);
+    //sprintf(new_node->seq_num, seq_num);
+    int number = seq_num[0] | seq_num[1] << 8;
+    new_node->seq_num = number;
 
     //calculate and save hash
     //hash(new_node->mac, new_node->ssid, seq_num, new_node->timestamp, (BYTE *)hash_str);
     //for (i = 0; i < HASH_LEN; i++){
     //   sprintf((new_node->hash) + (i * 2), "%02x", hash_str[i]);
     //}
-	//int val=MAC_LEN + strlen(new_node->ssid) + TIME_LEN + HASH_LEN*2 + JSON_FIELD_LEN;
+    //int val=MAC_LEN + strlen(new_node->ssid) + TIME_LEN + HASH_LEN*2 + JSON_FIELD_LEN;
 
     int val = MAC_LEN + strlen(new_node->ssid) + TIME_LEN + SEQ_NUM_LEN + JSON_FIELD_LEN;
     st.total_length += val;
 }
 
-void enable_promiscuous(){
-    
+void enable_promiscuous()
+{
+
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
     //Set callback function
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(promiscuous_rx_cb));
-    bool mode=false;
+    bool mode = false;
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-    while(mode!=true){
+    while (mode != true)
+    {
         ESP_ERROR_CHECK(esp_wifi_get_promiscuous(&mode));
-        if(mode==true) break;
+        if (mode == true)
+            break;
     }
 }
 
-void disable_promiscuous(){
-    bool mode=true;
+void disable_promiscuous()
+{
+    bool mode = true;
     ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
-    while(mode!=false){
+    while (mode != false)
+    {
         esp_wifi_get_promiscuous(&mode);
-        if(mode==false) break;
-    }  
+        if (mode == false)
+            break;
+    }
 }
 
 static void start_collector_timer()
@@ -155,9 +163,9 @@ void start_sniffer()
     clear_data();
 
     //Starting collector timer
-    printf("\tStarting collector timer: %ds\n",TIMER_USEC/1000);
-    start_collector_timer();    
-    
+    printf("\tStarting collector timer: %ds\n", TIMER_USEC / 1000);
+    start_collector_timer();
+
     //turning on promiscuos mode
     printf("\tTurning ON promiscuos mode\n");
     printf("Sniffing\n");
@@ -190,6 +198,3 @@ void initialize_sniffer()
     create_args.name = "collector_timer\0";
     ESP_ERROR_CHECK(esp_timer_create(&create_args, &(st.timer)));
 }
-
-
-

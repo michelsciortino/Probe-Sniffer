@@ -53,7 +53,7 @@
 #define HEADER_LEN 1
 #define MAC_LEN 17
 #define BSSID_MAXLEN 17
-#define SEQ_NUM_LEN 2
+#define SEQ_NUM_LEN 9
 #define TIME_LEN 32
 #define SRV_TIME_LEN 26
 #define SSID_MAXLEN 32
@@ -62,7 +62,7 @@
 #define STACK_SIZE 2000
 #define SSID_LEN_POS 37
 #define HASH_LEN 32
-#define JSON_FIELD_LEN 69
+#define JSON_FIELD_LEN 72 //con hash al posto di seq_num era 69
 #define JSON_HEAD_LEN 25 + MAC_LEN
 #define N_RECONNECT 3
 #define JSON_MAC_POS 15
@@ -87,7 +87,8 @@ struct packet_info
     char mac[MAC_LEN + 1];
     char timestamp[TIME_LEN + 13];
     char ssid[SSID_MAXLEN + 1];
-    char seq_num[SEQ_NUM_LEN + 1];
+    int seq_num;
+    //char seq_num[SEQ_NUM_LEN + 1];
     //char hash[(HASH_LEN * 2) + 1];
     int strength;
 };
