@@ -20,12 +20,12 @@ namespace Ui.ViewModels.DataVisualizer
         private const int UPDATING_RATE = 10000;
         private Timer timer = null;
         private DatabaseConnection dbConnection = null;
-        private DateTime last_interval_timestamp= default;
+        private DateTime last_interval_timestamp = default;
         #endregion
 
         #region Private Properties
-        private double _mapWidth=20;
-        private double _mapHeight=20;
+        private double _mapWidth = 20;
+        private double _mapHeight = 20;
         private bool _isLoading = true;
         #endregion
 
@@ -34,13 +34,13 @@ namespace Ui.ViewModels.DataVisualizer
         public LiveViewViewModel()
         {
             last_interval_timestamp = DateTime.SpecifyKind(DateTime.Now.AddMinutes(-3), DateTimeKind.Utc);
-            timer = new Timer((dispatcher) => UpdateAsync(dispatcher),Dispatcher.CurrentDispatcher,Timeout.Infinite,UPDATING_RATE);
+            timer = new Timer((dispatcher) => UpdateAsync(dispatcher), Dispatcher.CurrentDispatcher, Timeout.Infinite, UPDATING_RATE);
             dbConnection = new DatabaseConnection();
             dbConnection.Connect();
             dbConnection.TestConnection();
             Devices = new ObservableRangeCollection<DeviceStatistic>();
             ESPDevices = new ObservableCollection<ESP32_Device>();
-            Points = new ObservableCollection<KeyValuePair<int,string>>();
+            Points = new ObservableCollection<KeyValuePair<int, string>>();
         }
 
         #endregion
@@ -84,8 +84,8 @@ namespace Ui.ViewModels.DataVisualizer
         #region Private Methods
         private List<Probe> GetLastPositions(ProbesInterval interval)
         {
-            Dictionary<string, Probe> last = new Dictionary<string, Probe>();            
-            foreach(var p in interval.Probes)
+            Dictionary<string, Probe> last = new Dictionary<string, Probe>();
+            foreach (var p in interval.Probes)
             {
                 if (!last.ContainsKey(p.Sender.MAC)) last.Add(p.Sender.MAC, p);
                 else
@@ -103,7 +103,7 @@ namespace Ui.ViewModels.DataVisualizer
         {
             StopUpdater();
             Dispatcher disp = dispatcher as Dispatcher;
-            if(disp is null)
+            if (disp is null)
                 return;
             if (dbConnection.TestConnection() == false)
             {
@@ -117,10 +117,10 @@ namespace Ui.ViewModels.DataVisualizer
             ProbesInterval[] new_intervals = new ProbesInterval[20];
             KeyValuePair<int, string>[] new_points = new KeyValuePair<int, string>[20];
             foreach (var interval in stored_intervals)
-                new_intervals[interval.Timestamp.Minute - last_interval_timestamp.AddMinutes(-20).Minute] = interval;
+                new_intervals[(interval.Timestamp - last_interval_timestamp.AddMinutes(-20)).Minutes] = interval;
             List<Probe> i_last = null;
 
-            
+
             for (int i = 0; i < 20; i++)
             {
                 var ts = last_interval_timestamp.AddMinutes(-20 + i);
@@ -128,15 +128,15 @@ namespace Ui.ViewModels.DataVisualizer
                                                             (ts.Minute < 10 ? "0" : "") + ts.Minute.ToString() + "\n" +
                                                              ts.Date.ToShortDateString());
             }
-            
 
-            for(int i=0;i<20;i++)
+
+            for (int i = 0; i < 20; i++)
             {
                 i_last = null;
                 if (new_intervals[i] == null) continue;
-                i_last = GetLastPositions(new_intervals[i]);                
-                new_points[i]=new KeyValuePair<int, string>(i_last.Count, new_intervals[i].Timestamp.Hour.ToString() + ":"+
-                                                            (new_intervals[i].Timestamp.Minute<10?"0":"") + new_intervals[i].Timestamp.Minute.ToString()+"\n"+
+                i_last = GetLastPositions(new_intervals[i]);
+                new_points[i] = new KeyValuePair<int, string>(i_last.Count, new_intervals[i].Timestamp.Hour.ToString() + ":" +
+                                                            (new_intervals[i].Timestamp.Minute < 10 ? "0" : "") + new_intervals[i].Timestamp.Minute.ToString() + "\n" +
                                                              new_intervals[i].Timestamp.Date.ToShortDateString());
             }
 
@@ -176,7 +176,7 @@ namespace Ui.ViewModels.DataVisualizer
             IsLoading = false;
         }
 
-        public void RunUpdater() => timer.Change(UPDATING_RATE/10, UPDATING_RATE);
+        public void RunUpdater() => timer.Change(UPDATING_RATE / 10, UPDATING_RATE);
         public void StopUpdater() => timer.Change(Timeout.Infinite, Timeout.Infinite);
         #endregion
     }
