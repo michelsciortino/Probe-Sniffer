@@ -126,7 +126,7 @@ namespace Core.DataCollection
                         {
                             p.ESP_MAC = data.Esp_Mac;
                             p.Timestamp = p.Timestamp.AddHours(2);
-                            p.Hash = Utilities.Hash.SHA1(p.ESP_MAC + p.SSID + p.Seq_Num + p.Timestamp);
+                            p.Hash = Utilities.Hash.SHA1(p.MAC + p.SSID + p.Seq_Num + p.Timestamp.ToString("yyyy/MM/dd'T'HH:mm:ss.fff"));
                             toBeStored.Enqueue(p);
                         }
                     }
@@ -236,7 +236,7 @@ namespace Core.DataCollection
                 //Elimino tutti i probe non detected da tutti gli ESP
                 //var toberemoved = DetectionForHash.Where(pair => pair.Value.Count < 2).Select(pair => pair.Key).ToList();
                 var toberemoved = DetectionForHash.Where(pair => pair.Value.Count != ESPManager.ESPs.Count).Select(pair => pair.Key).ToList();
-                if (toberemoved.Count!=0)
+                if (toberemoved.Count != 0)
                 {
                     foreach (string hash in toberemoved)
                         DetectionForHash.Remove(hash);
