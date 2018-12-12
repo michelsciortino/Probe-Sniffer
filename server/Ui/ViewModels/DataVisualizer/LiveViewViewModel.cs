@@ -116,10 +116,7 @@ namespace Ui.ViewModels.DataVisualizer
             stored_intervals.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
             ProbesInterval[] new_intervals = new ProbesInterval[20];
             KeyValuePair<int, string>[] new_points = new KeyValuePair<int, string>[20];
-            foreach (var interval in stored_intervals)
-                new_intervals[(interval.Timestamp - last_interval_timestamp.AddMinutes(-20)).Minutes] = interval;
             List<Probe> i_last = null;
-
 
             for (int i = 0; i < 20; i++)
             {
@@ -128,7 +125,12 @@ namespace Ui.ViewModels.DataVisualizer
                                                             (ts.Minute < 10 ? "0" : "") + ts.Minute.ToString() + "\n" +
                                                              ts.Date.ToShortDateString());
             }
-
+            foreach (var interval in stored_intervals)
+            {
+                DateTime start = last_interval_timestamp.AddMinutes(-20).AddSeconds(-last_interval_timestamp.AddMinutes(-20).Second);
+                DateTime end = interval.Timestamp.AddSeconds(-interval.Timestamp.Second);
+                new_intervals[(end - start).Minutes] = interval;
+            }
 
             for (int i = 0; i < 20; i++)
             {
