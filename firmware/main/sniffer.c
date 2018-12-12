@@ -2,162 +2,199 @@
 #include "connection.h"
 #include "utilities.h"
 #include <inttypes.h>
-
-#define TASK_STACK_SIZE 10000
+#include "led.h"
 
 extern struct status st;
 
-void event_handler_promiscuous(void *buf, wifi_promiscuous_pkt_type_t type)
+wifi_promiscuous_filter_t filter = {
+    .filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT};
+
+//Wipes old packets
+static void clear_data()
 {
- char c;
- int i;
- struct packet_node *new_node = NULL;
- char new_time[TIME_LEN+1];
- char hash_str[HASH_LEN];
- if(type != WIFI_PKT_MGMT)
-  return;
-
- //to prevent creating nodes during sending process
- //if(st.status_value != ST_SNIFFING)
-  //return;
-
- c = ((wifi_promiscuous_pkt_t *)buf)->payload[0] & 0xB0;
- if(c != 0)
-  return;
-
- new_node = (struct packet_node *)malloc(sizeof(*new_node));
- if(new_node == NULL)
- {
-  printf("ERROR IN MALLOC\n");
-  esp_restart();
- }
-
- //save mac address of sender device
- for(i=0; i<6; i++)
- {
-  sprintf(new_node->packet.mac+i*3, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
-  //printf("%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS+i]);
-  if(i != 5)
-   sprintf(new_node->packet.mac+2+i*3, ":");
-   //printf(":");
- }
- //printf("\n");
-
- //find_ssid(ssid);
-
- //save timestamp
- calculate_timestamp(new_time);
- strcpy(new_node->packet.timestamp, new_time);
-
- //save rssi
- new_node->packet.strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
- //printf("%s rssi:%d\n", new_time, new_node->packet.strength);
-
- //calculate and save hash
- hash((const BYTE *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, (BYTE *)hash_str);
- for(i = 0; i < HASH_LEN; i++)
-  sprintf((new_node->packet.hash) + (i*2), "%02x", hash_str[i]);
- //printf("Hash: %s\n", new_node->packet.hash);
-
- sprintf(new_node->packet.ssid, "test_ssid");
-
- st.total_length += strlen(new_node->packet.ssid);
- st.total_length += MAC_LEN + TIME_LEN + (HASH_LEN*2) + JSON_FIELD_LEN;
-
- new_node->next = st.packet_list;
- st.packet_list = new_node;
-}
-
-//sniffs packets then sends those to server in infinite loop
-void sniffer()
-{
- clear_data();
- start_timer();
-
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
-}
-
-void clear_data()
-{
- struct packet_node *next;
- struct packet_node *p=st.packet_list;
- while(p!=NULL)
- {
-  next=p->next;
-  free(p);
-  p=next;
- }
- st.total_length=0;
- st.packet_list = NULL;
-}
-
-void start_timer()
-{
- esp_err_t ret;
- uint64_t usec=TIMER_USEC;
- ret = esp_timer_start_once(st.timer, usec);
- ESP_ERROR_CHECK( ret );
-}
-
-//handle the end of the timer: send data to server then reset timer and return sniffing
-void timer_handle()
-{
- ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
- //reconnect();
- //print_data(); //SET ST_SENDING_DATA
- send_data();
- //disconnect();
- sniffer();
-}
-
-void print_data()
-{
- char buf[BUFLEN];
- struct packet_node *p;
- int i = 0;
- int n;
-
- st.total_length += JSON_HEAD_LEN+2;
- n = CODE_DATA;
-
- buf[0] = (char) (st.total_length >> 8);
- buf[1] = (char) (st.total_length & 0xff);
-
- printf("%d ", n);
- printf("%02x%02x\n", buf[0], buf[1]);
- //printf("%lu", (long unsigned int)(st.total_length + JSON_LEN));
- printf("{\"Esp_Mac\":\"");
- get_device_mac(buf);
- printf("%s", buf);
- printf("\",\n\"Packets\":[\n");
-
- p = st.packet_list;
- while(p != NULL)
- {
-  printf("{\"MAC\":\"%s\",\n\"SSID\":\"%s\",\n\"Timestamp\":\"%s\",\n\"Hash\":\"%s\",\n\"SignalStrength\":%04d,},\n", p->packet.mac, p->packet.ssid, p->packet.timestamp, p->packet.hash, p->packet.strength);
-  p = p->next;
-  if(i != 0 && (i++%50) == 0)
-   usleep(1000000);
- }
- printf("]}\n");
+    st.total_length = 0;
+    st.count = 0;
 }
 
 //add elapsed time to timestamp received from server
-void calculate_timestamp(char *new_time)
+static void calculate_timestamp(char *new_time)
 {
- time_t sec_elapsed = time(NULL)-st.client_time;
- time_t timestamp = st.srv_time + sec_elapsed;
- struct tm *timestamp_str;
+    struct timeval elapsed = timeval_durationToNow(&st.client_time);
+    struct tm *timestamp_str;
+    struct timeval timestamp;
+    if (st.xSemaphore != NULL)
+    {
+        if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+        {
+            // We would expect this call to fail because we cannot give a semaphore without first "taking" it!
+        }
+        // Obtain the semaphore - don't block if the semaphore is not immediately available.
+        if (xSemaphoreTake(st.xSemaphore, (TickType_t)0))
+        {
+            // We now have the semaphore and can access the shared resource.
+            timestamp = timeval_add(&st.srv_time, &elapsed);
+            // We have finished accessing the shared resource so can free the semaphore.
+            if (xSemaphoreGive(st.xSemaphore) != pdTRUE)
+            {
+                // We would not expect this call to fail because we must have obtained the semaphore to get here.
+            }
+        }
+    }
 
- timestamp_str = localtime(&timestamp);
- sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.000000+02:00", timestamp_str->tm_year+1900, timestamp_str->tm_mon, timestamp_str->tm_mday, timestamp_str->tm_hour, timestamp_str->tm_min, timestamp_str->tm_sec);
+    timestamp_str = localtime(&timestamp.tv_sec);
+
+    sprintf(new_time, "%d-%02d-%02dT%02d:%02d:%02d.%06ld+02:00",
+            timestamp_str->tm_year + 1900,
+            timestamp_str->tm_mon + 1,
+            timestamp_str->tm_mday,
+            timestamp_str->tm_hour,
+            timestamp_str->tm_min,
+            timestamp_str->tm_sec,
+            timestamp.tv_usec);
+    new_time[TIME_LEN - 7] = '0';
+    new_time[TIME_LEN - 8] = '0';
+    new_time[TIME_LEN - 9] = '0';
+    //printf("%s\n",new_time );
 }
 
-void hash(const BYTE *v, int length, BYTE *hash_str)
+//promiscuous callback function, called each time a packet is sniffed
+static void IRAM_ATTR promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
 {
- SHA256_CTX ctx;
+    char c;
+    int i;
+    char new_time[TIME_LEN + 1];
+    //char hash_str[HASH_LEN];
+    char ssid[SSID_MAXLEN + 1];
+    char seq_num[SEQ_NUM_LEN + 1];
+    if (type != WIFI_PKT_MGMT)
+        return;
 
- sha256_init(&ctx);
- sha256_update(&ctx, v, length);
- sha256_final(&ctx, hash_str);
+    //to prevent creating nodes during sending process
+    if (st.status_value != ST_SNIFFING)
+        return;
+
+    c = ((wifi_promiscuous_pkt_t *)buf)->payload[0] & 0xB0;
+    if (c != 0)
+        return;
+
+    struct packet_info *new_node = &st.packet_list[st.count % MAX_QUEUE_LEN];
+    if (new_node == NULL)
+    {
+        printf("ERROR pointing inside the packet list\n");
+        esp_restart();
+    }
+    st.count += 1;
+
+    //save mac address of sender device
+    for (i = 0; i < 6; i++)
+    {
+        sprintf(new_node->mac + i * 3, "%02x", ((wifi_promiscuous_pkt_t *)buf)->payload[MAC_POS + i]);
+        if (i != 5)
+            sprintf(new_node->mac + 2 + i * 3, ":");
+    }
+
+    //save timestamp
+    calculate_timestamp(new_time);
+    strcpy(new_node->timestamp, new_time);
+
+    //save rssi
+    new_node->strength = (int)((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.rssi;
+
+    //setting mac string
+    memset(&new_node->ssid, 0, SSID_MAXLEN);
+    get_ssid((char *)((wifi_promiscuous_pkt_t *)buf)->payload, ((wifi_promiscuous_pkt_t *)buf)->rx_ctrl.sig_len, ssid);
+    sprintf(new_node->ssid, ssid);
+
+    //setting seq_num
+    new_node->seq_num=0;
+    get_seq_num((char *)((wifi_promiscuous_pkt_t *)buf)->payload, seq_num);
+    //sprintf(new_node->seq_num, seq_num);
+    int number = seq_num[0] | seq_num[1] << 8;
+    new_node->seq_num = number;
+
+    //calculate and save hash
+    //hash(new_node->mac, new_node->ssid, seq_num, new_node->timestamp, (BYTE *)hash_str);
+    //for (i = 0; i < HASH_LEN; i++){
+    //   sprintf((new_node->hash) + (i * 2), "%02x", hash_str[i]);
+    //}
+    //int val=MAC_LEN + strlen(new_node->ssid) + TIME_LEN + HASH_LEN*2 + JSON_FIELD_LEN;
+
+    int val = MAC_LEN + strlen(new_node->ssid) + TIME_LEN + SEQ_NUM_LEN + JSON_FIELD_LEN;
+    st.total_length += val;
+}
+
+void enable_promiscuous()
+{
+
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&filter));
+    //Set callback function
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(promiscuous_rx_cb));
+    bool mode = false;
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
+    while (mode != true)
+    {
+        ESP_ERROR_CHECK(esp_wifi_get_promiscuous(&mode));
+        if (mode == true)
+            break;
+    }
+}
+
+void disable_promiscuous()
+{
+    bool mode = true;
+    ESP_ERROR_CHECK(esp_wifi_set_promiscuous(false));
+    while (mode != false)
+    {
+        esp_wifi_get_promiscuous(&mode);
+        if (mode == false)
+            break;
+    }
+}
+
+static void start_collector_timer()
+{
+    ESP_ERROR_CHECK(esp_timer_start_once(st.timer, TIMER_USEC));
+}
+
+void start_sniffer()
+{
+    //Wiping old packets
+    printf("\tWiping old packets\n");
+    clear_data();
+
+    //Starting collector timer
+    printf("\tStarting collector timer: %ds\n", TIMER_USEC / 1000);
+    start_collector_timer();
+
+    //turning on promiscuos mode
+    printf("\tTurning ON promiscuos mode\n");
+    printf("Sniffing\n");
+    enable_promiscuous();
+
+    turn_led_on();
+    st.status_value = ST_SNIFFING;
+}
+
+//handle the end of the timer: send data to server then reset timer and return sniffing
+static void collector_timer_handle()
+{
+    //Turning off promiscuos mode
+    printf("\tTurning OFF promiscuos mode\n");
+    disable_promiscuous();
+
+    turn_led_off();
+    st.status_value = ST_SENDING_DATA;
+    send_data();
+    start_sniffer();
+}
+
+void initialize_sniffer()
+{
+    //Initialize collector timer
+    esp_timer_create_args_t create_args;
+    create_args.callback = collector_timer_handle;
+    create_args.arg = NULL;
+    create_args.dispatch_method = ESP_TIMER_TASK;
+    create_args.name = "collector_timer\0";
+    ESP_ERROR_CHECK(esp_timer_create(&create_args, &(st.timer)));
 }

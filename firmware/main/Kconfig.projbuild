@@ -13,13 +13,3 @@ config WIFI_PASSWORD
 	WiFi password (WPA or WPA2) for the example to use.
 
 endmenu
-
-menu "Server Configuration"
-
-config SERVER_IP
-    string "Server IP"
-    default "192.168.1.2"
-    help
-	IP of the server (Check ipconfig if on windows, ifconfig if on linux, may God have mercy if you have a mac).
-
-endmenu
