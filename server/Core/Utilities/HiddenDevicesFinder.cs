@@ -109,6 +109,7 @@ namespace Core.Utilities
                 }
             }
 
+            int count = 0;
             //Create Lists of equal mac
             for (int i = 0; i < sol.Length; i++)
             {
@@ -126,9 +127,10 @@ namespace Core.Utilities
                     }
                     else
                     {
+                        count++;
                         HiddenDeviceInfo hd = new HiddenDeviceInfo
                         {
-                            Id = i,
+                            Id = count,
                             MacList = new HashSet<string>(),
                             SsidList = new HashSet<string>()
                         };
