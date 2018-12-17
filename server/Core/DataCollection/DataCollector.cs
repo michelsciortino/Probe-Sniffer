@@ -202,7 +202,7 @@ namespace Core.DataCollection
 
             while (token.IsCancellationRequested is false)
             {
-                if (DateTime.Compare(DateTime.Now, last_interval.Timestamp.AddMinutes(5)) < 0)
+                if (DateTime.Compare(DateTime.Now, last_interval.Timestamp.AddMinutes(3)) < 0)
                 {
                     Thread.Sleep(30000);
                     continue;
