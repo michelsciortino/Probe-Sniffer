@@ -145,8 +145,17 @@ namespace Core.Utilities
                     sol[i] = -1;
                 }
             }
+            List<HiddenDeviceInfo> listDev = new List<HiddenDeviceInfo>();
+            listDev = hiddenDeviceDictionary.Values.ToList();
+            listDev.Sort((x, y) => x.MacList.Count.CompareTo(y.MacList.Count));
+            listDev.Reverse();
+            count = 0;
+            foreach (var tmp in listDev)
+            {
+                tmp.Id = count++;
+            }
 
-            return hiddenDeviceDictionary.Values.ToList();
+            return listDev;
         }
 
         #endregion
