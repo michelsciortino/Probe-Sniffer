@@ -57,7 +57,7 @@ namespace Ui.Models
                         {
                             MAC = p.Sender.MAC,
                             Color = Styles.Colors.Next,
-                            Active = true,
+                            Active = false,
                             Tot_Probes = 0
                         };
                         if (precision == Precision.Day)
