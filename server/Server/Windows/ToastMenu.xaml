@@ -80,7 +80,7 @@
                     </StackPanel>
                 </Grid>
             </Button>
-            <Button Style="{StaticResource ToastButton}">
+            <Button Style="{StaticResource ToastButton}" IsEnabled="False" Visibility="Collapsed">
                 <Grid>
                     <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="16" FontWeight="Light" Margin="0,1"/>
                     <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom">
