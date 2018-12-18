@@ -156,6 +156,8 @@ namespace Ui.ViewModels.DataVisualizer
         {
             NotFound = false;
             HasData = false;
+            Labels.Clear();
+            Values.Clear();
             if (dbConnection == null || dbConnection.TestConnection() == false)
             {
                 Core.Controls.MessageBox message = new Core.Controls.MessageBox("Unable to connect to the database.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -177,6 +179,10 @@ namespace Ui.ViewModels.DataVisualizer
                 message.Show();
                 return;
             }
+            start = start.AddMinutes(-start.Minute).AddSeconds(-start.Second).AddMilliseconds(-start.Millisecond);
+            if (end.Minute > 0) end.AddHours(1);
+            end = end.AddMinutes(-end.Minute).AddSeconds(-end.Second).AddMilliseconds(-end.Millisecond);
+
             List<DeviceStatistic> statistics = DeviceStatistic.DoStatistics(intervals, start, end, precision);
             if (statistics.Count == 0)
             {
@@ -189,14 +195,11 @@ namespace Ui.ViewModels.DataVisualizer
             statistics = statistics.OrderByDescending((a) => a.Tot_Probes).ToList();
             foreach(var d in Devices) d.PropertyChanged -= checkedChange;
             Devices.Clear();
-
             foreach (var st in statistics)
             {
                 st.PropertyChanged += checkedChange;
                 Devices.Add(st);
             }
-            Labels.Clear();
-            Values.Clear();
             List<string> new_lables = new List<string>();
             if (precision == Models.Precision.Day)
             {
@@ -209,7 +212,7 @@ namespace Ui.ViewModels.DataVisualizer
             }
             else if (precision == Models.Precision.Hour)
             {
-                DateTime label = start.AddMinutes(-start.Minute).AddSeconds(-start.Second).AddMinutes(-start.Millisecond);
+                DateTime label = start;
                 for (int i = (int)(end - start).TotalHours; i > 0; i--)
                 {
                     new_lables.Add(label.ToShortTimeString() + "\n" + label.ToShortDateString());

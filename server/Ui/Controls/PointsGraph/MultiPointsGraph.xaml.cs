@@ -318,7 +318,11 @@ namespace Ui.Controls.PointsGraph
 
         private void UpdateGraph(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (Check() is false) return;
+            if (Check() is false)
+            {
+                Graph.Children.Clear();
+                return;
+            }
             FindYAxisBounds();
             SetupYAxis();
             Graph.Children.Clear();
